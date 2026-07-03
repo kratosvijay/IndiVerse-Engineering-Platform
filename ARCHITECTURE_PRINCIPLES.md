@@ -40,7 +40,7 @@ When providers, plugins, networks, or external services fail, the platform shoul
 Trace execution paths, token budgets, and latencies via the distributed event bus.
 
 ### 9. Everything testable
-Every core engine, manager, and provider must maintain 100% test coverage target.
+Every core engine, manager, and provider should maintain comprehensive automated test coverage. Critical platform components should target complete behavioral coverage.
 
 ### 10. Human approval before destructive operations
 Critical execution steps, file system writes, and git commands require explicit developer confirmation.
@@ -62,6 +62,9 @@ Public SDKs, plugin APIs, and stable platform contracts should remain backward c
 
 ### 15. Public Contracts Are Versioned
 Every stable SDK, API, plugin contract, and extension point must expose a version and maintain compatibility throughout the supported release lifecycle.
+
+### 16. Small Stable APIs
+Public interfaces should remain intentionally small, cohesive, and stable. Prefer extending behavior through composition rather than expanding existing APIs.
 
 ---
 
@@ -97,13 +100,11 @@ Reviewers and contributors must verify the following gates:
 - [ ] **Offline First**: Offline caching capability is preserved.
 - [ ] **Graceful Degradation**: Reduced functionality operational fallback checked.
 - [ ] **Observable**: Cost tracking and event bus triggers are instrumented.
-- [ ] **Testable**: Clean test coverage gates are satisfied.
+- [ ] **Testable**: Comprehensive automated test coverage is validated.
 - [ ] **Human Approval**: Mandatory prompt validation gates for destructive mutations are preserved.
 - [ ] **Documentation**: Version control documentation updated.
 - [ ] **Open Standards**: Standards-compliant protocols (like MCP/Git) are prioritized.
 - [ ] **Explainable AI**: Reasoning maps and context source histories are exposed.
 - [ ] **Backward Compatible**: Breaking stable contracts are prohibited.
 - [ ] **Versioned Public Contracts**: Public version targets declared.
-
-
-
+- [ ] **Small Stable APIs**: Interface cohesion and composition checks passed.

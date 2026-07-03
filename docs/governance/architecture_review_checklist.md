@@ -17,7 +17,7 @@ Use this checklist during architecture reviews, pull request assessments, and ma
 
 ## 🎯 Quality
 - **Observable**: Are event trace logs and cost calculations instrumented?
-- **Testable**: Is the component fully mockable and verified by unit tests?
+- **Testable**: Is the component verified by comprehensive automated test coverage targeting critical behaviors?
 - **Human Approval**: Do destructive writes require explicit user approval?
 - **Documentation as Code**: Have corresponding guides, schemas, or ADRs been updated?
 
@@ -26,3 +26,4 @@ Use this checklist during architecture reviews, pull request assessments, and ma
 - **Explainable AI**: Is the reason why this context chunk or resolution was suggested visible?
 - **Backward Compatible**: Does this break existing plugin hooks or public SDK APIs?
 - **Versioned Contracts**: Are new public interfaces explicitly versioned?
+- **Small Stable APIs**: Are interfaces kept small and extended through composition rather than API bloat?
