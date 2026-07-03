@@ -5,6 +5,19 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-03
+### Added
+- Completed Phase 3 Sprint 11 (Agent Engine).
+- Standardized micro-contracts (`Agent`, `Workflow`, `Scheduler`, `Task`, `Executor`, `DecisionRecord`, `ExecutionPolicy`, `ApprovalPolicy`, `MemoryProvider`) under `contracts/`.
+- Implemented task execution graph models (`WorkflowDefinition`, `WorkflowNode`, `WorkflowEdge`, `WorkflowResult`, `WorkflowSnapshot`, `WorkflowStatistics`) and validations.
+- Developed `AgentExecutor` managing execution lifecycles, retries, timeouts, and cancellations.
+- Evolved `AgentSession` tracking mutable stats metrics and immutable `AgentContext`.
+- Programmed decoupled `PolicyValidator` delegating audits to: `SecurityPolicy`, `FilesystemPolicy`, `GitPolicy`, `BudgetPolicy`, `PluginPolicy`.
+- Added context resolver compiling data from `ContextSource` options (Workspace, Knowledge, Memory, Git, Plugin, MCP, User Input).
+- Programmed task queues local dispatcher queue system.
+- Evolved built-in stateless executors: `PlannerAgent`, `DeveloperAgent`, `ReviewerAgent`, `TesterAgent`, `DocumentationAgent`, `SecurityAgent`.
+- Formulated Platform ADR 0011 (Agent Architecture).
+
 ## [0.6.0] - 2026-07-03
 ### Added
 - Completed Phase 3 Sprint 10 (Knowledge Engine).

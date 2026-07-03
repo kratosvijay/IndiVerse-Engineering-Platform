@@ -3,8 +3,8 @@
 ```yaml
 Platform:
   Name: "IndiVerse Developer Platform"
-  Version: "0.6.0"
-  Status: "Knowledge Engine Active"
+  Version: "0.7.0"
+  Status: "Agent Engine Active"
 
 Supports:
   - Flutter
@@ -15,7 +15,7 @@ Statistics:
   Prompts: 24
   Agents: 8
   Templates: 11
-  ADRs: 10
+  ADRs: 11
   Validation: "Passed"
   License: "MIT"
 ```
