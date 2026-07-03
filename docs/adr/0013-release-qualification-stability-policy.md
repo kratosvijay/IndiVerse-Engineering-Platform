@@ -30,6 +30,10 @@ We implement a Release Qualification & Stability Policy containing the following
      - Benchmarks meet performance budgets.
      - Security audit scans pass.
      - Dependency matrix rules are verified with zero circular imports.
+6. **Release Repeatability**:
+   - Two consecutive release qualification runs on the same commit must produce equivalent pass/fail results (excluding expected timing variance).
+7. **Unified Qualification Tooling**:
+   - We enforce a single release qualification command: `dart run tool/release_qualification.dart` which automates all gates and exports compile-time reports under `reports/`.
 
 ## Directory Structure
 
@@ -51,7 +55,9 @@ benchmark/
     ├── startup.json
     ├── memory.json
     ├── benchmark.json
-    └── security.json
+    ├── security.json
+    ├── compatibility.json
+    └── qualification_report.json
 ```
 
 ## Consequences
