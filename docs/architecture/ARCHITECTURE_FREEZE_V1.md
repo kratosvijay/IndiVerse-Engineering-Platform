@@ -4,7 +4,7 @@ This document freezes the workbench architecture of **IndiVerse Studio** at vers
 
 ---
 
-## 1. Layer Diagram
+## 1. Layer Diagram & Dependency Direction Rules
 ```
                      Presentation (UI Widgets)
                                 │
@@ -27,6 +27,23 @@ NavigationApi   EditorApi   SymbolApi   WorkspaceApi   NotificationApi
                     ▼
          Platform SDK Backend Core
 ```
+
+### Dependency Matrix
+| Layer | May Depend On |
+| --- | --- |
+| **UI Widgets** | `WorkbenchApi` only |
+| **WorkbenchApi** | `Domain APIs` |
+| **Domain APIs** | `Providers`, `DocumentService` |
+| **DocumentService** | `PlatformSDK` |
+| **PlatformSDK** | Backend REST / WebSocket |
+| **Backend** | Core Runtime |
+
+#### Forbidden Imports:
+- UI ➔ PlatformSDK
+- UI ➔ Core Runtime
+- Provider ➔ UI
+- PlatformSDK ➔ Flutter Widgets
+- Core ➔ Studio UI
 
 ---
 
@@ -118,7 +135,22 @@ abstract class AgentProvider {}
 
 ---
 
-## 6. CI Architecture Gates
+## 6. Workbench Performance Budgets
+
+| Operation | Budget |
+| --- | --- |
+| Open file | <50 ms |
+| Switch tab | <16 ms |
+| Reveal in explorer | <30 ms |
+| Outline generation | <100 ms |
+| Go to definition | <150 ms |
+| Find references | <500 ms |
+| Search debounce | 250 ms |
+| Workspace refresh | <500 ms |
+
+---
+
+## 7. CI Architecture Gates
 The release qualification tool (`dart run tool/release_qualification.dart`) enforces:
 - Dependency direction checks: UI packages must not import core engines directly.
 - Circular dependency checks.

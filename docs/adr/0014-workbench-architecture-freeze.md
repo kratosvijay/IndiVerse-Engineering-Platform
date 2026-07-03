@@ -8,10 +8,48 @@ As IndiVerse Studio evolves from a dashboard application into a professional dev
 
 ## Decision
 The Workbench v1 Architecture is officially frozen.
-1. The layered layout is locked: `Widgets` ➔ `WorkbenchApiV1` ➔ `Domain APIs / Providers` ➔ `DocumentService` ➔ `WorkbenchEventBus` ➔ `PlatformSDK`.
-2. All UI components interact exclusively through the `WorkbenchApi` facade using strongly-typed IDs.
-3. Asynchronous APIs return standard `OperationResult<T>` and `WorkbenchError` envelopes, supporting `CancellationToken` capability.
-4. Any future architectural modification requires a formal ADR review and approval.
+
+### 1. Dependency Matrix Rules
+The allowed import directions are strictly constrained as follows:
+
+| Layer | May Depend On |
+| --- | --- |
+| **UI Widgets** | `WorkbenchApi` only |
+| **WorkbenchApi** | `Domain APIs` |
+| **Domain APIs** | `Providers`, `DocumentService` |
+| **DocumentService** | `PlatformSDK` |
+| **PlatformSDK** | Backend REST / WebSocket |
+| **Backend** | Core Runtime |
+
+#### Forbidden Imports:
+- UI ➔ PlatformSDK
+- UI ➔ Core Runtime
+- Provider ➔ UI
+- PlatformSDK ➔ Flutter Widgets
+- Core ➔ Studio UI
+
+### 2. Workbench API Facade Stability
+We classify the `WorkbenchApiV1` facade methods into stability tiers:
+
+| API Tier | Methods |
+| --- | --- |
+| **Stable** | `openFile()`, `closeFile()`, `jumpToLine()`, `revealInExplorer()`, `search()` |
+| **Experimental** | `semanticTokens()`, `hover()`, `completion()` |
+| **Reserved** | `rename()`, `format()` |
+
+### 3. Workbench Performance Budgets
+To keep the UI responsive and fast, we enforce the following latency budgets:
+
+| Operation | Budget |
+| --- | --- |
+| Open file | <50 ms |
+| Switch tab | <16 ms |
+| Reveal in explorer | <30 ms |
+| Outline generation | <100 ms |
+| Go to definition | <150 ms |
+| Find references | <500 ms |
+| Search debounce | 250 ms |
+| Workspace refresh | <500 ms |
 
 ## Consequences
 ### Pros
