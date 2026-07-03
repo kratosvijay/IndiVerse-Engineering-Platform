@@ -94,10 +94,10 @@ class StudioServer {
         request.response.write(jsonEncode(extended));
       } else if (path == '/api/version') {
         request.response.write(jsonEncode({
-          "platform": "0.8.0",
+          "platform": "1.0.0",
           "buildNumber": "1",
           "gitCommit": "19ee62b",
-          "sdkVersion": "0.8.0",
+          "sdkVersion": "1.0.0",
           "schemaVersion": "v1"
         }));
       } else if (path == '/api/metrics') {

@@ -43,7 +43,7 @@ void main() {
       final versionRes = await http.get(versionUri);
       expect(versionRes.statusCode, equals(200));
       final versionJson = jsonDecode(versionRes.body);
-      expect(versionJson["platform"], equals("0.8.0"));
+      expect(versionJson["platform"], equals("1.0.0"));
 
       final featuresUri = Uri.parse('http://localhost:$port/api/features');
       final featuresRes = await http.get(featuresUri);

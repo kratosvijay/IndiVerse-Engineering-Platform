@@ -110,7 +110,7 @@ void main() async {
       .writeAsStringSync(jsonEncode(compatibility));
 
   final qualificationReport = {
-    "version": "0.95.0",
+    "version": "1.0.0",
     "timestamp": DateTime.now().toIso8601String(),
     "status": "QUALIFIED",
     "metrics": {

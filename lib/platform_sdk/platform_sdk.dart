@@ -72,7 +72,7 @@ class PlatformHealthService {
     return {
       "Runtime": "healthy",
       "Workspace": "ready",
-      "Knowledge": "indexing",
+      "Knowledge": "ready",
       "Agent": "idle",
     };
   }
