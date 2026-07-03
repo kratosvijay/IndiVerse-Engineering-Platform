@@ -13,6 +13,7 @@ class WebsocketServer {
       final category = _resolveCategory(event);
       final eventMap = {
         "version": "1.0.1",
+        "type": event.runtimeType.toString(),
         "category": category,
         "event": event.runtimeType.toString(),
         "timestamp": DateTime.now().toIso8601String(),

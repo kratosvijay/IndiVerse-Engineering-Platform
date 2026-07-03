@@ -47,6 +47,14 @@ class _StudioDashboardState extends State<StudioDashboard> {
   String _agentWorkflowStatus = 'Idle';
   WebSocketChannel? _wsChannel;
 
+  String _version = "v1.0.1";
+  Map<String, dynamic>? _selectedItem;
+  String? _selectedItemType;
+  List<dynamic> _workspaceFiles = [];
+  List<dynamic> _architectureNodes = [];
+  String _activeProject = "indiverse-engineering-platform";
+  String _branchName = "main";
+
   @override
   void initState() {
     super.initState();
@@ -91,12 +99,57 @@ class _StudioDashboardState extends State<StudioDashboard> {
       final mRes = await http.get(
         Uri.parse('http://localhost:$_serverPort/api/metrics'),
       );
+      final wRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/workspace'),
+      );
+      final vRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/version'),
+      );
+
+      final wJson = jsonDecode(wRes.body);
+      final vJson = jsonDecode(vRes.body);
 
       setState(() {
         _health = Map<String, String>.from(jsonDecode(hRes.body));
         _features = Map<String, bool>.from(jsonDecode(fRes.body));
         _metrics = Map<String, dynamic>.from(jsonDecode(mRes.body));
+        _version = vJson['data']['platform'] ?? 'v1.0.1';
+        _workspaceFiles = wJson['data']['files'] ?? [];
+        _activeProject = wJson['data']['activeProject'] ?? 'indiverse-engineering-platform';
+        _branchName = wJson['data']['branch'] ?? 'main';
       });
+
+      _fetchArchitecture();
+    } catch (_) {}
+  }
+
+  void _fetchArchitecture() async {
+    try {
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/architecture'),
+      );
+      final data = jsonDecode(res.body);
+      if (data["success"] == true) {
+        setState(() {
+          _architectureNodes = data["data"]["nodes"] ?? [];
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _selectItem(Map<String, dynamic> item, String type) async {
+    try {
+      final id = type == "workspace" ? (item["path"] ?? "") : (item["file"] ?? item["id"] ?? "");
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/inspector?id=$id&type=$type'),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        setState(() {
+          _selectedItem = Map<String, dynamic>.from(envelope["data"]);
+          _selectedItemType = type;
+        });
+      }
     } catch (_) {}
   }
 
@@ -108,8 +161,10 @@ class _StudioDashboardState extends State<StudioDashboard> {
       _wsChannel!.stream.listen(
         (message) {
           final data = jsonDecode(message);
+          final type = data['type'] ?? data['event'] ?? 'Event';
+          final payload = data['payload'] ?? '';
           setState(() {
-            _eventLogs.insert(0, "[${data['type']}] ${data['payload']}");
+            _eventLogs.insert(0, "[$type] ${_formatEventPayload(type, payload)}");
           });
         },
         onError: (_) {
@@ -120,6 +175,25 @@ class _StudioDashboardState extends State<StudioDashboard> {
         },
       );
     } catch (_) {}
+  }
+
+  String _formatEventPayload(String type, String payload) {
+    switch (type) {
+      case 'WorkspaceRefreshing':
+        return 'Workspace Refreshing • Scanning project...';
+      case 'WorkspaceReady':
+        return 'Workspace Ready • Project parsed successfully';
+      case 'WorkspaceOpened':
+        return 'Workspace Opened • Initializing scanner';
+      case 'WorkspaceClosed':
+        return 'Workspace Closed';
+      case 'PluginLoaded':
+        return 'Plugin Loaded • Loading capability registries';
+      case 'PluginActivated':
+        return 'Plugin Activated • Engine fully operational';
+      default:
+        return payload;
+    }
   }
 
   void _executeSearch(String query) async {
@@ -219,9 +293,9 @@ class _StudioDashboardState extends State<StudioDashboard> {
                   color: const Color(0xFF2E1065),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'v0.7.0',
-                  style: TextStyle(fontSize: 10, color: Color(0xFFA78BFA)),
+                child: Text(
+                  _version,
+                  style: const TextStyle(fontSize: 10, color: Color(0xFFA78BFA)),
                 ),
               ),
             ],
@@ -232,6 +306,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
                   'Workspace',
                   'Search',
                   'Agents',
+                  'Architecture',
                   'Metrics',
                   'Diagnostics',
                 ].map((tab) {
@@ -374,6 +449,8 @@ class _StudioDashboardState extends State<StudioDashboard> {
         return _buildSearchPanel();
       case 'Agents':
         return _buildAgentsPanel();
+      case 'Architecture':
+        return _buildArchitecturePanel();
       case 'Metrics':
         return _buildMetricsPanel();
       case 'Diagnostics':
@@ -389,37 +466,137 @@ class _StudioDashboardState extends State<StudioDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Workspace Explorer',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Project: $_activeProject  •  Branch: $_branchName',
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: _fetchInitialData,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text("Refresh"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E1B4B),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: _workspaceFiles.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: _workspaceFiles.length,
+                    itemBuilder: (context, index) {
+                      final file = _workspaceFiles[index];
+                      final name = file["name"] as String? ?? "";
+                      final path = file["path"] as String? ?? "";
+                      final sizeKb = ((file["size"] as int? ?? 0) / 1024).toStringAsFixed(1);
+
+                      return ListTile(
+                        leading: const Icon(Icons.description, color: Color(0xFFA78BFA), size: 18),
+                        title: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        subtitle: Text(path, style: const TextStyle(fontSize: 11, color: Colors.white30)),
+                        trailing: Text("$sizeKb KB", style: const TextStyle(fontSize: 11, color: Colors.white30)),
+                        onTap: () {
+                          _selectItem(Map<String, dynamic>.from(file), "workspace");
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildArchitecturePanel() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const Text(
-            'Workspace Explorer',
+            'Architecture Explorer',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           const Text(
-            'Scan active workspace directories and identify project structures.',
+            'Visualize the system layers, contracts, health states, and inter-component dependencies.',
             style: TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.6,
-              children: [
-                _buildCard(
-                  'Active Project',
-                  'indiverse-engineering-platform',
-                  Icons.folder_open,
-                  'Flutter / Dart Framework detected.',
-                ),
-                _buildCard(
-                  'Git Configuration',
-                  'Branch: main',
-                  Icons.commit,
-                  'Commit history tracking active.',
-                ),
-              ],
-            ),
+            child: _architectureNodes.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 2.2,
+                    ),
+                    itemCount: _architectureNodes.length,
+                    itemBuilder: (context, index) {
+                      final node = _architectureNodes[index];
+                      final label = node["label"] as String? ?? "";
+                      final layer = node["layer"] as String? ?? "";
+
+                      return InkWell(
+                        onTap: () {
+                          _selectItem(Map<String, dynamic>.from(node), "architecture");
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1B4B),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF312E81)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF311042),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(layer, style: const TextStyle(fontSize: 10, color: Color(0xFFF472B6))),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              const Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.green, size: 14),
+                                  SizedBox(width: 6),
+                                  Text("Healthy", style: TextStyle(fontSize: 12, color: Colors.green)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -478,8 +655,19 @@ class _StudioDashboardState extends State<StudioDashboard> {
                     itemBuilder: (context, index) {
                       final item = _searchResults[index];
                       return ListTile(
-                        title: Text(item['file'] ?? ''),
-                        subtitle: Text(item['snippet'] ?? ''),
+                        leading: const Icon(Icons.search, color: Color(0xFF8B5CF6), size: 18),
+                        title: Text(item['file'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFA78BFA))),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item['snippet'] ?? '', style: const TextStyle(color: Colors.white70)),
+                            const SizedBox(height: 4),
+                            Text("Line ${item['lineNumber']} • Score: ${item['score']}", style: const TextStyle(fontSize: 11, color: Colors.white30)),
+                          ],
+                        ),
+                        onTap: () {
+                          _selectItem(Map<String, dynamic>.from(item), "search");
+                        },
                       );
                     },
                   ),
@@ -667,37 +855,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
     );
   }
 
-  Widget _buildCard(String title, String value, IconData icon, String desc) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF131024),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF2C284D)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: const Color(0xFF8B5CF6), size: 28),
-          const Spacer(),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 14, color: Colors.white54),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            desc,
-            style: const TextStyle(fontSize: 12, color: Colors.white30),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildMetricCard(String label, String val, Color color) {
     return Container(
@@ -735,26 +893,114 @@ class _StudioDashboardState extends State<StudioDashboard> {
         color: Color(0xFF110E22),
         border: Border(left: BorderSide(color: Color(0xFF2C284D))),
       ),
-      child: const Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'INSPECTOR',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white30,
-                fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'INSPECTOR',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white30,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No active execution segment selected.',
-              style: TextStyle(color: Colors.white30, fontSize: 12),
-            ),
-          ],
+              const SizedBox(height: 16),
+              if (_selectedItem == null)
+                const Text(
+                  'No active execution segment selected.',
+                  style: TextStyle(color: Colors.white30, fontSize: 12),
+                )
+              else
+                ..._buildInspectorDetails(),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  List<Widget> _buildInspectorDetails() {
+    if (_selectedItem == null) return [];
+    final details = _selectedItem!["details"] as Map<String, dynamic>? ?? {};
+    final type = _selectedItemType;
+
+    final widgets = <Widget>[];
+
+    if (type == "workspace") {
+      widgets.addAll([
+        Text(details["path"] ?? "", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFA78BFA))),
+        const Divider(color: Color(0xFF2C284D), height: 24),
+        _buildInspectorRow("Size", details["size"] ?? ""),
+        _buildInspectorRow("Lines", "${details["lines"] ?? 0}"),
+        _buildInspectorRow("Language", details["language"] ?? ""),
+        _buildInspectorRow("Git Status", details["gitStatus"] ?? ""),
+        _buildInspectorRow("Indexed", details["indexed"] == true ? "Yes" : "No"),
+        _buildInspectorRow("Embeddings", details["embeddings"] ?? ""),
+        const SizedBox(height: 16),
+        const Text("Symbols", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white54)),
+        const SizedBox(height: 6),
+        ...((details["symbols"] as List? ?? []).map((s) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(s.toString(), style: const TextStyle(fontSize: 11, color: Colors.white30)),
+        ))),
+      ]);
+    } else if (type == "search") {
+      widgets.addAll([
+        Text(details["file"] ?? "", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFA78BFA))),
+        const Divider(color: Color(0xFF2C284D), height: 24),
+        _buildInspectorRow("Score", details["score"] ?? ""),
+        _buildInspectorRow("Match Reason", details["reason"] ?? ""),
+        const SizedBox(height: 16),
+        const Text("Snippet", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white54)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(4)),
+          child: Text(details["snippet"] ?? "", style: const TextStyle(fontFamily: "monospace", fontSize: 11, color: Colors.white70)),
+        ),
+      ]);
+    } else if (type == "workflow") {
+      widgets.addAll([
+        Text(details["id"] ?? "Workflow Agent", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFA78BFA))),
+        const Divider(color: Color(0xFF2C284D), height: 24),
+        _buildInspectorRow("Status", details["state"] ?? ""),
+        _buildInspectorRow("Duration", details["duration"] ?? ""),
+        _buildInspectorRow("Tokens", "${details["tokens"] ?? 0}"),
+        _buildInspectorRow("Cost", details["cost"] ?? ""),
+        _buildInspectorRow("Current Step", details["currentStep"] ?? ""),
+      ]);
+    } else if (type == "architecture") {
+      widgets.addAll([
+        Text(details["name"] ?? "", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFA78BFA))),
+        const Divider(color: Color(0xFF2C284D), height: 24),
+        _buildInspectorRow("Health Status", details["health"] ?? ""),
+        _buildInspectorRow("Latency", details["latency"] ?? ""),
+        _buildInspectorRow("State", details["status"] ?? ""),
+      ]);
+    }
+
+    return widgets;
+  }
+
+  Widget _buildInspectorRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white30, fontSize: 11)),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11, color: Colors.white70),
+            ),
+          ),
+        ],
       ),
     );
   }
