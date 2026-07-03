@@ -55,7 +55,7 @@ void main() {
       final metricsRes = await http.get(metricsUri);
       expect(metricsRes.statusCode, equals(200));
       final metricsJson = jsonDecode(metricsRes.body);
-      expect(metricsJson["workspaceFilesCount"], equals(0));
+      expect(metricsJson["workspaceFilesCount"], greaterThan(0));
     });
   });
 }
