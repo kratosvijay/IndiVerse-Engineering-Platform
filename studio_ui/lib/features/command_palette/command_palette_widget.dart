@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/state/studio_state.dart';
-import '../../../models/command.dart';
+import '../../../core/services/keyboard_shortcut_manager.dart';
 
 class CommandPaletteWidget extends StatefulWidget {
   final StudioState state;
@@ -23,12 +23,12 @@ class _CommandPaletteWidgetState extends State<CommandPaletteWidget> {
   @override
   void initState() {
     super.initState();
-    _filteredCommands = widget.state.commandRegistry;
+    _filteredCommands = widget.state.commandRegistry.all();
   }
 
   void _filter(String text) {
     setState(() {
-      _filteredCommands = widget.state.commandRegistry
+      _filteredCommands = widget.state.commandRegistry.all()
           .where(
             (c) =>
                 c.title.toLowerCase().contains(text.toLowerCase()) ||
@@ -88,7 +88,7 @@ class _CommandPaletteWidgetState extends State<CommandPaletteWidget> {
                       ),
                       trailing: cmd.shortcut != null
                           ? Text(
-                              cmd.shortcut!,
+                              '${cmd.shortcut!.control ? "Ctrl+" : ""}${cmd.shortcut!.meta ? "Cmd+" : ""}${cmd.shortcut!.shift ? "Shift+" : ""}${cmd.shortcut!.trigger.keyLabel}',
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Color(0xFFA78BFA),
@@ -96,9 +96,9 @@ class _CommandPaletteWidgetState extends State<CommandPaletteWidget> {
                             )
                           : null,
                       onTap: () {
-                        widget.state.executeCommand(
+                        widget.state.dispatcher.execute(
                           cmd.id,
-                          CommandContext(widget.state),
+                          const CommandContext(),
                         );
                         widget.onClose();
                       },

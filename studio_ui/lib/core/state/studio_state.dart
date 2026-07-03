@@ -5,7 +5,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../models/ids.dart';
 import '../../models/selection.dart';
-import '../../models/command.dart';
+import '../services/keyboard_shortcut_manager.dart';
+import '../services/workbench_providers.dart';
 import '../../models/editor_document.dart';
 import '../../models/tree_node.dart';
 import '../services/navigation_service.dart';
@@ -15,6 +16,7 @@ import '../services/workbench_event_bus.dart';
 import '../services/workbench_api.dart';
 import '../../features/editor/controllers/editor_controller.dart';
 import '../../features/explorer/controllers/explorer_controller.dart';
+import 'package:flutter/services.dart';
 
 class StudioState extends ChangeNotifier {
   String _activeTab = 'Workspace';
@@ -41,8 +43,9 @@ class StudioState extends ChangeNotifier {
   final DocumentService documentService = DocumentService();
   final WorkbenchEventBus eventBus = WorkbenchEventBus();
   late final WorkbenchApi workbench;
-
-  final List<Command> commandRegistry = [];
+  late final CommandRegistry commandRegistry;
+  late final CommandDispatcher dispatcher;
+  late final KeyboardShortcutManager shortcutManager;
   WebSocketChannel? _wsChannel;
 
   List<dynamic> _searchResults = [];
@@ -87,42 +90,78 @@ class StudioState extends ChangeNotifier {
   StudioState() {
     navigation = NavigationService(this);
     workbench = WorkbenchApi(this);
+    commandRegistry = CommandRegistry();
+    dispatcher = CommandDispatcher(commandRegistry);
+    shortcutManager = KeyboardShortcutManager(dispatcher: dispatcher, registry: commandRegistry);
     _registerDefaultCommands();
   }
 
   void _registerDefaultCommands() {
-    registerCommand(
+    commandRegistry.register(
       Command(
-        id: "workspace.reload",
-        title: "Reload Workspace",
-        description: "Force re-index and reload files structure",
-        category: "Workspace",
-        execute: (ctx) async {
-          await reloadWorkspace();
+        id: "workbench.file.quickOpen",
+        title: "Go to File...",
+        category: "Navigation",
+        description: "Fuzzy search files in workspace",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyP, meta: true),
+        handler: (ctx) async {
+          eventBus.publish("Command", "quickOpen");
+          return const OperationResult.ok(null);
         },
       ),
     );
-    registerCommand(
+    commandRegistry.register(
       Command(
-        id: "agent.run",
-        title: "Run Agent",
-        description: "Trigger Multi-Agent Planning Workflow",
-        category: "Agent",
-        execute: (ctx) async {
-          triggerAgentWorkflow();
+        id: "editor.find",
+        title: "Find in Editor",
+        category: "Editor",
+        description: "Find text occurrences in active document",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyF, meta: true),
+        handler: (ctx) async {
+          eventBus.publish("Command", "find");
+          return const OperationResult.ok(null);
         },
       ),
     );
-  }
-
-  void registerCommand(Command cmd) {
-    commandRegistry.add(cmd);
-  }
-
-  Future<void> executeCommand(String id, CommandContext context) async {
-    final cmd = commandRegistry.firstWhere((c) => c.id == id);
-    await cmd.execute(context);
-    notifyListeners();
+    commandRegistry.register(
+      Command(
+        id: "editor.gotoLine",
+        title: "Go to Line...",
+        category: "Editor",
+        description: "Jump to specific line number in document",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyG, meta: true),
+        handler: (ctx) async {
+          eventBus.publish("Command", "gotoLine");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: "workbench.action.showCommands",
+        title: "Command Palette",
+        category: "Command",
+        description: "Show Command Palette",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyP, meta: true, shift: true),
+        handler: (ctx) async {
+          eventBus.publish("Command", "showCommands");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: "editor.gotoDefinition",
+        title: "Go to Definition",
+        category: "Editor",
+        description: "Resolve definition for symbol under cursor",
+        shortcut: const SingleActivator(LogicalKeyboardKey.f12),
+        handler: (ctx) async {
+          eventBus.publish("Command", "gotoDefinition");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
   }
 
   void setTab(String tab) {

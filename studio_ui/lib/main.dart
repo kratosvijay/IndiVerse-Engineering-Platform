@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'core/state/studio_state.dart';
-import 'features/explorer/widgets/explorer_widget.dart';
 import 'features/editor/widgets/editor_widget.dart';
 import 'features/search/search_widget.dart';
 import 'features/command_palette/command_palette_widget.dart';
@@ -9,8 +8,12 @@ import 'features/inspector/inspector_widget.dart';
 import 'features/architecture/architecture_widget.dart';
 import 'features/agents/agents_widget.dart';
 import 'features/metrics/metrics_widget.dart';
-import 'features/outline/widgets/outline_widget.dart';
+import 'features/explorer/widgets/collapsible_accordion_sidebar.dart';
+import 'features/editor/widgets/welcome_widget.dart';
+import 'features/quick_open/widgets/quick_open_widget.dart';
 import 'features/diagnostics/diagnostics_widget.dart';
+import 'models/tree_node.dart';
+import 'core/services/keyboard_shortcut_manager.dart';
 
 void main() {
   runApp(const StudioApp());
@@ -47,11 +50,53 @@ class StudioDashboard extends StatefulWidget {
 class _StudioDashboardState extends State<StudioDashboard> {
   final StudioState _studioState = StudioState();
   bool _showCommandPalette = false;
+  bool _showQuickOpen = false;
 
   @override
   void initState() {
     super.initState();
     _studioState.connect(18080);
+    _initializeWorkspaceSession();
+
+    _studioState.eventBus.stream.listen((evt) {
+      if (evt.category == 'Command') {
+        if (evt.payload == 'quickOpen') {
+          setState(() => _showQuickOpen = !_showQuickOpen);
+        } else if (evt.payload == 'showCommands') {
+          setState(() => _showCommandPalette = !_showCommandPalette);
+        }
+      }
+    });
+  }
+
+  void _initializeWorkspaceSession() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (_studioState.editor.tabs.isEmpty) {
+      String? defaultPath;
+      final rootNodes = _studioState.rootNodes;
+
+      final hasReadme = rootNodes.any((n) => n.name.toLowerCase() == 'readme.md');
+      if (hasReadme) {
+        defaultPath = 'README.md';
+      } else {
+        final hasLibMain = rootNodes.any((n) => n.name == 'lib');
+        if (hasLibMain) {
+          defaultPath = 'lib/main.dart';
+        } else {
+          final firstFile = rootNodes.firstWhere(
+            (n) => !n.isDirectory,
+            orElse: () => TreeNode(name: '', path: '', isDirectory: false),
+          );
+          if (firstFile.path.isNotEmpty) {
+            defaultPath = firstFile.path;
+          }
+        }
+      }
+
+      if (defaultPath != null) {
+        _studioState.openFile(defaultPath);
+      }
+    }
   }
 
   @override
@@ -61,6 +106,10 @@ class _StudioDashboardState extends State<StudioDashboard> {
   }
 
   Widget _buildActivePanel(String tab) {
+    if (_studioState.editor.tabs.isEmpty) {
+      return WelcomeWidget(state: _studioState);
+    }
+
     switch (tab) {
       case 'Workspace':
         return EditorWidget(state: _studioState);
@@ -87,20 +136,8 @@ class _StudioDashboardState extends State<StudioDashboard> {
         return KeyboardListener(
           focusNode: FocusNode()..requestFocus(),
           onKeyEvent: (event) {
-            if (event is KeyDownEvent) {
-              final isCmdOrCtrl =
-                  HardwareKeyboard.instance.isMetaPressed ||
-                  HardwareKeyboard.instance.isControlPressed;
-              final isShift = HardwareKeyboard.instance.isShiftPressed;
-
-              if (isCmdOrCtrl &&
-                  isShift &&
-                  event.logicalKey == LogicalKeyboardKey.keyP) {
-                setState(() {
-                  _showCommandPalette = !_showCommandPalette;
-                });
-              }
-            }
+            final ctx = CommandContext();
+            _studioState.shortcutManager.handleKeyEvent(event, ctx);
           },
           child: Scaffold(
             body: Stack(
@@ -111,20 +148,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
                     Expanded(
                       child: Row(
                         children: [
-                          Container(
-                            width: 250,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF0F0C1B),
-                              border: Border(right: BorderSide(color: Color(0xFF2C284D))),
-                            ),
-                            child: Column(
-                              children: [
-                                Expanded(child: ExplorerWidget(state: _studioState)),
-                                const Divider(height: 1, color: Color(0xFF2C284D)),
-                                Expanded(child: OutlineWidget(state: _studioState)),
-                              ],
-                            ),
-                          ),
+                          CollapsibleAccordionSidebar(state: _studioState),
                           Expanded(
                             child: _buildActivePanel(_studioState.activeTab),
                           ),
@@ -141,6 +165,15 @@ class _StudioDashboardState extends State<StudioDashboard> {
                     onClose: () {
                       setState(() {
                         _showCommandPalette = false;
+                      });
+                    },
+                  ),
+                if (_showQuickOpen)
+                  QuickOpenWidget(
+                    state: _studioState,
+                    onClose: () {
+                      setState(() {
+                        _showQuickOpen = false;
                       });
                     },
                   ),
@@ -248,6 +281,9 @@ class _StudioDashboardState extends State<StudioDashboard> {
   }
 
   Widget _buildStatusBar() {
+    final activeTab = _studioState.editor.activeTab;
+    final doc = activeTab?.document;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: const BoxDecoration(
@@ -261,15 +297,40 @@ class _StudioDashboardState extends State<StudioDashboard> {
             'Status: ${_studioState.agentWorkflowStatus}',
             style: const TextStyle(fontSize: 11, color: Colors.white54),
           ),
+          if (doc != null) ...[
+            Row(
+              children: [
+                Text(
+                  'Ln ${doc.cursorLine}, Col 1',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  'Spaces: 2',
+                  style: TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  'UTF-8',
+                  style: TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  'LF',
+                  style: TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  doc.language.toUpperCase(),
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+              ],
+            ),
+          ],
           Row(
             children: [
               const Text(
-                'Tokens Consumed: 14.2K',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
-              ),
-              const SizedBox(width: 16),
-              const Text(
-                'Session Cost: \$0.02',
+                'Tokens: 14.2K',
                 style: TextStyle(fontSize: 11, color: Colors.white54),
               ),
               const SizedBox(width: 16),
@@ -283,7 +344,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
               ),
               const SizedBox(width: 6),
               const Text(
-                'Local Server Online',
+                'Online',
                 style: TextStyle(fontSize: 11, color: Colors.green),
               ),
             ],

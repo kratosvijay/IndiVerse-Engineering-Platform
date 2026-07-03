@@ -134,8 +134,12 @@ class _OutlineWidgetState extends State<OutlineWidget> {
 
     switch (kind) {
       case 'Class':
-        icon = Icons.category;
+        icon = Icons.grid_view;
         iconColor = const Color(0xFF3B82F6);
+        break;
+      case 'Constructor':
+        icon = Icons.settings;
+        iconColor = const Color(0xFF8B5CF6);
         break;
       case 'Method':
       case 'Function':
@@ -143,7 +147,7 @@ class _OutlineWidgetState extends State<OutlineWidget> {
         iconColor = const Color(0xFF10B981);
         break;
       case 'Variable':
-        icon = Icons.terminal;
+        icon = Icons.circle;
         iconColor = const Color(0xFFF59E0B);
         break;
       default:

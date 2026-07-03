@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import '../../../core/state/studio_state.dart';
 import '../../../core/services/workbench_providers.dart';
 import '../../../models/ids.dart';
@@ -11,6 +11,7 @@ import '../highlighting/markdown_highlighter.dart';
 import '../highlighting/text_highlighter.dart';
 import 'breadcrumb_symbols_widget.dart';
 import 'references_panel.dart';
+import 'find_overlay_widget.dart';
 
 class EditorWidget extends StatefulWidget {
   final StudioState state;
@@ -26,6 +27,140 @@ class _EditorWidgetState extends State<EditorWidget> {
   final TextEditingController _symbolController = TextEditingController();
   List<Map<String, dynamic>> _references = [];
   String _symbolQuery = '';
+
+  // Find properties
+  bool _showFind = false;
+  List<int> _matchLineIndices = [];
+  int _currentMatchIdx = 0;
+  String _findQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    widget.state.eventBus.stream.listen((evt) {
+      if (evt.category == 'Command') {
+        if (evt.payload == 'find') {
+          if (mounted) {
+            setState(() => _showFind = true);
+          }
+        } else if (evt.payload == 'gotoLine') {
+          _showGotoLineDialog();
+        } else if (evt.payload == 'gotoDefinition') {
+          _gotoDefinition();
+        }
+      }
+    });
+  }
+
+  void _showGotoLineDialog() {
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+    final doc = activeTab.document;
+    final lines = doc.content.split('\n');
+    final maxLine = lines.length;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final ctrl = TextEditingController();
+        String? errorText;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF131024),
+              title: const Text('Go to Line', style: TextStyle(color: Colors.white, fontSize: 14)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: ctrl,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Enter line number (1-$maxLine)...',
+                      errorText: errorText,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final line = int.tryParse(ctrl.text.trim());
+                    if (line == null || line < 1 || line > maxLine) {
+                      setState(() {
+                        errorText = 'Maximum line: $maxLine';
+                      });
+                    } else {
+                      widget.state.workbench.navigation.jumpToLine(DocumentId(doc.path), line);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Go'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _onFindSearchChanged(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _matchLineIndices = [];
+        _currentMatchIdx = 0;
+        _findQuery = '';
+      });
+      return;
+    }
+
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+    final lines = activeTab.document.content.split('\n');
+
+    final list = <int>[];
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().contains(query.toLowerCase())) {
+        list.add(i + 1);
+      }
+    }
+
+    setState(() {
+      _matchLineIndices = list;
+      _currentMatchIdx = 0;
+      _findQuery = query;
+    });
+
+    if (list.isNotEmpty) {
+      _scrollToLine(list[0]);
+    }
+  }
+
+  void _onFindNext() {
+    if (_matchLineIndices.isEmpty) return;
+    setState(() {
+      _currentMatchIdx = (_currentMatchIdx + 1) % _matchLineIndices.length;
+    });
+    _scrollToLine(_matchLineIndices[_currentMatchIdx]);
+  }
+
+  void _onFindPrev() {
+    if (_matchLineIndices.isEmpty) return;
+    setState(() {
+      _currentMatchIdx = (_currentMatchIdx - 1 + _matchLineIndices.length) % _matchLineIndices.length;
+    });
+    _scrollToLine(_matchLineIndices[_currentMatchIdx]);
+  }
 
   SyntaxHighlighter _resolveHighlighter(String language) {
     switch (language) {
@@ -121,14 +256,9 @@ class _EditorWidgetState extends State<EditorWidget> {
     final lines = doc.content.split('\n');
     final highlighter = _resolveHighlighter(doc.language);
 
-    return KeyboardListener(
-      focusNode: FocusNode()..requestFocus(),
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f12) {
-          _gotoDefinition();
-        }
-      },
-      child: Column(
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0C1B),
+      body: Column(
         children: [
           // Tabs bar
           Container(
@@ -167,7 +297,7 @@ class _EditorWidgetState extends State<EditorWidget> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                            color: isCurrent ? Colors.white : Colors.white54,
+                            color: isCurrent ? Colors.white : Colors.white70,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -224,52 +354,97 @@ class _EditorWidgetState extends State<EditorWidget> {
             ),
           ),
           const Divider(height: 1, color: Color(0xFF2C284D)),
-          // Line-numbered read-only viewer
+          // Line-numbered read-only viewer + Minimap
           Expanded(
-            child: Container(
-              color: const Color(0xFF0F0C1B),
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: lines.length,
-                itemExtent: 20.0,
-                itemBuilder: (context, index) {
-                  final lineNum = index + 1;
-                  final lineText = lines[index];
-                  final isHighlight = lineNum == doc.cursorLine;
+            child: Stack(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        itemCount: lines.length,
+                        itemExtent: 20.0,
+                        itemBuilder: (context, index) {
+                          final lineNum = index + 1;
+                          final lineText = lines[index];
+                          final isHighlight = lineNum == doc.cursorLine;
 
-                  return Container(
-                    color: isHighlight ? const Color(0xFF2C1C4D) : Colors.transparent,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 48,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Text(
-                            '$lineNum',
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: isHighlight ? const Color(0xFFA78BFA) : Colors.white24,
+                          // Search highlight checker
+                          final isSearchMatch = _findQuery.isNotEmpty && lineText.toLowerCase().contains(_findQuery.toLowerCase());
+
+                          return Container(
+                            color: isHighlight
+                                ? const Color(0xFF2C1C4D)
+                                : isSearchMatch
+                                    ? const Color(0xFF3B2A1A)
+                                    : Colors.transparent,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 48,
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Text(
+                                    '$lineNum',
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 12,
+                                      color: isHighlight ? const Color(0xFFA78BFA) : Colors.white24,
+                                    ),
+                                  ),
+                                ),
+                                const VerticalDivider(width: 1, color: Color(0xFF2C284D)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: RichText(
+                                      text: highlighter.highlight(context, lineText),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                        const VerticalDivider(width: 1, color: Color(0xFF2C284D)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: RichText(
-                              text: highlighter.highlight(context, lineText),
-                            ),
-                          ),
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                     ),
-                  );
-                },
-              ),
+                    // Minimap Sidebar Strip
+                    Container(
+                      width: 32,
+                      color: const Color(0xFF0F0C1B),
+                      child: ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: lines.length > 120 ? 120 : lines.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            height: 2.0,
+                            margin: const EdgeInsets.symmetric(vertical: 0.5),
+                            color: Colors.white10,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                if (_showFind)
+                  FindOverlayWidget(
+                    onSearchChanged: _onFindSearchChanged,
+                    onNext: _onFindNext,
+                    onPrev: _onFindPrev,
+                    onClose: () {
+                      setState(() {
+                        _showFind = false;
+                        _findQuery = '';
+                        _matchLineIndices = [];
+                      });
+                    },
+                    totalMatches: _matchLineIndices.length,
+                    currentIdx: _currentMatchIdx,
+                  ),
+              ],
             ),
           ),
           if (_references.isNotEmpty)
