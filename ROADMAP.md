@@ -13,7 +13,7 @@
 | **v0.7** | Agent Engine | ✅ Complete | Multi-agent coordination (Planners, Developers, Testers, Reviewers) |
 | **v0.8** | Studio | ✅ Complete | Minimal desktop explorer UI, diagnostics panel, token/cost dashboards |
 | **v0.9** | MCP | ✅ Complete | Native Model Context Protocol (MCP) servers client integrations |
-| **v0.95**| Performance & Hardening | ⬜ Planned | Memory profiling, startup optimization, security audits, load benchmarks |
+| **v0.95**| Performance & Hardening | ✅ Complete | Memory profiling, startup optimization, security audits, load benchmarks |
 | **v1.0.0**| General Availability (GA) | ⬜ Planned | Production stable, plugin marketplace ready, installer, LTS support |
 | **v1.1** | Distributed AI Execution | ⬜ Planned | Multiple Gemini Keys load balancing, failover queue, parallel agents |
 | **v2.0** | Autonomous Platform | ⬜ Planned | Autonomous sprint planning, multi-repo, AI architecture evolution |

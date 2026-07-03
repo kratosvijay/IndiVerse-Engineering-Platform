@@ -5,6 +5,13 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.95.0] - 2026-07-03
+### Added
+- Completed Phase 3 Sprint 14 (Release Qualification, Performance & Hardening).
+- Standardized performance benchmarks suite measuring cold startup, workspace index speed, semantic query latency, scheduler queue dispatch times, and MCP serialization latencies.
+- Built a unified entry qualification script `tool/release_qualification.dart` executing static analysis, testing, formatting, and budget checks.
+- Formulated Platform ADR 0013 (Release Qualification & Stability Policy).
+
 ## [0.9.0] - 2026-07-03
 ### Added
 - Completed Phase 3 Sprint 13 (MCP Integration).

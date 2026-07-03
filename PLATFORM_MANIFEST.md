@@ -3,8 +3,8 @@
 ```yaml
 Platform:
   Name: "IndiVerse Developer Platform"
-  Version: "0.9.0"
-  Status: "MCP Server Active"
+  Version: "0.95.0"
+  Status: "Stability Qualified"
 
 Supports:
   - Flutter
@@ -15,7 +15,7 @@ Statistics:
   Prompts: 24
   Agents: 8
   Templates: 11
-  ADRs: 12
+  ADRs: 13
   Validation: "Passed"
   License: "MIT"
 ```
