@@ -5,6 +5,14 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-03
+### Added
+- Completed Phase 3 Sprint 12 (Studio UI).
+- Implemented a local Dart Studio HTTP Server handling REST paths for health checks, feature flags, metrics resolution, and workspace queries.
+- Deployed dynamic port selector fallback mapping hunting.
+- Configured a dedicated real-time event pipeline streaming WebSocket connection under `/ws/events`.
+- Developed a beautiful IDE cockpit client dashboard in Flutter Web containing Workspace Explorer, Semantic search panels, Agent workflow logs, real-time metrics dashboards, and feature flags.
+
 ## [0.7.0] - 2026-07-03
 ### Added
 - Completed Phase 3 Sprint 11 (Agent Engine).

@@ -3,8 +3,8 @@
 ```yaml
 Platform:
   Name: "IndiVerse Developer Platform"
-  Version: "0.7.0"
-  Status: "Agent Engine Active"
+  Version: "0.8.0"
+  Status: "Studio Cockpit Active"
 
 Supports:
   - Flutter
