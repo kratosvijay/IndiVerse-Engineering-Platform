@@ -43,7 +43,7 @@ abstract class LifecycleService {
 
 ---
 
-## 3. Communication Contracts
+## 3. Communication & Governance Contracts
 
 ### WorkbenchEventBus Payload
 ```dart
@@ -71,6 +71,17 @@ class WorkbenchError {
 }
 ```
 
+### Command Object Structure
+```dart
+class Command {
+  final CommandId id;
+  final String title;
+  final String category;
+  final Shortcut? shortcut;
+  final Future<void> Function(CommandContext context) handler;
+}
+```
+
 ---
 
 ## 4. Extension Provider Interfaces
@@ -88,6 +99,6 @@ abstract class AgentProvider {}
 ---
 
 ## 5. Versioning Policy
-- **Minor Changes (v1.x.y)**: Feature additions conforming strictly to these layers.
-- **Major Changes (v2.0.0)**: Reserved for deep architectural evolutions.
+- **Workbench API Versioning**: Access points are versioned (`WorkbenchApiV1`). Backward compatibility is maintained; deprecations persist for at least one minor version before removal in a major version.
+- **Capabilities Versioning**: Plugins declare versions for requested capabilities (`SearchProvider: 1`) to isolate interface changes.
 - **REST Endpoints**: Keep versioned under `/api/v1/code/*` to ease future integrations.
