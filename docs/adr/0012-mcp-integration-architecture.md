@@ -15,23 +15,26 @@ We implement a decoupled, registry-driven, and session-based MCP Server integrat
    - The MCP server never interacts with lower-level core engines directly. It must communicate exclusively through the `PlatformSDK` facade APIs.
 2. **Platform Capability Isolation**:
    - MCP tools must expose only Platform SDK capabilities. They must never reveal internal engine implementations, object graphs, or private runtime state.
-3. **Protocol Isolation**:
+3. **Deterministic Tool Execution**:
+   - For identical request payloads, tool execution should be deterministic unless explicitly documented otherwise. Any non-deterministic behavior (such as AI generation or external network access) must be declared in the corresponding ToolManifest.
+4. **Protocol Isolation**:
    - MCP protocol types, transports, serializers, and session models must never propagate beyond the MCP layer. PlatformSDK and lower platform layers remain protocol-agnostic.
-4. **Protocol Purity**:
+5. **Protocol Purity**:
    - The stdout stream is reserved exclusively for MCP protocol frames. Human-readable logs must be written to stderr or a configured logging sink.
-5. **Request Middleware Pipeline**:
-   - Setup a request middleware pipeline executing tasks sequentially: `Protocol Validation` $\rightarrow$ `Authentication` $\rightarrow$ `Permission Validation` $\rightarrow$ `Rate Limiting` $\rightarrow$ `Dispatch` $\rightarrow$ `Serialization`.
-6. **Authorization Service & Context Wrappers**:
-   - Decouple permission checks to an independent `AuthorizationService`.
-   - Provide dynamic execution data (session, workspace, cancellation tokens) inside a unified `ToolExecutionContext` wrapper.
-7. **Tool Manifest & Versioned Registries**:
-   - Map available actions through a `ToolManifest` configuration definition. Track resources and prompts within versioned registries.
-8. **Registry & Provider Symmetry**:
-   - Implement registries (`ToolRegistry`, `ResourceRegistry`, `PromptRegistry`) backed by provider contracts (`ToolProvider`, `ResourceProvider`, `PromptProvider`) supporting streamable chunks (`Stream<ResourceChunk>`).
-9. **Session Negotiation & Cancellation**:
-   - Each connection is tracked via a stateful `McpSession` managing protocol version/capability negotiation, and active request cancellation tokens.
-10. **Pluggable Transports**:
-    - Support multiple transport layers: `StdioTransport`, `HttpTransport`, `WebSocketTransport`, `NamedPipeTransport`.
+6. **Middleware Chain**:
+   - Support a standard `MiddlewareChain` where each middleware implements `handle(request, next)` to pipeline: `Validation` $\rightarrow$ `Authentication` $\rightarrow$ `Permission` $\rightarrow$ `Rate Limiting` $\rightarrow$ `Dispatch` $\rightarrow$ `Serialization`.
+7. **Session, Request, and Tool Contexts**:
+   - Separate scopes cleanly into `SessionContext`, `RequestContext`, and `ToolExecutionContext`.
+8. **Tool Manifest & Versioned Registries**:
+   - Expose metadata fields inside `ToolManifest` (including `minimumProtocol`, `maximumProtocol`, and category classifications: Workspace, Knowledge, Agent, Git, Metrics, Diagnostics, Plugin).
+9. **Registry & Provider Symmetry**:
+   - Implement registries backed by providers supporting streamable chunks (`Stream<ResourceChunk>`).
+10. **Session Negotiation & Cancellation**:
+    - Each connection is tracked via stateful `McpSession` managing protocol version/capability negotiation (tools, resources, prompts, sampling, logging, progress, streaming), and cancellations via a centralized `CancellationRegistry`.
+11. **Transport Factory**:
+    - Build a `TransportFactory` to dynamically compile transport layers: `StdioTransport`, `HttpTransport`, `WebSocketTransport`, `NamedPipeTransport`.
+12. **Error Taxonomy**:
+    - Standardize JSON-RPC mapping exceptions: `ProtocolError`, `PermissionError`, `ValidationError`, `ToolError`, `RuntimeError`, `InternalError`.
 
 ## Directory Structure
 
@@ -46,7 +49,8 @@ lib/core/mcp/
 │   ├── server.dart
 │   ├── router.dart
 │   ├── session.dart
-│   └── transport.dart
+│   ├── transport.dart
+│   └── transport_factory.dart
 ├── gateway/
 │   ├── mcp_gateway.dart
 │   ├── authorization_service.dart
@@ -56,7 +60,8 @@ lib/core/mcp/
 ├── registry/
 │   ├── tool_registry.dart
 │   ├── resource_registry.dart
-│   └── prompt_registry.dart
+│   ├── prompt_registry.dart
+│   └── cancellation_registry.dart
 ├── providers/
 │   ├── tool_provider.dart
 │   ├── resource_provider.dart
@@ -71,6 +76,8 @@ lib/core/mcp/
 │   ├── mcp_prompt.dart
 │   ├── permission.dart
 │   ├── tool_manifest.dart
+│   ├── session_context.dart
+│   ├── request_context.dart
 │   └── tool_execution_context.dart
 ├── events/
 │   └── mcp_events.dart
