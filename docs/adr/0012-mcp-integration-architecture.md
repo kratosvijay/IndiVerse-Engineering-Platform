@@ -13,18 +13,25 @@ We implement a decoupled, registry-driven, and session-based MCP Server integrat
 
 1. **Platform SDK Integration Boundary**:
    - The MCP server never interacts with lower-level core engines directly. It must communicate exclusively through the `PlatformSDK` facade APIs.
-2. **Protocol Isolation**:
+2. **Platform Capability Isolation**:
+   - MCP tools must expose only Platform SDK capabilities. They must never reveal internal engine implementations, object graphs, or private runtime state.
+3. **Protocol Isolation**:
    - MCP protocol types, transports, serializers, and session models must never propagate beyond the MCP layer. PlatformSDK and lower platform layers remain protocol-agnostic.
-3. **Protocol Purity**:
+4. **Protocol Purity**:
    - The stdout stream is reserved exclusively for MCP protocol frames. Human-readable logs must be written to stderr or a configured logging sink.
-4. **MCP Gateway & Serializer Layers**:
-   - Introduce an `MCPGateway` translating standard Model Context Protocol messages (tools, resources, prompts) into `PlatformSDK` calls, managing validation, permissions, and serialization via request, response, and error mappers.
-5. **Registry & Provider Symmetry**:
-   - Implement registries (`ToolRegistry`, `ResourceRegistry`, `PromptRegistry`) backed by provider contracts (`ToolProvider`, `ResourceProvider`, `PromptProvider`) allowing plugins to register dynamic components.
-6. **Session Negotiation & Cancellation**:
-   - Each connection is tracked via a stateful `McpSession` managing protocol version negotiation, capabilities, and active request cancellation tokens.
-7. **Permission Verification Gate**:
-   - Enforce permission validation checks (e.g. `Workspace.Read`, `Knowledge.Search`, `Agent.Execute`, `Git.Read`, `Git.Write`) before dispatching tool execution.
+5. **Request Middleware Pipeline**:
+   - Setup a request middleware pipeline executing tasks sequentially: `Protocol Validation` $\rightarrow$ `Authentication` $\rightarrow$ `Permission Validation` $\rightarrow$ `Rate Limiting` $\rightarrow$ `Dispatch` $\rightarrow$ `Serialization`.
+6. **Authorization Service & Context Wrappers**:
+   - Decouple permission checks to an independent `AuthorizationService`.
+   - Provide dynamic execution data (session, workspace, cancellation tokens) inside a unified `ToolExecutionContext` wrapper.
+7. **Tool Manifest & Versioned Registries**:
+   - Map available actions through a `ToolManifest` configuration definition. Track resources and prompts within versioned registries.
+8. **Registry & Provider Symmetry**:
+   - Implement registries (`ToolRegistry`, `ResourceRegistry`, `PromptRegistry`) backed by provider contracts (`ToolProvider`, `ResourceProvider`, `PromptProvider`) supporting streamable chunks (`Stream<ResourceChunk>`).
+9. **Session Negotiation & Cancellation**:
+   - Each connection is tracked via a stateful `McpSession` managing protocol version/capability negotiation, and active request cancellation tokens.
+10. **Pluggable Transports**:
+    - Support multiple transport layers: `StdioTransport`, `HttpTransport`, `WebSocketTransport`, `NamedPipeTransport`.
 
 ## Directory Structure
 
@@ -33,7 +40,8 @@ lib/core/mcp/
 ├── contracts/
 │   ├── transport.dart
 │   ├── gateway.dart
-│   └── provider.dart
+│   ├── provider.dart
+│   └── middleware.dart
 ├── server/
 │   ├── server.dart
 │   ├── router.dart
@@ -41,6 +49,7 @@ lib/core/mcp/
 │   └── transport.dart
 ├── gateway/
 │   ├── mcp_gateway.dart
+│   ├── authorization_service.dart
 │   ├── tool_dispatcher.dart
 │   ├── resource_dispatcher.dart
 │   └── prompt_dispatcher.dart
@@ -60,7 +69,9 @@ lib/core/mcp/
 │   ├── mcp_tool.dart
 │   ├── mcp_resource.dart
 │   ├── mcp_prompt.dart
-│   └── permission.dart
+│   ├── permission.dart
+│   ├── tool_manifest.dart
+│   └── tool_execution_context.dart
 ├── events/
 │   └── mcp_events.dart
 └── statistics/
