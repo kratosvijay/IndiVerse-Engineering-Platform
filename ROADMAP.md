@@ -1,6 +1,28 @@
-# IndiVerse Developer Platform (IDP) - v2.0 Roadmap
+# IndiVerse Developer Platform (IDP) - Product Roadmap & Vision
 
-This document outlines the evolutionary steps of the IDP from foundational phases to the production-ready General Availability (GA) release and the long-term autonomous engineering platform vision.
+The IndiVerse Developer Platform (IDP) is an AI-native engineering platform designed to help developers plan, build, review, test, and maintain software through a provider-agnostic, plugin-first architecture.
+
+---
+
+## 🎯 Product Philosophy
+- **Human-in-the-loop**: The AI assists developers; it does not replace human judgment.
+- **Transparent AI**: Explain why context was selected and why decisions were proposed.
+- **Deterministic workflows**: Build repeatable, testable action sequences.
+- **Review before execution**: Critical changes require explicit developer confirmation.
+- **Composable agents**: Small, single-responsibility agents collaborating via the runtime.
+- **Standards over custom protocols**: Prioritize open protocols (like Model Context Protocol) for external tooling.
+
+---
+
+## 🚫 Non-Goals
+We explicitly do **not** aim to:
+- Replace software engineers.
+- Automatically merge code changes without human verification.
+- Lock developers into a single AI provider, API key, or ecosystem.
+- Depend on a specific proprietary IDE.
+- Require internet or cloud connectivity for local core indexing and workspace workflows.
+
+---
 
 ## 🌟 Core Principles
 Every design decisions and implementations must conform to these core tenets:
@@ -33,6 +55,7 @@ Every design decisions and implementations must conform to these core tenets:
 | **v1.0.0**| General Availability (GA) | ⬜ Planned | Production stable, plugin marketplace ready, installer, LTS support |
 | **v1.1** | Distributed AI Execution | ⬜ Planned | Multiple Gemini Keys load balancing, failover queue, parallel agents |
 | **v2.0** | Autonomous Platform | ⬜ Planned | Autonomous sprint planning, multi-repo, AI architecture evolution |
+| **v3.x** | Ecosystem | ⬜ Planned | Hosted runtime, Cloud Workspace Sync, Hosted Knowledge/Agents |
 
 ---
 
@@ -74,6 +97,9 @@ Establish coding standards, linting, AI prompt structures, and CI validation pip
 ### Phase 5: Long-Term Vision (v2.0 - Planned)
 - **v2.0 (Autonomous Engineering Platform)**: Multi-repository orchestration, cross-project knowledge sharing, and autonomous sprint planning integrations.
 
+### Phase 6: Ecosystem Growth (v3.x - Planned)
+- **v3.x (Ecosystem)**: Cloud workspace syncing for teams, hosted agents pipelines, hosted knowledge retrieval databases, and hosted AI runtimes.
+
 ---
 
 ## 👥 Adoption Targets
@@ -99,5 +125,6 @@ Consistent telemetry, tracing, metrics, and health checks are exposed to all lay
 - **Metrics**: Token usage, cost estimations, and rolling average latency tracking.
 - **Logging**: Sandboxed logger per plugin.
 - **Diagnostics**: Snapshots exportable to JSON/Markdown.
+
 
 
