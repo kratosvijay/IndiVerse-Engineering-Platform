@@ -5,6 +5,17 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-07-03
+### Added
+- Completed Phase 3 Sprint 13 (MCP Integration).
+- Standardized native Model Context Protocol (MCP) Server.
+- Built abstract `McpTransport` allowing stdio stream parsing, writing human-readable errors exclusively to stderr stream to preserve stdout protocol purity.
+- Implemented `MCPGateway` translating standard protocol calls (tools, resources, prompts) into `PlatformSDK` calls.
+- Programmed symmetric provider and registry architectures (`ToolRegistry`, `ResourceRegistry`, `PromptRegistry`).
+- Deployed permission check layers validating tokens (e.g. `Workspace.Read`, `Knowledge.Search`, `Agent.Execute`) via an independent `AuthorizationService`.
+- Added stateful `McpSession` managing version/capability negotiation (tools, resources, prompts, sampling, progress, streaming) and cancellation maps.
+- Formulated Platform ADR 0012 (MCP Integration Architecture).
+
 ## [0.8.0] - 2026-07-03
 ### Added
 - Completed Phase 3 Sprint 12 (Studio UI).
