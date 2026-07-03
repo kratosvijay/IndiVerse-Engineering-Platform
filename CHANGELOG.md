@@ -5,6 +5,18 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-03
+### Added
+- Completed Phase 3 Sprint 10 (Knowledge Engine).
+- Standardized decoupled contracts (`EmbeddingProvider`, `VectorStore`, `SymbolExtractor`, `Chunker`, `SearchEngine`) under `contracts/`.
+- Implemented concrete Gemini/Ollama embedding adapters and in-memory/file-simulated SQL vector stores.
+- Developed Dart class regex symbol parser, markdown header parser, and json parser.
+- Built multi-level cache pipelines (`EmbeddingCache`, `DocumentCache`, `GraphCache`) and index manifests validating model/dimensions upgrades.
+- Programmed background reindex scheduler debouncing directory watch filesystem triggers.
+- Formulated semantic query logic leveraging ranking boosts (Graph/Git/Workspace) and explainability search result payloads.
+- Added platform index events telemetry log outputs.
+- Formulated Platform ADR 0010 (Repository Intelligence Knowledge Engine).
+
 ## [0.5.0] - 2026-07-03
 ### Added
 - Completed Phase 3 Sprint 9 (Workspace Engine).

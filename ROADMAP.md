@@ -9,7 +9,7 @@
 | **v0.3** | Gemini Adapter | ✅ Complete | Pluggable vendor clients, serialization mappers, SSE streaming |
 | **v0.4** | Plugin Platform | ✅ Complete | Sandboxed Plugin SDK, state machines, permission validators, graphs |
 | **v0.5** | Workspace Engine | ✅ Complete | Multi-project discovery, framework detection (Flutter/Firebase), indices |
-| **v0.6** | Knowledge Engine | ⬜ Planned | Embeddings generation, vector search, semantic code search, memory |
+| **v0.6** | Knowledge Engine | ✅ Complete | Embeddings generation, vector search, semantic code search, memory |
 | **v0.7** | Agent Engine | ⬜ Planned | Multi-agent coordination (Planners, Developers, Testers, Reviewers) |
 | **v0.8** | Studio | ⬜ Planned | Minimal desktop explorer UI, diagnostics panel, token/cost dashboards |
 | **v0.9** | MCP | ⬜ Planned | Native Model Context Protocol (MCP) servers client integrations |
