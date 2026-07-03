@@ -36,6 +36,14 @@ void main() {
       expect(healthRes.statusCode, equals(200));
       final healthJson = jsonDecode(healthRes.body);
       expect(healthJson["Runtime"], equals("healthy"));
+      expect(healthJson["Studio"], equals("connected"));
+      expect(healthJson["Plugin"], equals("healthy"));
+
+      final versionUri = Uri.parse('http://localhost:$port/api/version');
+      final versionRes = await http.get(versionUri);
+      expect(versionRes.statusCode, equals(200));
+      final versionJson = jsonDecode(versionRes.body);
+      expect(versionJson["platform"], equals("0.8.0"));
 
       final featuresUri = Uri.parse('http://localhost:$port/api/features');
       final featuresRes = await http.get(featuresUri);

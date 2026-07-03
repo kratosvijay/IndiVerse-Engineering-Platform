@@ -10,6 +10,7 @@ class StudioServer {
   HttpServer? _server;
   final List<WebSocket> _sockets = [];
   StreamSubscription<dynamic>? _eventSubscription;
+  final List<Map<String, dynamic>> _replayBuffer = [];
 
   StudioServer(this.sdk);
 
@@ -30,11 +31,16 @@ class StudioServer {
     _server!.listen(_handleRequest);
 
     _eventSubscription = eventBus.stream.listen((event) {
-      final message = jsonEncode({
+      final eventMap = {
         "type": event.runtimeType.toString(),
         "timestamp": DateTime.now().toIso8601String(),
         "payload": event.toString(),
-      });
+      };
+      _replayBuffer.add(eventMap);
+      if (_replayBuffer.length > 100) {
+        _replayBuffer.removeAt(0);
+      }
+      final message = jsonEncode(eventMap);
       for (final ws in _sockets) {
         if (ws.readyState == WebSocket.open) {
           ws.add(message);
@@ -64,6 +70,9 @@ class StudioServer {
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         final socket = await WebSocketTransformer.upgrade(request);
         _sockets.add(socket);
+        for (final eventMap in _replayBuffer) {
+          socket.add(jsonEncode(eventMap));
+        }
         socket.done.then((_) => _sockets.remove(socket));
       } else {
         request.response.statusCode = HttpStatus.badRequest;
@@ -77,7 +86,20 @@ class StudioServer {
     try {
       if (path == '/api/health') {
         final health = await sdk.health.checkHealth();
-        request.response.write(jsonEncode(health));
+        final extended = {
+          ...health,
+          "Studio": "connected",
+          "Plugin": "healthy",
+        };
+        request.response.write(jsonEncode(extended));
+      } else if (path == '/api/version') {
+        request.response.write(jsonEncode({
+          "platform": "0.8.0",
+          "buildNumber": "1",
+          "gitCommit": "19ee62b",
+          "sdkVersion": "0.8.0",
+          "schemaVersion": "v1"
+        }));
       } else if (path == '/api/metrics') {
         final metrics = await sdk.metrics.fetchMetrics();
         request.response.write(jsonEncode(metrics));
