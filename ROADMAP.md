@@ -56,8 +56,16 @@ Establish coding standards, linting, AI prompt structures, and CI validation pip
 - **v0.7 (Sprint 11 - Agent Engine)**: Run cooperative developer workflows (Planners, Reviewers, Testers).
 - **v0.8 (Sprint 12 - Studio)**: Lightweight developer cockpit.
 - **v0.9 (Sprint 13 - MCP)**: Native MCP Client/Server integration.
-- **v0.95 (Sprint 14 - Performance & Hardening)**: Memory profiling, startup optimization, caching, crash recovery, security audits, and load testing.
-- **v1.0.0 (GA)**: Enterprise stabilization, golden repositories validation, and LTS support.
+- **v0.95 (Sprint 14 - Performance & Hardening)**: Complete comprehensive validation including:
+  - Memory profiling & leak detection
+  - Startup initialization profiling
+  - Large repository load benchmarks
+  - Plugin stress and sandboxing testing
+  - Crash recovery & failover validation
+  - Security penetration testing
+  - Compatibility regression suite execution
+  - Golden repository automated verification
+- **v1.0.0 (GA)**: Enterprise stabilization and LTS support.
 
 ### Phase 4: Scaling & Failover (v1.1 - Planned)
 - **v1.1 (Distributed AI Execution)**: Parallel task execution queues, multi-key load balancing, and remote worker failovers.
