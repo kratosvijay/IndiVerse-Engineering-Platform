@@ -1,19 +1,65 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import '../../../platform_sdk/platform_sdk.dart';
 import '../../events/event_bus.dart';
-import '../../workspace/events/workspace_event.dart';
+import '../controllers/agent_controller.dart';
+import '../controllers/architecture_controller.dart';
+import '../controllers/inspector_controller.dart';
+import '../controllers/metrics_controller.dart';
+import '../controllers/search_controller.dart';
+import '../controllers/workspace_controller.dart';
+import '../dto/api_response.dart';
+import '../middleware/error_handler.dart';
+import '../middleware/request_logger.dart';
+import '../services/agent_service.dart';
+import '../services/architecture_service.dart';
+import '../services/inspector_service.dart';
+import '../services/metrics_service.dart';
+import '../services/search_service.dart';
+import '../services/workspace_service.dart';
+import '../websocket/websocket_server.dart';
 
 class StudioServer {
   final PlatformSDK sdk;
   final EventBus eventBus = EventBus();
-  HttpServer? _server;
-  final List<WebSocket> _sockets = [];
-  StreamSubscription<dynamic>? _eventSubscription;
-  final List<Map<String, dynamic>> _replayBuffer = [];
 
-  StudioServer(this.sdk);
+  late final WorkspaceService workspaceService;
+  late final SearchService searchService;
+  late final AgentService agentService;
+  late final MetricsService metricsService;
+  late final ArchitectureService architectureService;
+  late final InspectorService inspectorService;
+
+  late final WorkspaceController workspaceController;
+  late final SearchController searchController;
+  late final AgentController agentController;
+  late final MetricsController metricsController;
+  late final ArchitectureController architectureController;
+  late final InspectorController inspectorController;
+
+  late final WebsocketServer websocketServer;
+
+  HttpServer? _server;
+
+  StudioServer(this.sdk) {
+    workspaceService = WorkspaceService(sdk);
+    searchService = SearchService(sdk);
+    agentService = AgentService(sdk, eventBus);
+    metricsService = MetricsService(sdk);
+    architectureService = ArchitectureService(sdk);
+    inspectorService = InspectorService(sdk);
+
+    workspaceController = WorkspaceController(workspaceService);
+    searchController = SearchController(searchService);
+    agentController = AgentController(agentService);
+    metricsController = MetricsController(metricsService);
+    architectureController = ArchitectureController(architectureService);
+    inspectorController = InspectorController(inspectorService);
+
+    websocketServer = WebsocketServer(eventBus);
+  }
 
   Future<int> start({int preferredPort = 8080}) async {
     int port = preferredPort;
@@ -30,25 +76,6 @@ class StudioServer {
     }
 
     _server!.listen(_handleRequest);
-
-    _eventSubscription = eventBus.stream.listen((event) {
-      final eventMap = {
-        "type": event.runtimeType.toString(),
-        "timestamp": DateTime.now().toIso8601String(),
-        "payload": event.toString(),
-      };
-      _replayBuffer.add(eventMap);
-      if (_replayBuffer.length > 100) {
-        _replayBuffer.removeAt(0);
-      }
-      final message = jsonEncode(eventMap);
-      for (final ws in _sockets) {
-        if (ws.readyState == WebSocket.open) {
-          ws.add(message);
-        }
-      }
-    });
-
     return port;
   }
 
@@ -65,16 +92,14 @@ class StudioServer {
       return;
     }
 
+    final requestId = RequestLogger.logAndGenerateId(request);
     final path = request.uri.path;
 
+    // WebSocket events route
     if (path == '/ws/events') {
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         final socket = await WebSocketTransformer.upgrade(request);
-        _sockets.add(socket);
-        for (final eventMap in _replayBuffer) {
-          socket.add(jsonEncode(eventMap));
-        }
-        socket.done.then((_) => _sockets.remove(socket));
+        websocketServer.handleConnection(socket);
       } else {
         request.response.statusCode = HttpStatus.badRequest;
         await request.response.close();
@@ -82,9 +107,8 @@ class StudioServer {
       return;
     }
 
-    request.response.headers.contentType = ContentType.json;
-
     try {
+      // 1. Legacy API routes mapping (Returns raw maps directly for backward compatibility)
       if (path == '/api/health') {
         final health = await sdk.health.checkHealth();
         final extended = {
@@ -92,108 +116,166 @@ class StudioServer {
           "Studio": "connected",
           "Plugin": "healthy",
         };
-        request.response.write(jsonEncode(extended));
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode(extended));
       } else if (path == '/api/version') {
-        request.response.write(jsonEncode({
-          "platform": "1.0.0",
-          "buildNumber": "1",
-          "gitCommit": "19ee62b",
-          "sdkVersion": "1.0.0",
-          "schemaVersion": "v1"
-        }));
-      } else if (path == '/api/metrics') {
-        final dir = Directory.current;
-        final files = dir
-            .listSync(recursive: true)
-            .whereType<File>()
-            .where((f) => !f.path.contains('/.'))
-            .toList();
-        final metrics = {
-          "workspaceFilesCount": files.length,
-          "knowledgeChunksCount": files.length * 4,
-          "runtimeExecutedRequests": 142,
-          "agentActiveSessionsCount": 1,
-        };
-        request.response.write(jsonEncode(metrics));
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({
+            "platform": "1.0.0",
+            "buildNumber": "1",
+            "gitCommit": "19ee62b",
+            "sdkVersion": "1.0.0",
+            "schemaVersion": "v1"
+          }));
       } else if (path == '/api/features') {
-        final features = {
-          "KnowledgeSearch": sdk.featureFlags.isEnabled("KnowledgeSearch"),
-          "DistributedExecution":
-              sdk.featureFlags.isEnabled("DistributedExecution"),
-          "MCP": sdk.featureFlags.isEnabled("MCP"),
-          "StudioDiagnostics": sdk.featureFlags.isEnabled("StudioDiagnostics"),
-          "ExperimentalAgents":
-              sdk.featureFlags.isEnabled("ExperimentalAgents"),
-        };
-        request.response.write(jsonEncode(features));
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({
+            "KnowledgeSearch": sdk.featureFlags.isEnabled("KnowledgeSearch"),
+            "DistributedExecution":
+                sdk.featureFlags.isEnabled("DistributedExecution"),
+            "MCP": sdk.featureFlags.isEnabled("MCP"),
+            "StudioDiagnostics":
+                sdk.featureFlags.isEnabled("StudioDiagnostics"),
+            "ExperimentalAgents":
+                sdk.featureFlags.isEnabled("ExperimentalAgents"),
+          }));
+      } else if (path == '/api/metrics') {
+        final data = await metricsService.getMetricsSnapshot();
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({
+            "workspaceFilesCount": data["workspace"]["filesCount"],
+            "knowledgeChunksCount": data["knowledge"]["chunksCount"],
+            "runtimeExecutedRequests": data["runtime"]["executedRequests"],
+            "agentActiveSessionsCount": data["agents"]["activeSessionsCount"],
+          }));
       } else if (path == '/api/workspace') {
-        final dir = Directory.current;
-        final files = dir
-            .listSync(recursive: true)
-            .whereType<File>()
-            .where((f) =>
-                !f.path.contains('/.') && !f.path.contains('node_modules'))
-            .map((f) => {
-                  "name": f.path.split(Platform.pathSeparator).last,
-                  "path": f.path.replaceFirst(Directory.current.path, ""),
-                  "size": f.lengthSync(),
-                })
-            .toList();
-        request.response.write(jsonEncode({
-          "status": "ready",
-          "activeProject": "indiverse-engineering-platform",
-          "branch": "main",
-          "files": files,
-          "flutterDetected": true,
-          "gitDetected": true,
-          "firebaseDetected": true,
-        }));
+        final data = await workspaceService.getWorkspaceTree();
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode(data));
       } else if (path == '/api/search') {
-        final queryText = request.uri.queryParameters['q'] ?? '';
-        final dir = Directory.current;
-        final matchedFiles = <Map<String, dynamic>>[];
-        for (final file in dir.listSync(recursive: true).whereType<File>()) {
-          if (file.path.contains('/.') || file.path.contains('node_modules'))
-            continue;
-          final content = file.readAsStringSync();
-          if (content.contains(queryText) || file.path.contains(queryText)) {
-            matchedFiles.add({
-              "filePath": file.path.replaceFirst(Directory.current.path, ""),
-              "score": 0.95,
-              "explanation":
-                  "Found exact string match for '$queryText' in file content",
-              "symbols": <String>[queryText],
-            });
-          }
-        }
-        request.response.write(jsonEncode({
-          "results": matchedFiles.take(15).toList(),
-        }));
+        final query = request.uri.queryParameters['q'] ?? '';
+        final results =
+            await searchService.searchCodebase(query: query, mode: "symbol");
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({"results": results}));
       } else if (path == '/api/run') {
-        eventBus.publish(WorkspaceRefreshing(
-          timestamp: DateTime.now(),
-          eventId: "refresh-${DateTime.now().millisecondsSinceEpoch}",
-          rootPath: Directory.current.path,
-        ));
-        request.response.write(jsonEncode({"status": "scheduled"}));
+        final record = await agentService.runWorkflow("Planner");
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode(record));
+      }
+      // 2. Versioned API Endpoints (api/v1/... returning ApiResponse DTO wrappers)
+      else if (path == '/api/v1/health') {
+        final health = await sdk.health.checkHealth();
+        final extended = {
+          ...health,
+          "Studio": "connected",
+          "Plugin": "healthy",
+        };
+        final response = ApiResponse(
+          success: true,
+          timestamp: DateTime.now().toIso8601String(),
+          requestId: requestId,
+          data: extended,
+        );
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(response.toJsonString());
+      } else if (path == '/api/v1/version') {
+        final response = ApiResponse(
+          success: true,
+          timestamp: DateTime.now().toIso8601String(),
+          requestId: requestId,
+          data: {
+            "platform": "1.0.0",
+            "buildNumber": "1",
+            "gitCommit": "19ee62b",
+            "sdkVersion": "1.0.0",
+            "schemaVersion": "v1"
+          },
+        );
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(response.toJsonString());
+      } else if (path == '/api/v1/features') {
+        final response = ApiResponse(
+          success: true,
+          timestamp: DateTime.now().toIso8601String(),
+          requestId: requestId,
+          data: {
+            "KnowledgeSearch": sdk.featureFlags.isEnabled("KnowledgeSearch"),
+            "DistributedExecution":
+                sdk.featureFlags.isEnabled("DistributedExecution"),
+            "MCP": sdk.featureFlags.isEnabled("MCP"),
+            "StudioDiagnostics":
+                sdk.featureFlags.isEnabled("StudioDiagnostics"),
+            "ExperimentalAgents":
+                sdk.featureFlags.isEnabled("ExperimentalAgents"),
+          },
+        );
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(response.toJsonString());
+      } else if (path == '/api/v1/workspace') {
+        await workspaceController.handleGetWorkspace(request, requestId);
+      } else if (path == '/api/v1/search') {
+        await searchController.handleSearch(request, requestId);
+      } else if (path == '/api/v1/metrics') {
+        await metricsController.handleGetMetrics(request, requestId);
+      } else if (path == '/api/v1/architecture') {
+        await architectureController.handleGetTopology(request, requestId);
+      } else if (path == '/api/v1/architecture/node') {
+        await architectureController.handleGetNodeDetails(request, requestId);
+      } else if (path == '/api/v1/inspector') {
+        await inspectorController.handleInspect(request, requestId);
+      } else if (path == '/api/v1/agent/run') {
+        await agentController.handleRun(request, requestId);
+      } else if (path == '/api/v1/agent/cancel') {
+        await agentController.handleCancel(request, requestId);
+      } else if (path == '/api/v1/agent/status') {
+        await agentController.handleStatus(request, requestId);
+      } else if (path == '/api/v1/agent/history') {
+        await agentController.handleHistory(request, requestId);
+      } else if (path == '/api/v1/agent/workflows') {
+        await agentController.handleWorkflows(request, requestId);
       } else {
-        request.response.statusCode = HttpStatus.notFound;
-        request.response.write(jsonEncode({"error": "Not Found"}));
+        final response = ApiResponse(
+          success: false,
+          timestamp: DateTime.now().toIso8601String(),
+          requestId: requestId,
+          data: const {},
+          errors: ["Route not found: $path"],
+        );
+        request.response
+          ..statusCode = HttpStatus.notFound
+          ..headers.contentType = ContentType.json
+          ..write(response.toJsonString());
       }
     } catch (e) {
-      request.response.statusCode = HttpStatus.internalServerError;
-      request.response.write(jsonEncode({"error": e.toString()}));
+      ErrorHandler.handle(request, e, requestId);
     } finally {
       await request.response.close();
     }
   }
 
   Future<void> stop() async {
-    await _eventSubscription?.cancel();
-    for (final ws in _sockets) {
-      await ws.close();
-    }
-    _sockets.clear();
+    websocketServer.closeAll();
     await _server?.close(force: true);
   }
 }
