@@ -1,5 +1,7 @@
 # Architecture Principles
 
+These principles are mandatory for all core platform components, SDKs, plugins, and future architectural decisions. When trade-offs arise, they should be documented through an Architecture Decision Record (ADR) before implementation.
+
 These principles guide all codebase modifications, API designs, and plugin implementations:
 
 ---
