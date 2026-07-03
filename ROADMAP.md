@@ -18,6 +18,10 @@
 | **v2.0** | Autonomous Platform | ⬜ Planned | Autonomous sprint planning, multi-repo, AI architecture evolution |
 | **v3.x** | Ecosystem | ⬜ Planned | Hosted runtime, Cloud Workspace Sync, Hosted Knowledge/Agents |
 
+> [!NOTE]
+> The engine milestones follow a strict, layered dependency chain:
+> **Workspace Engine** (discovers files) $\rightarrow$ **Knowledge Engine** (indexes and generates embeddings) $\rightarrow$ **Agent Engine** (consumes knowledge to collaborate) $\rightarrow$ **Studio** (visualizes & orchestrates all runtimes).
+
 ---
 
 ## 🎯 Success Metrics
