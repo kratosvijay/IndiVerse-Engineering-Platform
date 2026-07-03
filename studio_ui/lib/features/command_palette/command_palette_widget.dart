@@ -6,7 +6,11 @@ class CommandPaletteWidget extends StatefulWidget {
   final StudioState state;
   final VoidCallback onClose;
 
-  const CommandPaletteWidget({super.key, required this.state, required this.onClose});
+  const CommandPaletteWidget({
+    super.key,
+    required this.state,
+    required this.onClose,
+  });
 
   @override
   State<CommandPaletteWidget> createState() => _CommandPaletteWidgetState();
@@ -25,9 +29,11 @@ class _CommandPaletteWidgetState extends State<CommandPaletteWidget> {
   void _filter(String text) {
     setState(() {
       _filteredCommands = widget.state.commandRegistry
-          .where((c) =>
-              c.title.toLowerCase().contains(text.toLowerCase()) ||
-              c.description.toLowerCase().contains(text.toLowerCase()))
+          .where(
+            (c) =>
+                c.title.toLowerCase().contains(text.toLowerCase()) ||
+                c.description.toLowerCase().contains(text.toLowerCase()),
+          )
           .toList();
     });
   }
@@ -69,13 +75,31 @@ class _CommandPaletteWidgetState extends State<CommandPaletteWidget> {
                   itemBuilder: (context, index) {
                     final cmd = _filteredCommands[index];
                     return ListTile(
-                      title: Text(cmd.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(cmd.description, style: const TextStyle(fontSize: 11, color: Colors.white30)),
+                      title: Text(
+                        cmd.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        cmd.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white30,
+                        ),
+                      ),
                       trailing: cmd.shortcut != null
-                          ? Text(cmd.shortcut!, style: const TextStyle(fontSize: 10, color: Color(0xFFA78BFA)))
+                          ? Text(
+                              cmd.shortcut!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFFA78BFA),
+                              ),
+                            )
                           : null,
                       onTap: () {
-                        widget.state.executeCommand(cmd.id, CommandContext(widget.state));
+                        widget.state.executeCommand(
+                          cmd.id,
+                          CommandContext(widget.state),
+                        );
                         widget.onClose();
                       },
                     );

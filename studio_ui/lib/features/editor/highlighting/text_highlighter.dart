@@ -5,6 +5,9 @@ import 'theme.dart';
 class TextHighlighter extends SyntaxHighlighter {
   @override
   InlineSpan highlight(BuildContext context, String source) {
-    return TextSpan(text: source, style: const TextStyle(color: SyntaxTheme.normal));
+    return TextSpan(
+      text: source,
+      style: const TextStyle(color: SyntaxTheme.normal),
+    );
   }
 }

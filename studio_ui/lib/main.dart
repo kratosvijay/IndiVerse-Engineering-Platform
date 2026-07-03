@@ -9,6 +9,7 @@ import 'features/inspector/inspector_widget.dart';
 import 'features/architecture/architecture_widget.dart';
 import 'features/agents/agents_widget.dart';
 import 'features/metrics/metrics_widget.dart';
+import 'features/outline/widgets/outline_widget.dart';
 import 'features/diagnostics/diagnostics_widget.dart';
 
 void main() {
@@ -87,11 +88,14 @@ class _StudioDashboardState extends State<StudioDashboard> {
           focusNode: FocusNode()..requestFocus(),
           onKeyEvent: (event) {
             if (event is KeyDownEvent) {
-              final isCmdOrCtrl = HardwareKeyboard.instance.isMetaPressed ||
+              final isCmdOrCtrl =
+                  HardwareKeyboard.instance.isMetaPressed ||
                   HardwareKeyboard.instance.isControlPressed;
               final isShift = HardwareKeyboard.instance.isShiftPressed;
 
-              if (isCmdOrCtrl && isShift && event.logicalKey == LogicalKeyboardKey.keyP) {
+              if (isCmdOrCtrl &&
+                  isShift &&
+                  event.logicalKey == LogicalKeyboardKey.keyP) {
                 setState(() {
                   _showCommandPalette = !_showCommandPalette;
                 });
@@ -107,7 +111,20 @@ class _StudioDashboardState extends State<StudioDashboard> {
                     Expanded(
                       child: Row(
                         children: [
-                          ExplorerWidget(state: _studioState),
+                          Container(
+                            width: 250,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF0F0C1B),
+                              border: Border(right: BorderSide(color: Color(0xFF2C284D))),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(child: ExplorerWidget(state: _studioState)),
+                                const Divider(height: 1, color: Color(0xFF2C284D)),
+                                Expanded(child: OutlineWidget(state: _studioState)),
+                              ],
+                            ),
+                          ),
                           Expanded(
                             child: _buildActivePanel(_studioState.activeTab),
                           ),
@@ -165,7 +182,10 @@ class _StudioDashboardState extends State<StudioDashboard> {
                 ),
                 child: Text(
                   _studioState.version,
-                  style: const TextStyle(fontSize: 10, color: Color(0xFFA78BFA)),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFFA78BFA),
+                  ),
                 ),
               ),
             ],

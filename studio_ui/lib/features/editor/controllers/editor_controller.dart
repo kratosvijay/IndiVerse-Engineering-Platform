@@ -7,8 +7,8 @@ class EditorController {
 
   EditorTab? get activeTab =>
       activeTabIndex >= 0 && activeTabIndex < tabs.length
-          ? tabs[activeTabIndex]
-          : null;
+      ? tabs[activeTabIndex]
+      : null;
 
   void open(EditorDocument doc) {
     final existingIndex = tabs.indexWhere((t) => t.document.path == doc.path);

@@ -12,15 +12,34 @@ class ExplorerWidget extends StatefulWidget {
 }
 
 class _ExplorerWidgetState extends State<ExplorerWidget> {
+  Map<String, dynamic> _indexStatus = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIndexStatus();
+  }
+
+  @override
+  void didUpdateWidget(covariant ExplorerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadIndexStatus();
+  }
+
+  void _loadIndexStatus() async {
+    final res = await widget.state.workbench.workspace.getIndexStatus();
+    if (res.success && res.data != null) {
+      if (mounted) {
+        setState(() {
+          _indexStatus = res.data!;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 250,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F0C1B),
-        border: Border(right: BorderSide(color: Color(0xFF2C284D))),
-      ),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -38,7 +57,10 @@ class _ExplorerWidgetState extends State<ExplorerWidget> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 14, color: Colors.white30),
-                  onPressed: () => widget.state.reloadWorkspace(),
+                  onPressed: () {
+                    widget.state.reloadWorkspace();
+                    _loadIndexStatus();
+                  },
                   tooltip: 'Reload Explorer',
                 )
               ],
@@ -54,6 +76,37 @@ class _ExplorerWidgetState extends State<ExplorerWidget> {
                     },
                   ),
           ),
+          const Divider(color: Color(0xFF2C284D), height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'WORKSPACE INDEX STATUS',
+                  style: TextStyle(fontSize: 10, color: Colors.white30, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _buildStatusRow('Files Indexed', '${_indexStatus["indexed"] ?? 0}'),
+                _buildStatusRow('Total Symbols', '${_indexStatus["symbols"] ?? 0}'),
+                _buildStatusRow('Classes', '${_indexStatus["classes"] ?? 0}'),
+                _buildStatusRow('Methods / Functions', '${_indexStatus["functions"] ?? 0}'),
+                _buildStatusRow('Indexer State', '${_indexStatus["indexerState"] ?? "Ready"}'),
+              ],
+            ),
+          ),
+        ],
+      );
+  }
+
+  Widget _buildStatusRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.white30)),
+          Text(value, style: const TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.bold)),
         ],
       ),
     );

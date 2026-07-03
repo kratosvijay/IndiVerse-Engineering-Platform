@@ -34,10 +34,6 @@ class WorkspaceCache {
   }
 
   Map<String, int> statistics() {
-    return {
-      "hits": _hits,
-      "misses": _misses,
-      "size": _cache.length,
-    };
+    return {"hits": _hits, "misses": _misses, "size": _cache.length};
   }
 }

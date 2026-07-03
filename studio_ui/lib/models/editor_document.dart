@@ -1,4 +1,3 @@
-
 class EditorDocument {
   final String id;
   final String path;
@@ -10,7 +9,7 @@ class EditorDocument {
   final int size;
   final String lastModified;
   final bool readOnly;
-  
+
   // Session UI states
   int cursorLine = 1;
   int cursorColumn = 1;
@@ -33,6 +32,6 @@ class EditorDocument {
 
 class EditorTab {
   final EditorDocument document;
-  
+
   EditorTab({required this.document});
 }

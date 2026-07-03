@@ -23,18 +23,34 @@ class DiagnosticsWidget extends StatelessWidget {
             style: TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 24),
-          _buildHealthStatusRow('Runtime Engine Pipeline', state.health['Runtime'] ?? 'ready'),
-          _buildHealthStatusRow('Workspace Context Scanner', state.health['Workspace'] ?? 'ready'),
-          _buildHealthStatusRow('Knowledge & Vector Database', state.health['Knowledge'] ?? 'ready'),
-          _buildHealthStatusRow('Plugin registry Services', state.health['Plugin'] ?? 'ready'),
-          _buildHealthStatusRow('Studio REST API Bindings', state.health['Studio'] ?? 'ready'),
+          _buildHealthStatusRow(
+            'Runtime Engine Pipeline',
+            state.health['Runtime'] ?? 'ready',
+          ),
+          _buildHealthStatusRow(
+            'Workspace Context Scanner',
+            state.health['Workspace'] ?? 'ready',
+          ),
+          _buildHealthStatusRow(
+            'Knowledge & Vector Database',
+            state.health['Knowledge'] ?? 'ready',
+          ),
+          _buildHealthStatusRow(
+            'Plugin registry Services',
+            state.health['Plugin'] ?? 'ready',
+          ),
+          _buildHealthStatusRow(
+            'Studio REST API Bindings',
+            state.health['Studio'] ?? 'ready',
+          ),
         ],
       ),
     );
   }
 
   Widget _buildHealthStatusRow(String service, String status) {
-    final isOk = status.toLowerCase() == 'ready' || status.toLowerCase() == 'healthy';
+    final isOk =
+        status.toLowerCase() == 'ready' || status.toLowerCase() == 'healthy';
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -46,10 +62,17 @@ class DiagnosticsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(service, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            service,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           Row(
             children: [
-              Icon(isOk ? Icons.check_circle : Icons.error, color: isOk ? Colors.green : Colors.red, size: 16),
+              Icon(
+                isOk ? Icons.check_circle : Icons.error,
+                color: isOk ? Colors.green : Colors.red,
+                size: 16,
+              ),
               const SizedBox(width: 8),
               Text(
                 status.toUpperCase(),
@@ -60,7 +83,7 @@ class DiagnosticsWidget extends StatelessWidget {
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );

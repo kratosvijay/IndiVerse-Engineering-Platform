@@ -71,19 +71,41 @@ class ArchitectureWidget extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              label,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text('Layer: $layer', style: const TextStyle(fontSize: 12, color: Colors.white30)),
+                            Text(
+                              'Layer: $layer',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white30,
+                              ),
+                            ),
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green.withAlpha(25),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('Healthy', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
-                        )
+                          child: const Text(
+                            'Healthy',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

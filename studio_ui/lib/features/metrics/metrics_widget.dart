@@ -30,12 +30,36 @@ class MetricsWidget extends StatelessWidget {
               mainAxisSpacing: 16,
               childAspectRatio: 1.5,
               children: [
-                _buildMetricCard('Workspace Files', '${state.metrics['workspaceFilesCount'] ?? 0}', Colors.blue),
-                _buildMetricCard('Knowledge Chunks', '${state.metrics['knowledgeChunksCount'] ?? 0}', Colors.green),
-                _buildMetricCard('Agent active Sessions', '${state.metrics['agentActiveSessionsCount'] ?? 0}', Colors.purple),
-                _buildMetricCard('Exposed Tools count', '${state.metrics['registeredToolsCount'] ?? 0}', Colors.orange),
-                _buildMetricCard('Avg API Latency', '${state.metrics['averageApiLatencyMs'] ?? 0} ms', Colors.teal),
-                _buildMetricCard('Diagnostics warnings', '${state.metrics['activeDiagnosticsWarningCount'] ?? 0}', Colors.red),
+                _buildMetricCard(
+                  'Workspace Files',
+                  '${state.metrics['workspaceFilesCount'] ?? 0}',
+                  Colors.blue,
+                ),
+                _buildMetricCard(
+                  'Knowledge Chunks',
+                  '${state.metrics['knowledgeChunksCount'] ?? 0}',
+                  Colors.green,
+                ),
+                _buildMetricCard(
+                  'Agent active Sessions',
+                  '${state.metrics['agentActiveSessionsCount'] ?? 0}',
+                  Colors.purple,
+                ),
+                _buildMetricCard(
+                  'Exposed Tools count',
+                  '${state.metrics['registeredToolsCount'] ?? 0}',
+                  Colors.orange,
+                ),
+                _buildMetricCard(
+                  'Avg API Latency',
+                  '${state.metrics['averageApiLatencyMs'] ?? 0} ms',
+                  Colors.teal,
+                ),
+                _buildMetricCard(
+                  'Diagnostics warnings',
+                  '${state.metrics['activeDiagnosticsWarningCount'] ?? 0}',
+                  Colors.red,
+                ),
               ],
             ),
           ),
@@ -55,7 +79,10 @@ class MetricsWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: Colors.white54)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Colors.white54),
+          ),
           const Spacer(),
           Text(
             val,

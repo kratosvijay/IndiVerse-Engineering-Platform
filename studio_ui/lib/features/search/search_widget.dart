@@ -69,14 +69,33 @@ class _SearchWidgetState extends State<SearchWidget> {
                       final score = item['score'] ?? 0.0;
 
                       return ListTile(
-                        leading: const Icon(Icons.search, color: Color(0xFF8B5CF6), size: 18),
-                        title: Text(file, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFA78BFA))),
+                        leading: const Icon(
+                          Icons.search,
+                          color: Color(0xFF8B5CF6),
+                          size: 18,
+                        ),
+                        title: Text(
+                          file,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFA78BFA),
+                          ),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(snippet, style: const TextStyle(color: Colors.white70)),
+                            Text(
+                              snippet,
+                              style: const TextStyle(color: Colors.white70),
+                            ),
                             const SizedBox(height: 4),
-                            Text("Line $line • Match Score: $score", style: const TextStyle(fontSize: 11, color: Colors.white30)),
+                            Text(
+                              "Line $line • Match Score: $score",
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white30,
+                              ),
+                            ),
                           ],
                         ),
                         onTap: () {

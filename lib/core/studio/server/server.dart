@@ -19,6 +19,8 @@ import '../services/inspector_service.dart';
 import '../services/metrics_service.dart';
 import '../services/search_service.dart';
 import '../services/workspace_service.dart';
+import '../controllers/code_intelligence_controller.dart';
+import '../services/code_intelligence_service.dart';
 import '../websocket/websocket_server.dart';
 
 class StudioServer {
@@ -39,6 +41,9 @@ class StudioServer {
   late final ArchitectureController architectureController;
   late final InspectorController inspectorController;
 
+  late final CodeIntelligenceService codeIntelService;
+  late final CodeIntelligenceController codeIntelController;
+
   late final WebsocketServer websocketServer;
 
   HttpServer? _server;
@@ -50,6 +55,7 @@ class StudioServer {
     metricsService = MetricsService(sdk);
     architectureService = ArchitectureService(sdk);
     inspectorService = InspectorService(sdk);
+    codeIntelService = CodeIntelligenceService(sdk);
 
     workspaceController = WorkspaceController(workspaceService);
     searchController = SearchController(searchService);
@@ -57,10 +63,15 @@ class StudioServer {
     metricsController = MetricsController(metricsService);
     architectureController = ArchitectureController(architectureService);
     inspectorController = InspectorController(inspectorService);
+    codeIntelController = CodeIntelligenceController(codeIntelService);
 
     websocketServer = WebsocketServer(eventBus);
     workspaceService.addWatcherListener((event) {
       websocketServer.broadcast(event);
+      final path = event["path"];
+      if (path is String && path.isNotEmpty) {
+        codeIntelService.handleFileChanged(path);
+      }
     });
   }
 
@@ -79,6 +90,7 @@ class StudioServer {
     }
 
     _server!.listen(_handleRequest);
+    await codeIntelService.initialize();
     return port;
   }
 
@@ -261,6 +273,17 @@ class StudioServer {
         await agentController.handleHistory(request, requestId);
       } else if (path == '/api/v1/agent/workflows') {
         await agentController.handleWorkflows(request, requestId);
+      } else if (path == '/api/v1/code/outline') {
+        await codeIntelController.handleGetOutline(request, requestId);
+      } else if (path == '/api/v1/code/definition') {
+        await codeIntelController.handleResolveDefinition(request, requestId);
+      } else if (path == '/api/v1/code/references') {
+        await codeIntelController.handleFindReferences(request, requestId);
+      } else if (path == '/api/v1/code/workspaceSymbols') {
+        await codeIntelController.handleSearchWorkspaceSymbols(
+            request, requestId);
+      } else if (path == '/api/v1/code/diagnostics') {
+        await codeIntelController.handleGetIndexStatus(request, requestId);
       } else {
         final response = ApiResponse(
           success: false,

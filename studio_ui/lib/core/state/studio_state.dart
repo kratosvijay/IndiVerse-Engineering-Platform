@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../models/ids.dart';
 import '../../models/selection.dart';
 import '../../models/command.dart';
 import '../../models/editor_document.dart';
 import '../../models/tree_node.dart';
 import '../services/navigation_service.dart';
 import '../services/workspace_cache.dart';
+import '../services/document_service.dart';
+import '../services/workbench_event_bus.dart';
+import '../services/workbench_api.dart';
 import '../../features/editor/controllers/editor_controller.dart';
 import '../../features/explorer/controllers/explorer_controller.dart';
 
@@ -16,30 +20,33 @@ class StudioState extends ChangeNotifier {
   String _activeTab = 'Workspace';
   int _serverPort = 18080;
   bool _isConnected = false;
-  
+
   Map<String, String> _health = {};
   Map<String, dynamic> _metrics = {};
   Map<String, bool> _features = {};
   final List<String> _eventLogs = [];
-  
+
   String _agentWorkflowStatus = 'Idle';
   String _version = "v1.1.0";
   String _activeProject = "indiverse-engineering-platform";
   String _branchName = "main";
-  
+
   Selection? _currentSelection;
   final List<TreeNode> _rootNodes = [];
-  
+
   final WorkspaceCache workspaceCache = WorkspaceCache();
   late final NavigationService navigation;
   final EditorController editor = EditorController();
   final ExplorerController explorer = ExplorerController();
-  
+  final DocumentService documentService = DocumentService();
+  final WorkbenchEventBus eventBus = WorkbenchEventBus();
+  late final WorkbenchApi workbench;
+
   final List<Command> commandRegistry = [];
   WebSocketChannel? _wsChannel;
 
   List<dynamic> _searchResults = [];
-  
+
   // Getters
   String get activeTab => _activeTab;
   int get serverPort => _serverPort;
@@ -79,28 +86,33 @@ class StudioState extends ChangeNotifier {
 
   StudioState() {
     navigation = NavigationService(this);
+    workbench = WorkbenchApi(this);
     _registerDefaultCommands();
   }
 
   void _registerDefaultCommands() {
-    registerCommand(Command(
-      id: "workspace.reload",
-      title: "Reload Workspace",
-      description: "Force re-index and reload files structure",
-      category: "Workspace",
-      execute: (ctx) async {
-        await reloadWorkspace();
-      },
-    ));
-    registerCommand(Command(
-      id: "agent.run",
-      title: "Run Agent",
-      description: "Trigger Multi-Agent Planning Workflow",
-      category: "Agent",
-      execute: (ctx) async {
-        triggerAgentWorkflow();
-      },
-    ));
+    registerCommand(
+      Command(
+        id: "workspace.reload",
+        title: "Reload Workspace",
+        description: "Force re-index and reload files structure",
+        category: "Workspace",
+        execute: (ctx) async {
+          await reloadWorkspace();
+        },
+      ),
+    );
+    registerCommand(
+      Command(
+        id: "agent.run",
+        title: "Run Agent",
+        description: "Trigger Multi-Agent Planning Workflow",
+        category: "Agent",
+        execute: (ctx) async {
+          triggerAgentWorkflow();
+        },
+      ),
+    );
   }
 
   void registerCommand(Command cmd) {
@@ -134,19 +146,30 @@ class StudioState extends ChangeNotifier {
 
   Future<void> _fetchInitialData() async {
     try {
-      final hRes = await http.get(Uri.parse('http://localhost:$_serverPort/api/health'));
-      final fRes = await http.get(Uri.parse('http://localhost:$_serverPort/api/features'));
-      final mRes = await http.get(Uri.parse('http://localhost:$_serverPort/api/metrics'));
-      final vRes = await http.get(Uri.parse('http://localhost:$_serverPort/api/v1/version'));
+      final hRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/health'),
+      );
+      final fRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/features'),
+      );
+      final mRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/metrics'),
+      );
+      final vRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/version'),
+      );
 
       _health = Map<String, String>.from(jsonDecode(hRes.body));
       _features = Map<String, bool>.from(jsonDecode(fRes.body));
       _metrics = Map<String, dynamic>.from(jsonDecode(mRes.body));
       final vJson = jsonDecode(vRes.body);
       _version = vJson['data']['platform'] ?? 'v1.1.0';
-      final wRes = await http.get(Uri.parse('http://localhost:$_serverPort/api/v1/workspace'));
+      final wRes = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/workspace'),
+      );
       final wJson = jsonDecode(wRes.body);
-      _activeProject = wJson['data']['activeProject'] ?? 'indiverse-engineering-platform';
+      _activeProject =
+          wJson['data']['activeProject'] ?? 'indiverse-engineering-platform';
       _branchName = wJson['data']['branch'] ?? 'main';
 
       await reloadWorkspace();
@@ -167,7 +190,9 @@ class StudioState extends ChangeNotifier {
 
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/workspace?path=$path&recursive=false'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace?path=$path&recursive=false',
+        ),
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
@@ -181,7 +206,7 @@ class StudioState extends ChangeNotifier {
             modified: item["modified"] ?? '',
           );
         }).toList();
-        
+
         // Sort: directories first, then alphabetically
         nodes.sort((a, b) {
           if (a.isDirectory && !b.isDirectory) return -1;
@@ -199,10 +224,14 @@ class StudioState extends ChangeNotifier {
   Future<void> openFile(String path, {int? line}) async {
     try {
       final statRes = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/workspace/stat?path=$path'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/stat?path=$path',
+        ),
       );
       final fileRes = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/workspace/file?path=$path'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
+        ),
       );
 
       final statEnvelope = jsonDecode(statRes.body);
@@ -226,6 +255,7 @@ class StudioState extends ChangeNotifier {
         );
 
         editor.open(doc);
+        documentService.cacheDocument(DocumentId(path), doc);
         if (line != null) {
           doc.cursorLine = line;
         }
@@ -244,7 +274,9 @@ class StudioState extends ChangeNotifier {
   void selectInspector(String id, String type) async {
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/inspector?id=$id&type=$type'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/inspector?id=$id&type=$type',
+        ),
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
@@ -291,7 +323,9 @@ class StudioState extends ChangeNotifier {
     _agentWorkflowStatus = 'Running (Planning)...';
     notifyListeners();
     try {
-      final res = await http.get(Uri.parse('http://localhost:$_serverPort/api/run'));
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/run'),
+      );
       final data = jsonDecode(res.body);
       if (data['status'] == 'scheduled') {
         Future.delayed(const Duration(seconds: 2), () {
@@ -304,7 +338,8 @@ class StudioState extends ChangeNotifier {
         });
         Future.delayed(const Duration(seconds: 6), () {
           _agentWorkflowStatus = 'Completed';
-          _metrics['agentActiveSessionsCount'] = (_metrics['agentActiveSessionsCount'] ?? 0) + 1;
+          _metrics['agentActiveSessionsCount'] =
+              (_metrics['agentActiveSessionsCount'] ?? 0) + 1;
           notifyListeners();
         });
       }
@@ -346,5 +381,59 @@ class StudioState extends ChangeNotifier {
         },
       );
     } catch (_) {}
+  }
+
+  Future<List<Map<String, dynamic>>> fetchOutline(DocumentId id) async {
+    try {
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/code/outline?path=${id.value}'),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        final outline = List<Map<String, dynamic>>.from(envelope["data"]["outline"] ?? []);
+        documentService.cacheOutline(id, outline);
+        return outline;
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> fetchDefinition(SymbolId id) async {
+    try {
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/code/definition?name=${id.value}'),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        return Map<String, dynamic>.from(envelope["data"] ?? {});
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchReferences(SymbolId id) async {
+    try {
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/code/references?name=${id.value}'),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        return List<Map<String, dynamic>>.from(envelope["data"]["references"] ?? []);
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<Map<String, dynamic>> fetchIndexStatus() async {
+    try {
+      final res = await http.get(
+        Uri.parse('http://localhost:$_serverPort/api/v1/code/diagnostics'),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        return Map<String, dynamic>.from(envelope["data"] ?? {});
+      }
+    } catch (_) {}
+    return {};
   }
 }
