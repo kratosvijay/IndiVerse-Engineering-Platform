@@ -22,11 +22,13 @@ We implement a decoupled, task-driven, and event-based Agent Engine (`lib/core/a
 4. **Task Graph Orchestration**:
    - Workflows are represented as explicit directed task graphs composed of `WorkflowDefinition`, `WorkflowNode`, `WorkflowEdge`, and returning a `WorkflowResult`, executed by a central `AgentScheduler`.
 5. **Decoupled Three-Layer Memory**:
-   - Memory is split into `AgentMemory` (long-term prompt preferences), `WorkspaceMemory` (project context), and `TaskMemory` (short-term execution state).
+   - Memory is split into `AgentMemory` (long-term prompt preferences), `WorkspaceMemory` (project context), and `TaskMemory` (short-term execution state) leveraging the abstract `MemoryProvider` interface.
 6. **Unified Decision Records**:
    - Explainability metadata is compiled into a `DecisionRecord` detailing matched resources, confidence levels, cost projections, risk classifications, and recommended actions.
 7. **Agent Registry**:
    - Registries support pluggable third-party agent hooks and integrations.
+8. **First-class Retry and Budget Mappings**:
+   - Budgets (`token_budget.dart`, `cost_budget.dart`, `execution_budget.dart`) and retry strategies (`retry_policy.dart`) are decoupled from execution blocks.
 
 ## Directory Structure
 
@@ -35,29 +37,50 @@ lib/core/agent/
 ├── contracts/
 │   ├── agent.dart
 │   ├── workflow.dart
-│   └── scheduler.dart
+│   ├── scheduler.dart
+│   ├── task.dart
+│   ├── decision_record.dart
+│   └── execution_policy.dart
 ├── context/
-│   ├── agent_context.dart
-│   └── task_context.dart
-├── lifecycle/
-│   ├── agent_state.dart
-│   └── lifecycle.dart
-├── registry/
-│   └── agent_registry.dart
-├── scheduler/
-│   └── task_scheduler.dart
+│   └── agent_context.dart
 ├── workflow/
-│   ├── workflow.dart
+│   ├── workflow_definition.dart
+│   ├── workflow_node.dart
+│   ├── workflow_edge.dart
+│   ├── workflow_result.dart
+│   ├── workflow_snapshot.dart
+│   ├── workflow_statistics.dart
 │   ├── workflow_builder.dart
 │   └── workflow_executor.dart
+├── scheduler/
+│   ├── task_scheduler.dart
+│   ├── task_queue.dart
+│   └── retry_policy.dart
+├── budget/
+│   ├── token_budget.dart
+│   ├── cost_budget.dart
+│   └── execution_budget.dart
 ├── memory/
+│   ├── memory_provider.dart
 │   ├── task_memory.dart
 │   ├── workspace_memory.dart
 │   └── agent_memory.dart
+├── statistics/
+│   ├── agent_statistics.dart
+│   └── scheduler_statistics.dart
 ├── events/
+│   ├── task_queued.dart
 │   ├── task_started.dart
+│   ├── task_progress.dart
+│   ├── task_waiting.dart
 │   ├── task_completed.dart
-│   └── review_requested.dart
+│   ├── task_failed.dart
+│   ├── task_cancelled.dart
+│   ├── review_requested.dart
+│   ├── review_approved.dart
+│   └── review_rejected.dart
+├── registry/
+│   └── agent_registry.dart
 └── agents/
     ├── planner/
     ├── developer/
