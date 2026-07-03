@@ -5,6 +5,17 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-03
+### Added
+- Completed Phase 3 Sprint 9 (Workspace Engine).
+- Standardized Workspace State Machine (`WorkspaceState` tracking states `closed`, `opening`, `discovering`, `indexing`, `ready`, etc.).
+- Developed Extensible Discovery Pipeline (`discovery/` engine with registries supporting Flutter, Firebase, Git, Dart, Node, Python, Docker, MCP, Melos, FVM).
+- Implemented file ignore scanning system and incremental indexer checking hashes.
+- Constructed `WorkspaceDiagnostics` providing export mappings (JSON, Markdown, summary).
+- Built ranked context builders aggregating `ContextContribution` models via README, ADR, rules, and git status providers.
+- Configured budget policy rules limiting token sizes dynamically (`Tiny`, `Standard`, `Extended`, `Maximum`).
+- Formulated Platform ADR 0009 (Workspace Engine).
+
 ## [0.4.0] - 2026-07-03
 ### Added
 - Completed Phase 2 Sprint 8 (Open Source Integration Foundation).

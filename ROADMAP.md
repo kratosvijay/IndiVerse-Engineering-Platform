@@ -10,7 +10,7 @@ This document outlines the evolutionary steps of the IDP from the foundational p
 | **v0.2** | AI Runtime | ✅ Complete | Event-driven runtime core, pipeline middlewares, budget and token tracking |
 | **v0.3** | Gemini Adapter | ✅ Complete | Pluggable vendor clients, serialization mappers, SSE streaming |
 | **v0.4** | Plugin Platform | ✅ Complete | Sandboxed Plugin SDK, state machines, permission validators, graphs |
-| **v0.5** | Workspace Engine | ⬜ Planned | Multi-project discovery, framework detection (Flutter/Firebase), indices |
+| **v0.5** | Workspace Engine | ✅ Complete | Multi-project discovery, framework detection (Flutter/Firebase), indices |
 | **v0.6** | Knowledge Engine | ⬜ Planned | Embeddings generation, vector search, semantic code search, memory |
 | **v0.7** | Agent Engine | ⬜ Planned | Multi-agent coordination (Planners, Developers, Testers, Reviewers) |
 | **v0.8** | Studio | ⬜ Planned | Minimal desktop explorer UI, diagnostics panel, token/cost dashboards |
