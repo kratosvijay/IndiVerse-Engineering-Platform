@@ -4,6 +4,17 @@ The IndiVerse Developer Platform (IDP) is an AI-native engineering platform desi
 
 ---
 
+## 🏗️ Product Pillars
+These core pillars guide all technical and feature prioritization decisions:
+- **Engineering Productivity**: Make common development tasks faster and less error-prone.
+- **Developer Trust**: Ensure all code changes are explainable, reviewable, and deterministic.
+- **Extensibility**: Empower the ecosystem to build custom providers, agents, and connectors on standard SDKs.
+- **Performance**: Execute local file analysis, indexing, and context compilation in under 500 ms.
+- **Reliability**: Implement offline-first caching, graceful fallbacks, and crash recovery.
+- **Portability**: Keep the core independent of proprietary IDEs, tools, or cloud dependencies.
+
+---
+
 ## 🎯 Product Philosophy
 - **Human-in-the-loop**: The AI assists developers; it does not replace human judgment.
 - **Transparent AI**: Explain why context was selected and why decisions were proposed.
@@ -125,6 +136,24 @@ Consistent telemetry, tracing, metrics, and health checks are exposed to all lay
 - **Metrics**: Token usage, cost estimations, and rolling average latency tracking.
 - **Logging**: Sandboxed logger per plugin.
 - **Diagnostics**: Snapshots exportable to JSON/Markdown.
+
+---
+
+## 🔄 Release Cadence
+- **Major (X.y.z)**: Breaking architectural changes or API updates.
+- **Minor (x.Y.z)**: New platform services, core engines, or capabilities.
+- **Patch (x.y.Z)**: Non-breaking bug fixes and performance improvements.
+- **Hotfix**: Urgent security updates or crash resolutions.
+
+---
+
+## ⚙️ Compatibility Matrix
+- **Flutter**: Latest stable release branch.
+- **Dart**: Latest stable SDK release.
+- **Firebase**: Current CLI tools and FlutterFire modules.
+- **Gemini API**: Current public stable endpoint models.
+- **MCP**: Stable Model Context Protocol v1.x specification.
+
 
 
 
