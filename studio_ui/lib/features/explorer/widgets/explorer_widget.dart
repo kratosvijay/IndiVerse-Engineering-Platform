@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/state/studio_state.dart';
 import '../../../models/tree_node.dart';
+import '../../../core/services/keyboard_shortcut_manager.dart';
+import '../../../core/services/workbench_commands.dart';
 
 class ExplorerWidget extends StatefulWidget {
   final StudioState state;
@@ -76,7 +78,10 @@ class _ExplorerWidgetState extends State<ExplorerWidget> {
               }
             } else {
               widget.state.explorer.select(node.path);
-              widget.state.navigation.openFile(node.path);
+              widget.state.dispatcher.execute(
+                WorkbenchCommands.fileOpen,
+                CommandContext(arguments: {"path": node.path}),
+              );
             }
           },
           child: Container(

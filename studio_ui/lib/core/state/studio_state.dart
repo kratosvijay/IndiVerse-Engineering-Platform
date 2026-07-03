@@ -14,6 +14,7 @@ import '../services/workspace_cache.dart';
 import '../services/document_service.dart';
 import '../services/workbench_event_bus.dart';
 import '../services/workbench_api.dart';
+import '../services/workbench_commands.dart';
 import '../../features/editor/controllers/editor_controller.dart';
 import '../../features/explorer/controllers/explorer_controller.dart';
 import 'package:flutter/services.dart';
@@ -99,7 +100,22 @@ class StudioState extends ChangeNotifier {
   void _registerDefaultCommands() {
     commandRegistry.register(
       Command(
-        id: "workbench.file.quickOpen",
+        id: WorkbenchCommands.fileOpen,
+        title: "Open File",
+        category: "File",
+        description: "Open file from workspace path",
+        handler: (ctx) async {
+          final path = ctx.arguments["path"];
+          if (path is String) {
+            await openFile(path);
+          }
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: WorkbenchCommands.fileQuickOpen,
         title: "Go to File...",
         category: "Navigation",
         description: "Fuzzy search files in workspace",
@@ -112,7 +128,7 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: "editor.find",
+        id: WorkbenchCommands.editorFind,
         title: "Find in Editor",
         category: "Editor",
         description: "Find text occurrences in active document",
@@ -125,7 +141,7 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: "editor.gotoLine",
+        id: WorkbenchCommands.editorGotoLine,
         title: "Go to Line...",
         category: "Editor",
         description: "Jump to specific line number in document",
@@ -138,7 +154,7 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: "workbench.action.showCommands",
+        id: WorkbenchCommands.showCommands,
         title: "Command Palette",
         category: "Command",
         description: "Show Command Palette",
@@ -151,7 +167,7 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: "editor.gotoDefinition",
+        id: WorkbenchCommands.editorGotoDefinition,
         title: "Go to Definition",
         category: "Editor",
         description: "Resolve definition for symbol under cursor",
