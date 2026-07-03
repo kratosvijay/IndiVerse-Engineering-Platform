@@ -3,29 +3,46 @@
 This document details the pipeline execution flow within the Agent Engine.
 
 ```text
-Workflow Graph (Nodes & Edges)
-          │
-          ▼
-   Task Scheduler (Task Queue)
-          │
-          ▼
-   Agent Registry (Capability Match)
-          │
-          ▼
-   Agent Context (Workspace & Knowledge snapshots)
-          │
-          ▼
-   Knowledge Engine Retrieval
-          │
-          ▼
-    AI Runtime (Adapter Prompts Execution)
-          │
-          ▼
-    Decision Record (Telemetry stats mapping)
-          │
-          ▼
-    Human Review Approval Gate
-          │
-          ▼
-        Result Output (Task Completed event)
+Workflow Definition
+        │
+        ▼
+Workflow Executor
+        │
+        ▼
+Task Scheduler (Task Queue / LocalScheduler)
+        │
+        ▼
+Agent Registry
+        │
+        ▼
+Agent Executor (lifecycle, retry, budgets)
+        │
+        ▼
+Agent Context Resolver
+        │
+        ├──────────────────────┬──────────────────────┐
+        ▼                      ▼                      ▼
+Workspace Snapshot     Knowledge Snapshot      Memory Snapshot
+        │                      │                      │
+        └──────────────────────┼──────────────────────┘
+                               ▼
+                        Knowledge Engine
+                               │
+                               ▼
+                           AI Runtime
+                               │
+                               ▼
+                        Decision Record
+                               │
+                               ▼
+                       Policy Validator
+                               │
+                               ▼
+                       Human Review Gate
+                               │
+                               ▼
+                          Task Result
+                               │
+                               ▼
+                       Platform Event Bus
 ```
