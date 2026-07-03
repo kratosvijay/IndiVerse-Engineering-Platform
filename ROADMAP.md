@@ -2,6 +2,21 @@
 
 This document outlines the evolutionary steps of the IDP from foundational phases to the production-ready General Availability (GA) release and the long-term autonomous engineering platform vision.
 
+## 🌟 Core Principles
+Every design decisions and implementations must conform to these core tenets:
+- **Provider Agnostic**: The system does not depend on a single vendor or API model.
+- **Event Driven**: Components communicate through asynchronous state dispatchers.
+- **Plugin First**: Integrations are isolated sandbox plugins built on the SDK.
+- **Offline First**: Cache data and compile indices locally.
+- **Secure by Default**: Explicit permission controls and sandboxed file-system rules.
+- **AI Native**: Orchestrates capabilities explicitly mapped to LLM APIs.
+- **Observable**: Distributed telemetry, cost tracing, and execution tracking.
+- **Testable**: Absolute unit test coverage requirements for platform engines.
+- **Extensible**: Simple base interfaces allow community extensions.
+- **Open Standards**: Standard protocols (like Model Context Protocol) guide interfaces.
+
+---
+
 ## 🗺️ Roadmap Overview
 
 | Version | Phase / Goal | Status | Focus Area |
@@ -18,6 +33,20 @@ This document outlines the evolutionary steps of the IDP from foundational phase
 | **v1.0.0**| General Availability (GA) | ⬜ Planned | Production stable, plugin marketplace ready, installer, LTS support |
 | **v1.1** | Distributed AI Execution | ⬜ Planned | Multiple Gemini Keys load balancing, failover queue, parallel agents |
 | **v2.0** | Autonomous Platform | ⬜ Planned | Autonomous sprint planning, multi-repo, AI architecture evolution |
+
+---
+
+## 🎯 Success Metrics
+
+| Version | Success Criteria |
+|---|---|
+| **v0.6** | Semantic search returns relevant results in < 500 ms for indexed repositories |
+| **v0.7** | Coordinated workflows (e.g. planner + reviewer + tester) complete successfully |
+| **v0.8** | Core workflows executed smoothly without relying on CLI commands |
+| **v0.9** | Native compatibility with standard external MCP clients and servers |
+| **v1.0.0**| Stable and secure enough for daily platform development on IndiVerse apps |
+| **v1.1** | Multi-key load balancing and worker queues improve platform throughput |
+| **v2.0** | Autonomous planning pipelines assist developer flows while remaining reviewable |
 
 ---
 
@@ -47,10 +76,28 @@ Establish coding standards, linting, AI prompt structures, and CI validation pip
 
 ---
 
+## 👥 Adoption Targets
+- **Alpha**: Internal IndiVerse product teams (IndiCabs, TeamOS, School ERP).
+- **Beta**: Trusted external developers.
+- **Release Candidate (RC)**: Small teams and pilot integrations.
+- **General Availability (GA)**: Public developers and enterprise integrations.
+
+---
+
+## 🔌 Enterprise Connectors (v1.x - Built as Plugins)
+Connector integrations will be built as external plugins using the SDK:
+- **Source Control**: GitHub, GitLab.
+- **Planning & Comms**: Jira, Linear, Slack, Discord.
+- **Data & Ops**: Firebase, Supabase, PostgreSQL, Docker, Kubernetes.
+- **Environments**: Figma, VS Code extension, Android Studio plugin.
+
+---
+
 ## 🛠️ Cross-Cutting Platform Services
 Consistent telemetry, tracing, metrics, and health checks are exposed to all layers:
 - **Telemetry**: Distributed event bus tracing execution chains.
 - **Metrics**: Token usage, cost estimations, and rolling average latency tracking.
 - **Logging**: Sandboxed logger per plugin.
 - **Diagnostics**: Snapshots exportable to JSON/Markdown.
+
 
