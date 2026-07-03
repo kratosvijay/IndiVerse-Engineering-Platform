@@ -16,6 +16,7 @@ This document outlines the evolutionary steps of the IDP from the foundational p
 | **v0.8** | Studio | ⬜ Planned | Minimal desktop explorer UI, diagnostics panel, token/cost dashboards |
 | **v0.9** | MCP | ⬜ Planned | Native Model Context Protocol (MCP) servers client integrations |
 | **v1.0** | Enterprise Release | ⬜ Planned | Production hardening, crash recovery, documentation freeze, release |
+| **v1.1** | Distributed AI Execution | ⬜ Planned | Multiple Gemini Keys, Load Balancing, Failover, Parallel Agents, remote workers |
 
 ---
 
@@ -34,3 +35,6 @@ Establish coding standards, linting, AI prompt structures, and CI validation pip
 - **v0.6 (Sprint 10 - Knowledge Engine)**: Indexes source code and semantic ADR references.
 - **v0.7 (Sprint 11 - Agent Engine)**: Run cooperative developer workflows.
 - **v0.8 (Sprint 12 - Studio)**: Lightweight developer cockpit.
+
+### Phase 4: Scaling & Failover (v1.1 - Planned)
+- **v1.1 (Distributed AI Execution)**: Integrates multiple Gemini API keys load balancing, parallel task execution queues, and remote cloud worker failovers.
