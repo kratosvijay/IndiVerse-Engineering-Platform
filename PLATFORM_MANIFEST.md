@@ -3,8 +3,8 @@
 ```yaml
 Platform:
   Name: "IndiVerse Developer Platform"
-  Version: "0.3.0"
-  Status: "Gemini Adapter Active"
+  Version: "0.4.0"
+  Status: "Orchestration Platform Foundation Active"
 
 Supports:
   - Flutter
@@ -15,7 +15,7 @@ Statistics:
   Prompts: 24
   Agents: 8
   Templates: 11
-  ADRs: 7
+  ADRs: 8
   Validation: "Passed"
   License: "MIT"
 ```

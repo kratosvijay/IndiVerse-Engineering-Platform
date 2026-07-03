@@ -5,6 +5,20 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-03
+### Added
+- Completed Phase 2 Sprint 8 (Open Source Integration Foundation).
+- Introduced **Plugin SDK** (`lib/sdk/`) decoupling runtime internals from external plugins (`PluginContext`, `PluginLogger`, `PluginBuilder`, `PluginSDK`).
+- Implemented **Capability-Driven Routing** matching enums (`IntegrationCapability`) to active plugins dynamically in the registry.
+- Rich Lifecycle State Machine (`PluginState`: `initialized`, `activated`, `paused`, `disabled`, `failed`, `disposed`).
+- Rich Health Reports (`HealthReport` tracking latency, versions, warning alerts, and error metrics).
+- Environment requirements compatibility validation checks (`RuntimeCompatibility`, `PlatformCompatibility`, `DependencyCompatibility`).
+- Dependency tree topological sort validation graph (`DependencyGraph`).
+- Sandboxed permission rules verification (`PluginSandbox`).
+- Built-in Gemini and Ollama adapter plugins.
+- OpenHands, Continue, Aider, and Claude external template blueprints.
+- Platform ADR 0008 (Extensible Integration Platform).
+
 ## [0.3.0] - 2026-07-03
 ### Added
 - Completed Phase 2 Sprint 7 (Gemini Provider Adapter).

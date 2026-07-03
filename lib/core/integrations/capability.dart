@@ -1,0 +1,21 @@
+enum IntegrationCapability {
+  aiChat,
+  streaming,
+  toolExecution,
+  codeGeneration,
+  embedding,
+  vectorSearch,
+  terminal,
+  git,
+  ide,
+  planning,
+  review,
+  documentation,
+  testing,
+  memory,
+  workflow,
+  image,
+  vision,
+  audio,
+  toolCalling
+}
