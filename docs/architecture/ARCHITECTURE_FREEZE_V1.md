@@ -98,7 +98,28 @@ abstract class AgentProvider {}
 
 ---
 
-## 5. Versioning Policy
+## 5. Versioning & Package Classification Policy
 - **Workbench API Versioning**: Access points are versioned (`WorkbenchApiV1`). Backward compatibility is maintained; deprecations persist for at least one minor version before removal in a major version.
 - **Capabilities Versioning**: Plugins declare versions for requested capabilities (`SearchProvider: 1`) to isolate interface changes.
 - **REST Endpoints**: Keep versioned under `/api/v1/code/*` to ease future integrations.
+
+### API Classification Matrix
+| Directory | Classification | Purpose |
+| --- | --- | --- |
+| `studio_ui/lib/core/workbench/` | Stable | Public APIs for extension authors |
+| `studio_ui/lib/core/services/` | Stable | UI integration helpers |
+| `lib/platform_sdk/` | Stable | Platform integration entry-point |
+| `lib/core/runtime/` | Internal | Private runtime pipeline |
+| `lib/core/workspace/` | Internal | Private directory indexing |
+| `lib/core/knowledge/` | Internal | Private vector / symbol engines |
+| `lib/core/agent/` | Internal | Private agent orchestrator |
+| `lib/core/studio/` | Internal | Private server REST backend |
+| `lib/core/mcp/` | Internal | Private MCP execution context |
+
+---
+
+## 6. CI Architecture Gates
+The release qualification tool (`dart run tool/release_qualification.dart`) enforces:
+- Dependency direction checks: UI packages must not import core engines directly.
+- Circular dependency checks.
+- API and capability version matches.
