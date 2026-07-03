@@ -12,24 +12,28 @@ To ensure loose coupling, robustness, and compliance with the Engineering Consti
 We implement a decoupled, task-driven, and event-based Agent Engine (`lib/core/agent/`) conforming to the following structural guarantees:
 
 1. **Orchestrator and Executor Separation**:
-   - **Workflows** compile into an `ExecutionPlan` containing ordered tasks, dependencies, retry strategies, and budgets.
-   - **AgentExecutor** executes individual micro-agents inside a stateful `AgentSession` tracking telemetry and decision history.
+   - **Workflows** compile into an `ExecutionPlan` containing ordered tasks, dependencies, retry strategies, and budgets. A dedicated `TaskDependencyResolver` computes runnable tasks from dependency graphs.
+   - **AgentExecutor** executes individual micro-agents inside a stateful `AgentSession` tracking telemetry, execution history, and `AgentHealth` metrics (last run, latency, circuit-breaker status).
    - **Agents** remain stateless executors.
 2. **Immutable `AgentContext` and `ContextSource`**:
    - Context is resolved by a `AgentContextResolver` gathering data from explicit `ContextSource` targets (Workspace, Knowledge, Memory, Git, Plugin, MCP, User Input).
-3. **Agent Capability Matrix & Manifest**:
-   - Expose agent capabilities via an `AgentCapabilityMatrix` and metadata versioning fields inside `AgentManifest` (matching PluginManifest layout).
-4. **Workflow validation**:
-   - A `WorkflowValidator` checks for dependency cycles, missing nodes, or impossible branches before execution begins.
+3. **Agent Capability & Manifest**:
+   - Expose agent capabilities as value objects (`AgentCapability` carrying metadata priority/parallel flags) via an `AgentCapabilityMatrix`. Each agent exposes an `AgentManifest` metadata definition.
+4. **Task Graph Serialization**:
+   - Workflows are represented as explicit directed task graphs composed of `WorkflowDefinition`, `WorkflowNode`, `WorkflowEdge`, and returning a `WorkflowResult`. Workflows serialize to JSON via `WorkflowSnapshot`.
 5. **Decoupled Three-Layer Memory**:
    - Memory is split into `AgentMemory`, `WorkspaceMemory`, and `TaskMemory` caching leveraging the abstract `MemoryProvider` interface.
 6. **Policy Validator & Review Gates**:
    - Prior to human review, a `PolicyValidator` delegates check constraints to decoupled policies: `SecurityPolicy`, `FilesystemPolicy`, `GitPolicy`, `BudgetPolicy`, `PluginPolicy`.
    - Execution gates enforce: `Automatic` $\rightarrow$ `Policy Review` $\rightarrow$ `Human Review` $\rightarrow$ `Execution`.
-7. **Execution Results**:
+7. **Execution vs Approval Policies**:
+   - Decouple execution modes (`ExecutionPolicy`: `Safe`, `Interactive`, `Autonomous`) from review requirements (`ApprovalPolicy`: `None`, `HumanRequired`, `SecurityRequired`).
+8. **Execution Results**:
    - Return specialized result subclasses: `ExecutionResult`, `ReviewResult`, `FailureResult`, `CancelledResult`.
-8. **Pluggable Schedulers**:
+9. **Pluggable Schedulers**:
    - Define a generic `Scheduler` contract under `lib/core/agent/contracts/scheduler.dart` implemented locally via `LocalScheduler`.
+10. **Stable Contracts Mappings**:
+    - Identify stable contracts for GA: `Agent`, `Scheduler`, `Workflow`, `ExecutionPlan`, `AgentContext`, `DecisionRecord`, `MemoryProvider`, `AgentManifest`, `AgentCapability`.
 
 ## Directory Structure
 
@@ -43,6 +47,7 @@ lib/core/agent/
 │   ├── executor.dart
 │   ├── decision_record.dart
 │   ├── execution_policy.dart
+│   ├── approval_policy.dart
 │   └── memory_provider.dart
 ├── context/
 │   ├── agent_context.dart
@@ -62,10 +67,12 @@ lib/core/agent/
 │   ├── local_scheduler.dart
 │   ├── task_queue.dart
 │   ├── execution_plan.dart
+│   ├── task_dependency_resolver.dart
 │   └── retry_policy.dart
 ├── executor/
 │   ├── agent_executor.dart
 │   ├── agent_session.dart
+│   ├── agent_health.dart
 │   └── policy_validator.dart
 ├── policies/
 │   ├── security_policy.dart
@@ -109,3 +116,4 @@ lib/core/agent/
   - Prepares the platform for parallel, distributed execution.
 - **Cons**:
   - Introduces multi-agent synchronization and routing overhead.
+ stream logic is abstracted into the Executor layer.
