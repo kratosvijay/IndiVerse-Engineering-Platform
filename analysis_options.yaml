@@ -1,0 +1,13 @@
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - always_declare_return_types
+    - avoid_empty_else
+    - camel_case_types
+    - empty_constructor_bodies

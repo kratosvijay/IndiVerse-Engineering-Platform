@@ -3,8 +3,8 @@
 ```yaml
 Platform:
   Name: "IndiVerse Developer Platform"
-  Version: "0.1.0"
-  Status: "Stable Baseline"
+  Version: "0.2.0"
+  Status: "AI Runtime Active"
 
 Supports:
   - Flutter
@@ -15,7 +15,7 @@ Statistics:
   Prompts: 24
   Agents: 8
   Templates: 11
-  ADRs: 4
+  ADRs: 6
   Validation: "Passed"
   License: "MIT"
 ```

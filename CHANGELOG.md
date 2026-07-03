@@ -5,6 +5,21 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-03
+### Added
+- Completed Phase 2 Sprint 6 (AI Runtime Foundation).
+- Pluggable abstract `AIProvider` model execution system.
+- Structured `AIRequest`, `AIResponse`, and `ExecutionResult` abstractions.
+- Event-driven monitoring bus (`EventBus` and `RuntimeEvent`).
+- Dynamic token counting, latency telemetry, and cost estimations (`TokenTracker`, `CostTracker`).
+- Aggregated contextual prompts compilation flow (`ContextManager`, `PromptCompiler`).
+- Chainable execution middleware (Validation, Logging, Retry with Exponential Backoff).
+- Capabilites-based routing registry checks (`Capability` and `ModelMetadata`).
+- Environment variable key manager bindings.
+- Complete unit test suite verifying full runtime capabilities with 100% pass rates.
+- Local validation integration gates run format, linting, analysis, and package tests.
+- Platform ADR 0006 (AI Runtime Architecture).
+
 ## [0.1.0] - 2026-07-03
 ### Added
 - Standardized directory layout for Sprints 0-5.
