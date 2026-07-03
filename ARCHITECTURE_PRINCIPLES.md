@@ -52,3 +52,43 @@ Every AI-generated recommendation should expose sufficient reasoning, context so
 ### 12. Backward Compatibility First
 Public SDKs, plugin APIs, and stable platform contracts should remain backward compatible throughout a major release. Breaking changes require a new ADR, migration documentation, and a major version increment.
 
+---
+
+## ⚖️ Precedence
+When principles appear to conflict, resolve them in the following order:
+1. **Security**
+2. **Correctness**
+3. **Architecture**
+4. **Reliability**
+5. **Performance**
+6. **Developer Experience**
+
+Any intentional deviation must be documented in an ADR.
+
+---
+
+## 👮 Enforcement
+These principles are enforced through:
+- **Architecture Review Checklist**: Evaluated during design and code reviews.
+- **Pull Request Review Process**: PR templates require explicit compliance validation.
+- **Architecture Decision Records (ADRs)**: Exposing exceptions and architectural trade-offs explicitly.
+- **Automated Validation**: Running `dart analyze`, `dart test`, and custom validation gates.
+- **CI Pipelines**: Rejecting non-conforming builds.
+
+---
+
+## 📋 Compliance Checklist
+Reviewers and contributors must verify the following gates:
+- [ ] **Provider SDKs**: Do not leak vendor-specific types into core layers.
+- [ ] **Interface Driven**: Every new dependency behaves through decoupled abstract contracts.
+- [ ] **Plugin Sandbox**: Filesystem access is strictly sandboxed.
+- [ ] **Security by Default**: Least privilege rule respected.
+- [ ] **Offline First**: Offline caching capability is preserved.
+- [ ] **Observable**: Cost tracking and event bus triggers are instrumented.
+- [ ] **Testable**: Clean test coverage gates are satisfied.
+- [ ] **Human Approval**: Mandatory prompt validation gates for destructive mutations are preserved.
+- [ ] **Open Standards**: Standards-compliant protocols (like MCP/Git) are prioritized.
+- [ ] **Explainable AI**: Reasoning maps and context source histories are exposed.
+- [ ] **Backward Compatible**: Breaking stable contracts are prohibited.
+
+
