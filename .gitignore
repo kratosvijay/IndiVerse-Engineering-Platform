@@ -1,0 +1,21 @@
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs & Diagnostics
+*.log
+.system_generated/
+reports/platform_report.json
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+
+# Local Scripts Temp
+scratch/
