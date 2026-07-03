@@ -1,0 +1,1 @@
+{"version":"0.95.0","timestamp":"2026-07-03T20:46:26.336632","status":"QUALIFIED","metrics":{"startupTimeMs":1,"workspaceScanTimeMs":4,"semanticSearchTimeMs":3,"agentDispatchTimeMs":8,"runtimeExecutionTimeMs":12,"mcpRequestTimeMs":2}}
