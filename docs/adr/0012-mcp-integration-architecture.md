@@ -1,7 +1,7 @@
 # ADR 0012: MCP Integration Architecture
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 With the core platform cockpit (Studio UI v0.8.0) and backend engines completed, the platform now needs to expose its capabilities (semantic search, code workspace discovery, multi-agent runs) to external developer environments like Claude Desktop, VS Code, and other editors. 
@@ -12,15 +12,19 @@ To ensure loose coupling, compliance with the Engineering Constitution, and to p
 We implement a decoupled, registry-driven, and session-based MCP Server integration (`lib/core/mcp/`) conforming to the following structural guarantees:
 
 1. **Platform SDK Integration Boundary**:
-   - The MCP server never interacts with lower-level core engines (Workspace, Knowledge, Agent, Runtime) directly. It must communicate exclusively through the `PlatformSDK` facade APIs.
-2. **MCP Gateway Pattern**:
-   - Introduce an `MCPGateway` translating standard Model Context Protocol messages (tools, resources, prompts) into `PlatformSDK` calls, managing validation, permissions, and serialization.
-3. **Pluggable Registries**:
-   - Implement `ToolRegistry`, `ResourceRegistry`, and `PromptRegistry` so that new tools, files, or agent capabilities can be dynamically registered without altering the MCP transport core.
-4. **Session Manager**:
-   - Each connection is tracked via a stateful `McpSession` managing protocol versions, capabilities, and workspace scopes.
-5. **Transport Abstraction**:
-   - Expose an abstract `McpTransport` interface supporting stdio-based streams (default) with future-proofing for HTTP/WebSocket connections.
+   - The MCP server never interacts with lower-level core engines directly. It must communicate exclusively through the `PlatformSDK` facade APIs.
+2. **Protocol Isolation**:
+   - MCP protocol types, transports, serializers, and session models must never propagate beyond the MCP layer. PlatformSDK and lower platform layers remain protocol-agnostic.
+3. **Protocol Purity**:
+   - The stdout stream is reserved exclusively for MCP protocol frames. Human-readable logs must be written to stderr or a configured logging sink.
+4. **MCP Gateway & Serializer Layers**:
+   - Introduce an `MCPGateway` translating standard Model Context Protocol messages (tools, resources, prompts) into `PlatformSDK` calls, managing validation, permissions, and serialization via request, response, and error mappers.
+5. **Registry & Provider Symmetry**:
+   - Implement registries (`ToolRegistry`, `ResourceRegistry`, `PromptRegistry`) backed by provider contracts (`ToolProvider`, `ResourceProvider`, `PromptProvider`) allowing plugins to register dynamic components.
+6. **Session Negotiation & Cancellation**:
+   - Each connection is tracked via a stateful `McpSession` managing protocol version negotiation, capabilities, and active request cancellation tokens.
+7. **Permission Verification Gate**:
+   - Enforce permission validation checks (e.g. `Workspace.Read`, `Knowledge.Search`, `Agent.Execute`, `Git.Read`, `Git.Write`) before dispatching tool execution.
 
 ## Directory Structure
 
@@ -28,7 +32,8 @@ We implement a decoupled, registry-driven, and session-based MCP Server integrat
 lib/core/mcp/
 ├── contracts/
 │   ├── transport.dart
-│   └── gateway.dart
+│   ├── gateway.dart
+│   └── provider.dart
 ├── server/
 │   ├── server.dart
 │   ├── router.dart
@@ -43,10 +48,23 @@ lib/core/mcp/
 │   ├── tool_registry.dart
 │   ├── resource_registry.dart
 │   └── prompt_registry.dart
-└── models/
-    ├── mcp_tool.dart
-    ├── mcp_resource.dart
-    └── mcp_prompt.dart
+├── providers/
+│   ├── tool_provider.dart
+│   ├── resource_provider.dart
+│   └── prompt_provider.dart
+├── serialization/
+│   ├── request_mapper.dart
+│   ├── response_mapper.dart
+│   └── error_mapper.dart
+├── models/
+│   ├── mcp_tool.dart
+│   ├── mcp_resource.dart
+│   ├── mcp_prompt.dart
+│   └── permission.dart
+├── events/
+│   └── mcp_events.dart
+└── statistics/
+    └── mcp_statistics.dart
 ```
 
 ## Consequences
