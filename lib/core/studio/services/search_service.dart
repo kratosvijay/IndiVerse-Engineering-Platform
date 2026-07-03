@@ -35,6 +35,7 @@ class SearchService {
             final line = lines[i];
             if (line.contains(query)) {
               results.add({
+                "file": relPath,
                 "filePath": relPath,
                 "lineNumber": i + 1,
                 "snippet": line.trim(),

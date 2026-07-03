@@ -54,8 +54,13 @@ class _StudioDashboardState extends State<StudioDashboard> {
   }
 
   void _connectToBackend() async {
-    // Dynamically check ports
-    for (int port = 8080; port <= 8180; port++) {
+    // Check preferred port 18080 first, then standard ports
+    final portsToCheck = [18080];
+    for (int p = 8080; p <= 8180; p++) {
+      portsToCheck.add(p);
+    }
+
+    for (int port in portsToCheck) {
       try {
         final res = await http
             .get(Uri.parse('http://localhost:$port/api/health'))
@@ -399,6 +404,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
+              childAspectRatio: 1.6,
               children: [
                 _buildCard(
                   'Active Project',
