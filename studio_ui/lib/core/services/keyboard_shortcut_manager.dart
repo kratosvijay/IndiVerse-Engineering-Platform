@@ -16,9 +16,8 @@ class Command {
   final String description;
   final SingleActivator? shortcut;
   final IconData? icon;
-  bool enabled;
-  bool visible;
-  final Future<OperationResult<void>> Function(CommandContext context) handler;
+  final bool Function(CommandContext)? isEnabled;
+  final Future<OperationResult<void>> Function(CommandContext context) execute;
 
   Command({
     required this.id,
@@ -27,9 +26,8 @@ class Command {
     required this.description,
     this.shortcut,
     this.icon,
-    this.enabled = true,
-    this.visible = true,
-    required this.handler,
+    this.isEnabled,
+    required this.execute,
   });
 }
 
@@ -45,10 +43,21 @@ class CommandRegistry {
   List<Command> all() => _commands.values.toList();
 }
 
+typedef CommandMiddleware = Future<OperationResult<void>> Function(
+  String commandId,
+  CommandContext context,
+  Future<OperationResult<void>> Function() next,
+);
+
 class CommandDispatcher {
   final CommandRegistry registry;
+  final List<CommandMiddleware> _middlewares = [];
 
   CommandDispatcher(this.registry);
+
+  void use(CommandMiddleware middleware) {
+    _middlewares.add(middleware);
+  }
 
   Future<OperationResult<void>> execute(String id, CommandContext context) async {
     final cmd = registry.get(id);
@@ -58,21 +67,32 @@ class CommandDispatcher {
         message: "Command '$id' not registered.",
       ));
     }
-    if (!cmd.enabled) {
+
+    final isEnabled = cmd.isEnabled?.call(context) ?? true;
+    if (!isEnabled) {
       return OperationResult.fail(WorkbenchError(
         code: "COMMAND_DISABLED",
         message: "Command '$id' is disabled.",
       ));
     }
 
-    try {
-      return await cmd.handler(context);
-    } catch (e) {
-      return OperationResult.fail(WorkbenchError(
-        code: "EXECUTION_ERROR",
-        message: e.toString(),
-      ));
+    int index = 0;
+    Future<OperationResult<void>> invokeNext() async {
+      if (index < _middlewares.length) {
+        final middleware = _middlewares[index++];
+        return await middleware(id, context, invokeNext);
+      }
+      try {
+        return await cmd.execute(context);
+      } catch (e) {
+        return OperationResult.fail(WorkbenchError(
+          code: "EXECUTION_ERROR",
+          message: e.toString(),
+        ));
+      }
     }
+
+    return await invokeNext();
   }
 }
 

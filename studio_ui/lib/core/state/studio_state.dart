@@ -94,6 +94,21 @@ class StudioState extends ChangeNotifier {
     commandRegistry = CommandRegistry();
     dispatcher = CommandDispatcher(commandRegistry);
     shortcutManager = KeyboardShortcutManager(dispatcher: dispatcher, registry: commandRegistry);
+
+    // Register execution logger middleware
+    dispatcher.use((cmdId, context, next) async {
+      debugPrint("[Command Dispatcher] Executing: $cmdId");
+      final stopwatch = Stopwatch()..start();
+      final res = await next();
+      stopwatch.stop();
+      if (res.success) {
+        debugPrint("[Command Dispatcher] Completed: $cmdId in ${stopwatch.elapsedMilliseconds}ms");
+      } else {
+        debugPrint("[Command Dispatcher] Failed: $cmdId (${res.error?.message})");
+      }
+      return res;
+    });
+
     _registerDefaultCommands();
   }
 
@@ -104,7 +119,7 @@ class StudioState extends ChangeNotifier {
         title: "Open File",
         category: "File",
         description: "Open file from workspace path",
-        handler: (ctx) async {
+        execute: (ctx) async {
           final path = ctx.arguments["path"];
           if (path is String) {
             await openFile(path);
@@ -120,7 +135,7 @@ class StudioState extends ChangeNotifier {
         category: "Navigation",
         description: "Fuzzy search files in workspace",
         shortcut: const SingleActivator(LogicalKeyboardKey.keyP, meta: true),
-        handler: (ctx) async {
+        execute: (ctx) async {
           eventBus.publish("Command", "quickOpen");
           return const OperationResult.ok(null);
         },
@@ -128,12 +143,12 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: WorkbenchCommands.editorFind,
+        id: EditorCommands.find,
         title: "Find in Editor",
         category: "Editor",
         description: "Find text occurrences in active document",
         shortcut: const SingleActivator(LogicalKeyboardKey.keyF, meta: true),
-        handler: (ctx) async {
+        execute: (ctx) async {
           eventBus.publish("Command", "find");
           return const OperationResult.ok(null);
         },
@@ -141,12 +156,12 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: WorkbenchCommands.editorGotoLine,
+        id: EditorCommands.gotoLine,
         title: "Go to Line...",
         category: "Editor",
         description: "Jump to specific line number in document",
         shortcut: const SingleActivator(LogicalKeyboardKey.keyG, meta: true),
-        handler: (ctx) async {
+        execute: (ctx) async {
           eventBus.publish("Command", "gotoLine");
           return const OperationResult.ok(null);
         },
@@ -159,7 +174,7 @@ class StudioState extends ChangeNotifier {
         category: "Command",
         description: "Show Command Palette",
         shortcut: const SingleActivator(LogicalKeyboardKey.keyP, meta: true, shift: true),
-        handler: (ctx) async {
+        execute: (ctx) async {
           eventBus.publish("Command", "showCommands");
           return const OperationResult.ok(null);
         },
@@ -167,12 +182,12 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
-        id: WorkbenchCommands.editorGotoDefinition,
+        id: EditorCommands.gotoDefinition,
         title: "Go to Definition",
         category: "Editor",
         description: "Resolve definition for symbol under cursor",
         shortcut: const SingleActivator(LogicalKeyboardKey.f12),
-        handler: (ctx) async {
+        execute: (ctx) async {
           eventBus.publish("Command", "gotoDefinition");
           return const OperationResult.ok(null);
         },
