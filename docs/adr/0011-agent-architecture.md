@@ -14,12 +14,13 @@ We implement a decoupled, task-driven, and event-based Agent Engine (`lib/core/a
 1. **Separation of Workflow and Agent Execution**:
    - **Workflows** own task graph routing and orchestration.
    - **Agents** own execution and do not spawn other agents recursively.
+   - **Agent Lifecycle States**: `idle`, `thinking`, `executing`, `waiting` (waiting for other workers or user checks), `reviewRequired`, `completed`, `failed`, `cancelled`.
 2. **Immutable `AgentContext`**:
    - Agents never access Workspace or Knowledge Engine APIs directly. Instead, they receive an immutable `AgentContext` containing snapshots, task models, budget limits, cancellation tokens, and memories.
 3. **Agent Capability Model**:
    - Instead of hardcoding types, agents expose capabilities (e.g., `Planning`, `Coding`, `Review`, `Testing`, `Documentation`, `Security`) via a `supports(AgentCapability)` validation method.
 4. **Task Graph Orchestration**:
-   - Workflows are represented as directed task graphs executed by a central `AgentScheduler`.
+   - Workflows are represented as explicit directed task graphs composed of `WorkflowDefinition`, `WorkflowNode`, `WorkflowEdge`, and returning a `WorkflowResult`, executed by a central `AgentScheduler`.
 5. **Decoupled Three-Layer Memory**:
    - Memory is split into `AgentMemory` (long-term prompt preferences), `WorkspaceMemory` (project context), and `TaskMemory` (short-term execution state).
 6. **Unified Decision Records**:
