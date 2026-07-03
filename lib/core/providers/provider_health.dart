@@ -1,1 +1,8 @@
-enum ProviderHealth { healthy, degraded, unavailable, rateLimited }
+enum ProviderHealth {
+  healthy,
+  degraded,
+  rateLimited,
+  offline,
+  maintenance,
+  unknown
+}

@@ -79,3 +79,29 @@ class ExecutionFailed extends RuntimeEvent {
     required this.details,
   }) : super(timestamp: timestamp, eventId: eventId);
 }
+
+class ProviderHealthChangedEvent extends RuntimeEvent {
+  final String providerName;
+  final String oldHealth;
+  final String newHealth;
+
+  ProviderHealthChangedEvent({
+    required DateTime timestamp,
+    required String eventId,
+    required this.providerName,
+    required this.oldHealth,
+    required this.newHealth,
+  }) : super(timestamp: timestamp, eventId: eventId);
+}
+
+class ProviderRegisteredEvent extends RuntimeEvent {
+  final String providerName;
+  final List<String> supportedModels;
+
+  ProviderRegisteredEvent({
+    required DateTime timestamp,
+    required String eventId,
+    required this.providerName,
+    required this.supportedModels,
+  }) : super(timestamp: timestamp, eventId: eventId);
+}

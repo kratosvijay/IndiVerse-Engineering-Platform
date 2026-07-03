@@ -1,6 +1,6 @@
 name: indiverse_developer_platform
 description: Reusable AI Runtime Core and Developer Experience Platform for IndiVerse.
-version: 0.2.0
+version: 0.3.0
 publish_to: none
 
 environment:

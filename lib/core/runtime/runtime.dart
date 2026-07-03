@@ -8,8 +8,9 @@ import '../events/event_bus.dart';
 import '../events/runtime_event.dart';
 import 'pipeline.dart';
 import 'state.dart';
-import 'provider_registry.dart';
-import 'model_registry.dart';
+import '../models/ai_chunk.dart';
+import '../registry/provider_registry.dart';
+import '../registry/model_registry.dart';
 
 class Runtime implements RuntimeCore {
   final ProviderRegistry providerRegistry;
@@ -130,11 +131,11 @@ class Runtime implements RuntimeCore {
   }
 
   @override
-  Stream<String> executeStream(AIRequest request) {
+  Stream<AIChunk> executeStream(AIRequest request) {
     _transition(RuntimeState.streaming);
     final provider = providerRegistry.resolve(request.modelName);
     return provider.executeStream(request).map((chunk) {
-      if (chunk.isEmpty) {
+      if (chunk.finishReason != null) {
         _transition(RuntimeState.completed);
       }
       return chunk;

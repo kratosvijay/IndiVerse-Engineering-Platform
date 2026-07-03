@@ -5,7 +5,7 @@ import 'package:indiverse_developer_platform/core/models/ai_response.dart';
 import 'package:indiverse_developer_platform/core/models/execution_result.dart';
 import 'package:indiverse_developer_platform/core/models/model_metadata.dart';
 import 'package:indiverse_developer_platform/core/models/capability.dart';
-import 'package:indiverse_developer_platform/core/runtime/model_registry.dart';
+import 'package:indiverse_developer_platform/core/registry/model_registry.dart';
 import 'package:indiverse_developer_platform/core/tracking/token_tracker.dart';
 import 'package:indiverse_developer_platform/core/tracking/cost_tracker.dart';
 

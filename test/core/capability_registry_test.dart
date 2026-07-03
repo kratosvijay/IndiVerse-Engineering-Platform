@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:indiverse_developer_platform/core/runtime/model_registry.dart';
+import 'package:indiverse_developer_platform/core/registry/model_registry.dart';
 import 'package:indiverse_developer_platform/core/models/model_metadata.dart';
 import 'package:indiverse_developer_platform/core/models/capability.dart';
 

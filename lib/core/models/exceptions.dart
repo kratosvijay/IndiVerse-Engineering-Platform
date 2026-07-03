@@ -11,7 +11,22 @@ class ProviderException extends AIException {
 }
 
 class RateLimitException extends AIException {
-  const RateLimitException(String message) : super(message);
+  final Duration? retryAfter;
+  final int? remainingRequests;
+  final String? quotaType;
+  final String? providerMessage;
+
+  const RateLimitException(
+    String message, {
+    this.retryAfter,
+    this.remainingRequests,
+    this.quotaType,
+    this.providerMessage,
+  }) : super(message);
+
+  @override
+  String toString() =>
+      "RateLimitException: $message (Retry After: $retryAfter, Remaining: $remainingRequests, Quota: $quotaType)";
 }
 
 class AuthenticationException extends AIException {

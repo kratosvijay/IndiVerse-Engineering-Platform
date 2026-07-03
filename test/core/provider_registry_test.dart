@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:indiverse_developer_platform/core/runtime/provider_registry.dart';
+import 'package:indiverse_developer_platform/core/registry/provider_registry.dart';
 import 'package:indiverse_developer_platform/core/providers/mock_provider.dart';
 
 void main() {

@@ -5,6 +5,21 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-03
+### Added
+- Completed Phase 2 Sprint 7 (Gemini Provider Adapter).
+- Concrete HTTP-based `GeminiAdapter` conforming to `AIProvider` contract.
+- Encapsulated HTTP client wrapper `GeminiApiClient` isolating endpoint interactions.
+- Request and response serialization mappings in `GeminiRequestMapper` and `GeminiResponseMapper`.
+- Capability matrix metadata matching constraints under `GeminiManifest`.
+- `ProviderManifest` and `ProviderBenchmark` modeling structures under `lib/core/registry/`.
+- Dynamic cost/performance telemetry tracking metrics in `BenchmarkCollector`.
+- Observability diagnostics interface via `RuntimeInspector`.
+- Integration tests in `gemini_provider_test.dart` checking mappings, token allocations, and status code exception translations (Rate limits, Authentications).
+- Extended `exceptions.dart` to support retry metrics (`retryAfter`, `remainingRequests`).
+- Restructured registries under `lib/core/registry/` for improved namespace isolation.
+- Platform ADR 0007 (External AI Provider Integration).
+
 ## [0.2.0] - 2026-07-03
 ### Added
 - Completed Phase 2 Sprint 6 (AI Runtime Foundation).

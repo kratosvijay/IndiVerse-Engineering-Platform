@@ -2,6 +2,9 @@ import '../contracts/ai_provider.dart';
 import 'provider_health.dart';
 import '../models/ai_request.dart';
 import '../models/ai_response.dart';
+import '../models/ai_chunk.dart';
+import '../models/model_metadata.dart';
+import '../registry/provider_manifest.dart';
 import '../tracking/token_tracker.dart';
 
 class MockProvider implements AIProvider {
@@ -30,9 +33,27 @@ class MockProvider implements AIProvider {
   }
 
   @override
-  Stream<String> executeStream(AIRequest request) async* {
-    yield "Mock";
-    yield " stream";
-    yield " response";
+  Stream<AIChunk> executeStream(AIRequest request) async* {
+    yield const AIChunk(text: "Mock");
+    yield const AIChunk(text: " stream");
+    yield const AIChunk(text: " response", finishReason: "stop");
+  }
+
+  @override
+  ProviderManifest manifest() {
+    return ProviderManifest(
+      providerName: name,
+      providerVersion: "1.0",
+      supportedModels: const [],
+      capabilities: const {},
+      supportsStreaming: true,
+      supportsJson: true,
+      initialHealth: ProviderHealth.healthy,
+    );
+  }
+
+  @override
+  Future<List<ModelMetadata>> discoverModels() async {
+    return const [];
   }
 }

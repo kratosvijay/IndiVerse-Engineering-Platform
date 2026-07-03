@@ -3,7 +3,7 @@ import 'package:indiverse_developer_platform/core/events/event_bus.dart';
 import 'package:indiverse_developer_platform/core/events/runtime_event.dart';
 import 'package:indiverse_developer_platform/core/models/ai_request.dart';
 import 'package:indiverse_developer_platform/core/runtime/runtime.dart';
-import 'package:indiverse_developer_platform/core/runtime/provider_registry.dart';
+import 'package:indiverse_developer_platform/core/registry/provider_registry.dart';
 import 'package:indiverse_developer_platform/core/providers/mock_provider.dart';
 
 void main() {

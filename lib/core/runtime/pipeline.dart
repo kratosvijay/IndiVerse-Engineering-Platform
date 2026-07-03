@@ -5,6 +5,8 @@ import '../models/ai_response.dart';
 class Pipeline {
   final List<Middleware> _middlewares = [];
 
+  List<Middleware> get middlewares => List.unmodifiable(_middlewares);
+
   void add(Middleware middleware) {
     _middlewares.add(middleware);
   }

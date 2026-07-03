@@ -9,6 +9,14 @@ class ModelRegistry {
 
   ModelMetadata? getModel(String name) => _models[name];
 
+  ModelMetadata resolve(String name) {
+    final meta = _models[name];
+    if (meta == null) {
+      throw StateError("Model metadata not registered: $name");
+    }
+    return meta;
+  }
+
   List<ModelMetadata> getModelsByCapability(dynamic capability) {
     return _models.values
         .where((m) => m.capabilities.contains(capability))
