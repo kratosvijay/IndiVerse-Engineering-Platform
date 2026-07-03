@@ -3,8 +3,8 @@
 ```yaml
 Platform:
   Name: "IndiVerse Developer Platform"
-  Version: "0.95.0"
-  Status: "Stability Qualified"
+  Version: "1.0.0"
+  Status: "General Availability"
 
 Supports:
   - Flutter
@@ -18,4 +18,8 @@ Statistics:
   ADRs: 13
   Validation: "Passed"
   License: "MIT"
+
+Release:
+  Stability: LTS
+  API: Stable
 ```

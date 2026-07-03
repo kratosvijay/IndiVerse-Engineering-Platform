@@ -5,6 +5,13 @@ All notable changes to the IndiVerse Developer Platform (IDP) will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-07-03
+### Added
+- Released **General Availability (GA)** of IndiVerse Developer Platform (IDP)!
+- Stabilized and frozen all core platform SDK interfaces (Runtime, Workspace, Knowledge, Agent, Plugin SDK, and MCP Server).
+- Validated performance thresholds across two consecutive qualification cycles to guarantee release repeatability.
+- Froze all architectural boundary enforcement constraints under `tool/release_qualification.dart`.
+
 ## [0.95.0] - 2026-07-03
 ### Added
 - Completed Phase 3 Sprint 14 (Release Qualification, Performance & Hardening).
