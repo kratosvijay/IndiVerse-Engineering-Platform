@@ -12,24 +12,24 @@ To ensure loose coupling, robustness, and compliance with the Engineering Consti
 We implement a decoupled, task-driven, and event-based Agent Engine (`lib/core/agent/`) conforming to the following structural guarantees:
 
 1. **Orchestrator and Executor Separation**:
-   - **Workflows** own task graph routing and orchestration.
-   - **AgentExecutor** handles lifecycle transitions, retries, timeout enforcement, telemetry, cancellations, and budget enforcement.
-   - **Agents** remain stateless executors implementing only prompt business logic.
-2. **Immutable `AgentContext` and `ContextResolver`**:
-   - Context is compiled by an `AgentContextResolver` aggregating snapshots from Workspace, Knowledge, Memory, and Plugins.
+   - **Workflows** compile into an `ExecutionPlan` containing ordered tasks, dependencies, retry strategies, and budgets.
+   - **AgentExecutor** executes individual micro-agents inside a stateful `AgentSession` tracking telemetry and decision history.
+   - **Agents** remain stateless executors.
+2. **Immutable `AgentContext` and `ContextSource`**:
+   - Context is resolved by a `AgentContextResolver` gathering data from explicit `ContextSource` targets (Workspace, Knowledge, Memory, Git, Plugin, MCP, User Input).
 3. **Agent Capability Matrix & Manifest**:
-   - Expose agent capabilities (`Planning`, `Coding`, `Review`, `Testing`, `Documentation`, `Security`) via an `AgentCapabilityMatrix`. Each agent exposes an `AgentManifest` metadata definition (version, capabilities, permissions, estimated limits).
-4. **Task Graph Serialization**:
-   - Workflows are represented as explicit directed task graphs composed of `WorkflowDefinition`, `WorkflowNode`, `WorkflowEdge`, and returning a `WorkflowResult`. Workflows serialize to JSON via `WorkflowSnapshot` for Studio display.
+   - Expose agent capabilities via an `AgentCapabilityMatrix` and metadata versioning fields inside `AgentManifest` (matching PluginManifest layout).
+4. **Workflow validation**:
+   - A `WorkflowValidator` checks for dependency cycles, missing nodes, or impossible branches before execution begins.
 5. **Decoupled Three-Layer Memory**:
    - Memory is split into `AgentMemory`, `WorkspaceMemory`, and `TaskMemory` caching leveraging the abstract `MemoryProvider` interface.
 6. **Policy Validator & Review Gates**:
-   - Prior to human review, a `PolicyValidator` audits execution budget limits, dangerous filesystem writes, and git mutations.
+   - Prior to human review, a `PolicyValidator` delegates check constraints to decoupled policies: `SecurityPolicy`, `FilesystemPolicy`, `GitPolicy`, `BudgetPolicy`, `PluginPolicy`.
    - Execution gates enforce: `Automatic` $\rightarrow$ `Policy Review` $\rightarrow$ `Human Review` $\rightarrow$ `Execution`.
-7. **Execution Policies**:
-   - Core policies include: `Safe`, `Interactive`, `ApprovalRequired`, `Autonomous`.
-8. **Pluggable Scheduler Schedulers**:
-   - Define a generic `Scheduler` contract with implementations for `LocalScheduler` and potential future `DistributedScheduler` workers.
+7. **Execution Results**:
+   - Return specialized result subclasses: `ExecutionResult`, `ReviewResult`, `FailureResult`, `CancelledResult`.
+8. **Pluggable Schedulers**:
+   - Define a generic `Scheduler` contract under `lib/core/agent/contracts/scheduler.dart` implemented locally via `LocalScheduler`.
 
 ## Directory Structure
 
@@ -42,9 +42,11 @@ lib/core/agent/
 │   ├── task.dart
 │   ├── executor.dart
 │   ├── decision_record.dart
-│   └── execution_policy.dart
+│   ├── execution_policy.dart
+│   └── memory_provider.dart
 ├── context/
 │   ├── agent_context.dart
+│   ├── context_source.dart
 │   └── context_resolver.dart
 ├── workflow/
 │   ├── workflow_definition.dart
@@ -54,37 +56,41 @@ lib/core/agent/
 │   ├── workflow_snapshot.dart
 │   ├── workflow_statistics.dart
 │   ├── workflow_builder.dart
+│   ├── workflow_validator.dart
 │   └── workflow_executor.dart
 ├── scheduler/
-│   ├── task_scheduler.dart
+│   ├── local_scheduler.dart
 │   ├── task_queue.dart
+│   ├── execution_plan.dart
 │   └── retry_policy.dart
 ├── executor/
 │   ├── agent_executor.dart
+│   ├── agent_session.dart
 │   └── policy_validator.dart
+├── policies/
+│   ├── security_policy.dart
+│   ├── filesystem_policy.dart
+│   ├── git_policy.dart
+│   ├── budget_policy.dart
+│   └── plugin_policy.dart
 ├── budget/
 │   ├── token_budget.dart
 │   ├── cost_budget.dart
 │   └── execution_budget.dart
 ├── memory/
-│   ├── memory_provider.dart
 │   ├── task_memory.dart
 │   ├── workspace_memory.dart
 │   └── agent_memory.dart
 ├── statistics/
 │   ├── agent_statistics.dart
+│   ├── workflow_statistics.dart
 │   └── scheduler_statistics.dart
 ├── events/
-│   ├── task_queued.dart
-│   ├── task_started.dart
-│   ├── task_progress.dart
-│   ├── task_waiting.dart
-│   ├── task_completed.dart
-│   ├── task_failed.dart
-│   ├── task_cancelled.dart
-│   ├── review_requested.dart
-│   ├── review_approved.dart
-│   └── review_rejected.dart
+│   ├── workflow_events.dart
+│   ├── task_events.dart
+│   ├── review_events.dart
+│   ├── scheduler_events.dart
+│   └── memory_events.dart
 ├── registry/
 │   └── agent_registry.dart
 └── agents/
