@@ -32,6 +32,19 @@ class WebsocketServer {
     });
   }
 
+  void broadcast(Map<String, dynamic> payload) {
+    _replayBuffer.add(payload);
+    if (_replayBuffer.length > 100) {
+      _replayBuffer.removeAt(0);
+    }
+    final message = jsonEncode(payload);
+    for (final ws in _sockets) {
+      if (ws.readyState == WebSocket.open) {
+        ws.add(message);
+      }
+    }
+  }
+
   void handleConnection(WebSocket ws) {
     _sockets.add(ws);
 

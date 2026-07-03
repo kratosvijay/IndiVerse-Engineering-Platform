@@ -59,6 +59,9 @@ class StudioServer {
     inspectorController = InspectorController(inspectorService);
 
     websocketServer = WebsocketServer(eventBus);
+    workspaceService.addWatcherListener((event) {
+      websocketServer.broadcast(event);
+    });
   }
 
   Future<int> start({int preferredPort = 8080}) async {
@@ -234,6 +237,10 @@ class StudioServer {
           ..write(response.toJsonString());
       } else if (path == '/api/v1/workspace') {
         await workspaceController.handleGetWorkspace(request, requestId);
+      } else if (path == '/api/v1/workspace/file') {
+        await workspaceController.handleGetFileContent(request, requestId);
+      } else if (path == '/api/v1/workspace/stat') {
+        await workspaceController.handleStat(request, requestId);
       } else if (path == '/api/v1/search') {
         await searchController.handleSearch(request, requestId);
       } else if (path == '/api/v1/metrics') {
