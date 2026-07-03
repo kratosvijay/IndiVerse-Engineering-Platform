@@ -22,6 +22,26 @@ void main() {
       expect(sdk.knowledge, isNotNull);
       expect(sdk.agent, isNotNull);
       expect(sdk.plugin, isNotNull);
+      expect(sdk.capabilities.runtime, isTrue);
+      expect(sdk.versions.runtime, equals("v1"));
+      expect(sdk.featureFlags.isEnabled("KnowledgeSearch"), isTrue);
+      expect(sdk.featureFlags.isEnabled("MCP"), isFalse);
+    });
+
+    test('Verify health and metrics resolution', () async {
+      final sdk = PlatformSDK(
+        runtime: RuntimeAPI(),
+        workspace: WorkspaceAPI(),
+        knowledge: KnowledgeAPI(),
+        agent: AgentAPI(),
+        plugin: PluginAPI(),
+      );
+
+      final health = await sdk.health.checkHealth();
+      expect(health["Runtime"], equals("healthy"));
+
+      final metrics = await sdk.metrics.fetchMetrics();
+      expect(metrics["workspaceFilesCount"], equals(0));
     });
   });
 }
