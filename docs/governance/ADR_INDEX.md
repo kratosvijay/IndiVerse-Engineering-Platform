@@ -15,4 +15,5 @@ This document indexes all Architecture Decision Records (ADRs) that guide the ID
 | **ADR 0009** | Workspace Engine | Accepted | 2026-07-03 |
 | **ADR 0010** | Repository Intelligence Knowledge Engine | Accepted | 2026-07-03 |
 | **ADR 0011** | Agent Architecture | Accepted | 2026-07-03 |
-| **ADR 0012** | MCP Integration Architecture | Proposed | 2026-07-03 |
+| **ADR 0012** | MCP Integration Architecture | Accepted | 2026-07-03 |
+| **ADR 0013** | Release Qualification & Stability Policy | Accepted | 2026-07-03 |
