@@ -13,6 +13,7 @@
 | **v0.7** | Agent Engine | ⬜ Planned | Multi-agent coordination (Planners, Developers, Testers, Reviewers) |
 | **v0.8** | Studio | ⬜ Planned | Minimal desktop explorer UI, diagnostics panel, token/cost dashboards |
 | **v0.9** | MCP | ⬜ Planned | Native Model Context Protocol (MCP) servers client integrations |
+| **v0.95**| Performance & Hardening | ⬜ Planned | Memory profiling, startup optimization, security audits, load benchmarks |
 | **v1.0.0**| General Availability (GA) | ⬜ Planned | Production stable, plugin marketplace ready, installer, LTS support |
 | **v1.1** | Distributed AI Execution | ⬜ Planned | Multiple Gemini Keys load balancing, failover queue, parallel agents |
 | **v2.0** | Autonomous Platform | ⬜ Planned | Autonomous sprint planning, multi-repo, AI architecture evolution |
@@ -32,6 +33,7 @@
 | **v0.7** | Coordinated workflows (e.g. planner + reviewer + tester) complete successfully |
 | **v0.8** | Core workflows executed smoothly without relying on CLI commands |
 | **v0.9** | Native compatibility with standard external MCP clients and servers |
+| **v0.95**| Zero memory leaks detected and startup index initialization optimized to < 150ms |
 | **v1.0.0**| Stable and secure enough for daily platform development on IndiVerse apps |
 | **v1.1** | Multi-key load balancing and worker queues improve platform throughput |
 | **v2.0** | Autonomous planning pipelines assist developer flows while remaining reviewable |
@@ -54,7 +56,8 @@ Establish coding standards, linting, AI prompt structures, and CI validation pip
 - **v0.7 (Sprint 11 - Agent Engine)**: Run cooperative developer workflows (Planners, Reviewers, Testers).
 - **v0.8 (Sprint 12 - Studio)**: Lightweight developer cockpit.
 - **v0.9 (Sprint 13 - MCP)**: Native MCP Client/Server integration.
-- **v1.0.0 (GA)**: Enterprise stabilization, security audit, and LTS support.
+- **v0.95 (Sprint 14 - Performance & Hardening)**: Memory profiling, startup optimization, caching, crash recovery, security audits, and load testing.
+- **v1.0.0 (GA)**: Enterprise stabilization, golden repositories validation, and LTS support.
 
 ### Phase 4: Scaling & Failover (v1.1 - Planned)
 - **v1.1 (Distributed AI Execution)**: Parallel task execution queues, multi-key load balancing, and remote worker failovers.
