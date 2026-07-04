@@ -24,6 +24,8 @@ class Position {
     );
   }
 
+  Map<String, dynamic> toJson() => {'line': line, 'column': column};
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -43,6 +45,16 @@ class SelectionRange {
   const SelectionRange({required this.start, required this.end});
 
   bool get isEmpty => start.line == end.line && start.column == end.column;
+
+  Map<String, dynamic> toJson() => {
+    'start': start.toJson(),
+    'end': end.toJson(),
+  };
+
+  factory SelectionRange.fromJson(Map<String, dynamic> json) => SelectionRange(
+    start: Position.fromJson(json['start'] as Map<String, dynamic>),
+    end: Position.fromJson(json['end'] as Map<String, dynamic>),
+  );
 
   @override
   bool operator ==(Object other) =>

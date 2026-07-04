@@ -153,3 +153,44 @@ class Diagnostic {
     );
   }
 }
+
+class TextEdit {
+  final Range range;
+  final String newText;
+
+  const TextEdit({required this.range, required this.newText});
+
+  Map<String, dynamic> toJson() => {
+        'range': range.toJson(),
+        'newText': newText,
+      };
+
+  factory TextEdit.fromJson(Map<String, dynamic> json) => TextEdit(
+        range: Range.fromJson(json['range'] as Map<String, dynamic>),
+        newText: json['newText'] as String? ?? '',
+      );
+}
+
+class WorkspaceEdit {
+  final Map<String, List<TextEdit>> changes;
+
+  const WorkspaceEdit({required this.changes});
+
+  Map<String, dynamic> toJson() => {
+        'changes': changes.map((path, edits) =>
+            MapEntry(path, edits.map((e) => e.toJson()).toList())),
+      };
+
+  factory WorkspaceEdit.fromJson(Map<String, dynamic> json) {
+    final changesMap = json['changes'] as Map<String, dynamic>? ?? {};
+    final parsedChanges = <String, List<TextEdit>>{};
+    changesMap.forEach((path, editsList) {
+      if (editsList is List) {
+        parsedChanges[path] = editsList
+            .map((e) => TextEdit.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    });
+    return WorkspaceEdit(changes: parsedChanges);
+  }
+}
