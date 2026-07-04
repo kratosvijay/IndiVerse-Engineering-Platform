@@ -23,6 +23,9 @@ jobs:
         with:
           sdk: '3.12.2'
 
+      - name: Install dependencies
+        run: dart pub get
+
       - name: Run Platform Validation Script
         run: |
           chmod +x scripts/validate.sh

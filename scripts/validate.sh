@@ -3,6 +3,7 @@
 python3 "$(dirname "$0")/validate_platform.py" || exit 1
 
 echo "=== Running Dart Quality Gates ==="
+dart pub get || { echo "Dart pub get failed!"; exit 1; }
 dart analyze lib test tool benchmark bin || { echo "Dart static analysis failed!"; exit 1; }
 dart test || { echo "Dart unit tests failed!"; exit 1; }
 dart format --output=none --set-exit-if-changed lib test tool benchmark bin || { echo "Dart formatting check failed!"; exit 1; }
