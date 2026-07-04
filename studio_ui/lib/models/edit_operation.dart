@@ -9,8 +9,14 @@ class OperationContext {
 }
 
 abstract class EditOperation {
-  Future<OperationResult<void>> apply(EditorDocument document, OperationContext context);
-  Future<OperationResult<void>> revert(EditorDocument document, OperationContext context);
+  Future<OperationResult<void>> apply(
+    EditorDocument document,
+    OperationContext context,
+  );
+  Future<OperationResult<void>> revert(
+    EditorDocument document,
+    OperationContext context,
+  );
 }
 
 class InsertTextOperation implements EditOperation {
@@ -20,18 +26,25 @@ class InsertTextOperation implements EditOperation {
   const InsertTextOperation({required this.index, required this.text});
 
   @override
-  Future<OperationResult<void>> apply(EditorDocument document, OperationContext context) async {
+  Future<OperationResult<void>> apply(
+    EditorDocument document,
+    OperationContext context,
+  ) async {
     if (document.readOnly) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "READ_ONLY",
-        message: "Cannot edit a read-only document.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "READ_ONLY",
+          message: "Cannot edit a read-only document.",
+        ),
+      );
     }
     if (index < 0 || index > document.content.length) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "OUT_OF_BOUNDS",
-        message: "Insert index is out of bounds.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "OUT_OF_BOUNDS",
+          message: "Insert index is out of bounds.",
+        ),
+      );
     }
     final content = document.content;
     final prefix = content.substring(0, index);
@@ -41,18 +54,25 @@ class InsertTextOperation implements EditOperation {
   }
 
   @override
-  Future<OperationResult<void>> revert(EditorDocument document, OperationContext context) async {
+  Future<OperationResult<void>> revert(
+    EditorDocument document,
+    OperationContext context,
+  ) async {
     if (document.readOnly) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "READ_ONLY",
-        message: "Cannot edit a read-only document.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "READ_ONLY",
+          message: "Cannot edit a read-only document.",
+        ),
+      );
     }
     if (index < 0 || index + text.length > document.content.length) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "OUT_OF_BOUNDS",
-        message: "Revert delete index is out of bounds.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "OUT_OF_BOUNDS",
+          message: "Revert delete index is out of bounds.",
+        ),
+      );
     }
     final content = document.content;
     final prefix = content.substring(0, index);
@@ -69,18 +89,25 @@ class DeleteTextOperation implements EditOperation {
   const DeleteTextOperation({required this.index, required this.text});
 
   @override
-  Future<OperationResult<void>> apply(EditorDocument document, OperationContext context) async {
+  Future<OperationResult<void>> apply(
+    EditorDocument document,
+    OperationContext context,
+  ) async {
     if (document.readOnly) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "READ_ONLY",
-        message: "Cannot edit a read-only document.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "READ_ONLY",
+          message: "Cannot edit a read-only document.",
+        ),
+      );
     }
     if (index < 0 || index + text.length > document.content.length) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "OUT_OF_BOUNDS",
-        message: "Delete index is out of bounds.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "OUT_OF_BOUNDS",
+          message: "Delete index is out of bounds.",
+        ),
+      );
     }
     final content = document.content;
     final prefix = content.substring(0, index);
@@ -90,18 +117,25 @@ class DeleteTextOperation implements EditOperation {
   }
 
   @override
-  Future<OperationResult<void>> revert(EditorDocument document, OperationContext context) async {
+  Future<OperationResult<void>> revert(
+    EditorDocument document,
+    OperationContext context,
+  ) async {
     if (document.readOnly) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "READ_ONLY",
-        message: "Cannot edit a read-only document.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "READ_ONLY",
+          message: "Cannot edit a read-only document.",
+        ),
+      );
     }
     if (index < 0 || index > document.content.length) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "OUT_OF_BOUNDS",
-        message: "Revert insert index is out of bounds.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "OUT_OF_BOUNDS",
+          message: "Revert insert index is out of bounds.",
+        ),
+      );
     }
     final content = document.content;
     final prefix = content.substring(0, index);
@@ -123,18 +157,25 @@ class ReplaceTextOperation implements EditOperation {
   });
 
   @override
-  Future<OperationResult<void>> apply(EditorDocument document, OperationContext context) async {
+  Future<OperationResult<void>> apply(
+    EditorDocument document,
+    OperationContext context,
+  ) async {
     if (document.readOnly) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "READ_ONLY",
-        message: "Cannot edit a read-only document.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "READ_ONLY",
+          message: "Cannot edit a read-only document.",
+        ),
+      );
     }
     if (index < 0 || index + oldText.length > document.content.length) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "OUT_OF_BOUNDS",
-        message: "Replace index is out of bounds.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "OUT_OF_BOUNDS",
+          message: "Replace index is out of bounds.",
+        ),
+      );
     }
     final content = document.content;
     final prefix = content.substring(0, index);
@@ -144,18 +185,25 @@ class ReplaceTextOperation implements EditOperation {
   }
 
   @override
-  Future<OperationResult<void>> revert(EditorDocument document, OperationContext context) async {
+  Future<OperationResult<void>> revert(
+    EditorDocument document,
+    OperationContext context,
+  ) async {
     if (document.readOnly) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "READ_ONLY",
-        message: "Cannot edit a read-only document.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "READ_ONLY",
+          message: "Cannot edit a read-only document.",
+        ),
+      );
     }
     if (index < 0 || index + newText.length > document.content.length) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "OUT_OF_BOUNDS",
-        message: "Revert replace index is out of bounds.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "OUT_OF_BOUNDS",
+          message: "Revert replace index is out of bounds.",
+        ),
+      );
     }
     final content = document.content;
     final prefix = content.substring(0, index);

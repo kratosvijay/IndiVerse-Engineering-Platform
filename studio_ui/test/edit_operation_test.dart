@@ -46,7 +46,11 @@ void main() {
     });
 
     test('ReplaceTextOperation apply and revert', () async {
-      const op = ReplaceTextOperation(index: 6, oldText: 'World', newText: 'IndiVerse');
+      const op = ReplaceTextOperation(
+        index: 6,
+        oldText: 'World',
+        newText: 'IndiVerse',
+      );
       final resApply = await op.apply(doc, ctx);
       expect(resApply.success, true);
       expect(doc.content, 'Hello IndiVerse');

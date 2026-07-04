@@ -15,6 +15,8 @@ import '../services/document_service.dart';
 import '../services/workbench_event_bus.dart';
 import '../services/workbench_api.dart';
 import '../services/workbench_commands.dart';
+import '../services/document_history_service.dart';
+import '../../models/edit_operation.dart';
 import '../../features/editor/controllers/editor_controller.dart';
 import '../../features/explorer/controllers/explorer_controller.dart';
 import 'package:flutter/services.dart';
@@ -44,6 +46,7 @@ class StudioState extends ChangeNotifier {
   final DocumentService documentService = DocumentService();
   final WorkbenchEventBus eventBus = WorkbenchEventBus();
   late final WorkbenchApi workbench;
+  late final DocumentHistoryService history;
   late final CommandRegistry commandRegistry;
   late final CommandDispatcher dispatcher;
   late final KeyboardShortcutManager shortcutManager;
@@ -91,9 +94,13 @@ class StudioState extends ChangeNotifier {
   StudioState() {
     navigation = NavigationService(this);
     workbench = WorkbenchApi(this);
+    history = DocumentHistoryService();
     commandRegistry = CommandRegistry();
     dispatcher = CommandDispatcher(commandRegistry);
-    shortcutManager = KeyboardShortcutManager(dispatcher: dispatcher, registry: commandRegistry);
+    shortcutManager = KeyboardShortcutManager(
+      dispatcher: dispatcher,
+      registry: commandRegistry,
+    );
 
     // Register execution logger middleware
     dispatcher.use((cmdId, context, next) async {
@@ -102,9 +109,13 @@ class StudioState extends ChangeNotifier {
       final res = await next();
       stopwatch.stop();
       if (res.success) {
-        debugPrint("[Command Dispatcher] Completed: $cmdId in ${stopwatch.elapsedMilliseconds}ms");
+        debugPrint(
+          "[Command Dispatcher] Completed: $cmdId in ${stopwatch.elapsedMilliseconds}ms",
+        );
       } else {
-        debugPrint("[Command Dispatcher] Failed: $cmdId (${res.error?.message})");
+        debugPrint(
+          "[Command Dispatcher] Failed: $cmdId (${res.error?.message})",
+        );
       }
       return res;
     });
@@ -169,11 +180,71 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
+        id: EditorCommands.undo,
+        title: "Undo",
+        category: "Editor",
+        description: "Undo last text edit operation",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyZ, meta: true),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await history.undo(
+            active.document,
+            OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+          );
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.redo,
+        title: "Redo",
+        category: "Editor",
+        description: "Redo last undone text edit operation",
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyZ,
+          meta: true,
+          shift: true,
+        ),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await history.redo(
+            active.document,
+            OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+          );
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
         id: WorkbenchCommands.showCommands,
         title: "Command Palette",
         category: "Command",
         description: "Show Command Palette",
-        shortcut: const SingleActivator(LogicalKeyboardKey.keyP, meta: true, shift: true),
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyP,
+          meta: true,
+          shift: true,
+        ),
         execute: (ctx) async {
           eventBus.publish("Command", "showCommands");
           return const OperationResult.ok(null);
@@ -193,6 +264,111 @@ class StudioState extends ChangeNotifier {
         },
       ),
     );
+    commandRegistry.register(
+      Command(
+        id: WorkbenchCommands.fileSave,
+        title: "Save File",
+        category: "File",
+        description: "Save active file content to disk",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyS, meta: true),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open to save.",
+              ),
+            );
+          }
+          final doc = active.document;
+          doc.state = DocumentState.saving;
+          notifyListeners();
+          final res = await saveFileContent(doc.path, doc.content);
+          if (!res.success) {
+            doc.state = DocumentState.dirty;
+            notifyListeners();
+          }
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: WorkbenchCommands.fileNew,
+        title: "New File",
+        category: "File",
+        description: "Create a new file in the workspace",
+        execute: (ctx) async {
+          final path = ctx.arguments["path"];
+          if (path is String) {
+            final content = ctx.arguments["content"] as String? ?? "";
+            final res = await createFile(path, content);
+            if (res.success) {
+              await openFile(path);
+            }
+            return res;
+          }
+          eventBus.publish("Command", "newFilePrompt");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: WorkbenchCommands.fileRename,
+        title: "Rename File",
+        category: "File",
+        description: "Rename a file in the workspace",
+        execute: (ctx) async {
+          final path = ctx.arguments["path"];
+          final newPath = ctx.arguments["newPath"];
+          if (path is String && newPath is String) {
+            return await renameFile(path, newPath);
+          }
+          final active = editor.activeTab;
+          if (active != null) {
+            eventBus.publish("Command", "renameFilePrompt");
+            return const OperationResult.ok(null);
+          }
+          return const OperationResult.fail(
+            WorkbenchError(
+              code: "INVALID_ARGUMENTS",
+              message: "Missing source or destination paths.",
+            ),
+          );
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: WorkbenchCommands.fileDelete,
+        title: "Delete File",
+        category: "File",
+        description: "Delete a file from the workspace",
+        execute: (ctx) async {
+          final path = ctx.arguments["path"];
+          if (path is String) {
+            return await deleteFile(path);
+          }
+          final active = editor.activeTab;
+          if (active != null) {
+            return await deleteFile(active.document.path);
+          }
+          return const OperationResult.fail(
+            WorkbenchError(
+              code: "INVALID_ARGUMENTS",
+              message: "No file specified to delete.",
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Public wrapper for notifyListeners, callable from WorkbenchApi facade.
+  void refreshUI() {
+    notifyListeners();
   }
 
   void setTab(String tab) {
@@ -318,8 +494,6 @@ class StudioState extends ChangeNotifier {
           content: fileData["content"] ?? '',
           language: fileData["language"] ?? 'txt',
           encoding: fileData["encoding"] ?? 'utf8',
-          lineCount: fileData["lineCount"] ?? 0,
-          size: fileData["size"] ?? 0,
           lastModified: fileData["lastModified"] ?? '',
           readOnly: fileData["readOnly"] ?? true,
         );
@@ -339,6 +513,162 @@ class StudioState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {}
+  }
+
+  Future<OperationResult<void>> saveFileContent(
+    String path,
+    String content,
+  ) async {
+    try {
+      final res = await http.put(
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
+        ),
+        body: jsonEncode({"content": content}),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        final doc = documentService.getDocument(DocumentId(path));
+        if (doc != null) {
+          doc.markSaved(DateTime.now());
+        }
+        return const OperationResult.ok(null);
+      } else {
+        final err =
+            envelope["errors"] is List &&
+                (envelope["errors"] as List).isNotEmpty
+            ? envelope["errors"][0]
+            : "Unknown error";
+        return OperationResult.fail(
+          WorkbenchError(code: "SAVE_FAILED", message: err),
+        );
+      }
+    } catch (e) {
+      return OperationResult.fail(
+        WorkbenchError(code: "SAVE_FAILED", message: e.toString()),
+      );
+    }
+  }
+
+  Future<OperationResult<void>> createFile(String path, String content) async {
+    try {
+      final res = await http.post(
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
+        ),
+        body: jsonEncode({"content": content}),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        await reloadWorkspace();
+        return const OperationResult.ok(null);
+      } else {
+        final err =
+            envelope["errors"] is List &&
+                (envelope["errors"] as List).isNotEmpty
+            ? envelope["errors"][0]
+            : "Unknown error";
+        return OperationResult.fail(
+          WorkbenchError(code: "CREATE_FAILED", message: err),
+        );
+      }
+    } catch (e) {
+      return OperationResult.fail(
+        WorkbenchError(code: "CREATE_FAILED", message: e.toString()),
+      );
+    }
+  }
+
+  Future<OperationResult<void>> renameFile(String path, String newPath) async {
+    try {
+      final res = await http.post(
+        Uri.parse('http://localhost:$_serverPort/api/v1/workspace/rename'),
+        body: jsonEncode({"path": path, "newPath": newPath}),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        // Safe transaction updates:
+        final doc = documentService.getDocument(DocumentId(path));
+        if (doc != null) {
+          documentService.removeDocument(DocumentId(path));
+          final newDoc = EditorDocument(
+            id: newPath,
+            path: newPath,
+            name: newPath.split('/').last,
+            content: doc.content,
+            language: doc.language,
+            encoding: doc.encoding,
+            lastModified: DateTime.now().toIso8601String(),
+            readOnly: doc.readOnly,
+          );
+          newDoc.state = doc.state;
+          newDoc.version = doc.version;
+          newDoc.cursor = doc.cursor;
+          newDoc.selection = doc.selection;
+          documentService.cacheDocument(DocumentId(newPath), newDoc);
+
+          // Update active tab in editor if matching
+          final existingTabIdx = editor.tabs.indexWhere(
+            (t) => t.document.path == path,
+          );
+          if (existingTabIdx != -1) {
+            editor.tabs[existingTabIdx] = EditorTab(document: newDoc);
+          }
+        }
+        await reloadWorkspace();
+        notifyListeners();
+        return const OperationResult.ok(null);
+      } else {
+        final err =
+            envelope["errors"] is List &&
+                (envelope["errors"] as List).isNotEmpty
+            ? envelope["errors"][0]
+            : "Unknown error";
+        return OperationResult.fail(
+          WorkbenchError(code: "RENAME_FAILED", message: err),
+        );
+      }
+    } catch (e) {
+      return OperationResult.fail(
+        WorkbenchError(code: "RENAME_FAILED", message: e.toString()),
+      );
+    }
+  }
+
+  Future<OperationResult<void>> deleteFile(String path) async {
+    try {
+      final res = await http.delete(
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
+        ),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        documentService.removeDocument(DocumentId(path));
+        final existingTabIdx = editor.tabs.indexWhere(
+          (t) => t.document.path == path,
+        );
+        if (existingTabIdx != -1) {
+          editor.close(existingTabIdx);
+        }
+        await reloadWorkspace();
+        notifyListeners();
+        return const OperationResult.ok(null);
+      } else {
+        final err =
+            envelope["errors"] is List &&
+                (envelope["errors"] as List).isNotEmpty
+            ? envelope["errors"][0]
+            : "Unknown error";
+        return OperationResult.fail(
+          WorkbenchError(code: "DELETE_FAILED", message: err),
+        );
+      }
+    } catch (e) {
+      return OperationResult.fail(
+        WorkbenchError(code: "DELETE_FAILED", message: e.toString()),
+      );
+    }
   }
 
   void selectInspector(String id, String type) async {
@@ -456,11 +786,15 @@ class StudioState extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> fetchOutline(DocumentId id) async {
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/code/outline?path=${id.value}'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/code/outline?path=${id.value}',
+        ),
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
-        final outline = List<Map<String, dynamic>>.from(envelope["data"]["outline"] ?? []);
+        final outline = List<Map<String, dynamic>>.from(
+          envelope["data"]["outline"] ?? [],
+        );
         documentService.cacheOutline(id, outline);
         return outline;
       }
@@ -471,7 +805,9 @@ class StudioState extends ChangeNotifier {
   Future<Map<String, dynamic>?> fetchDefinition(SymbolId id) async {
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/code/definition?name=${id.value}'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/code/definition?name=${id.value}',
+        ),
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
@@ -484,11 +820,15 @@ class StudioState extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> fetchReferences(SymbolId id) async {
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:$_serverPort/api/v1/code/references?name=${id.value}'),
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/code/references?name=${id.value}',
+        ),
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
-        return List<Map<String, dynamic>>.from(envelope["data"]["references"] ?? []);
+        return List<Map<String, dynamic>>.from(
+          envelope["data"]["references"] ?? [],
+        );
       }
     } catch (_) {}
     return [];

@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum DocumentState {
-  clean,
-  dirty,
-  saving,
-  conflict,
-  readOnly,
-}
+enum DocumentState { clean, dirty, saving, conflict, readOnly }
 
 class DocumentVersion {
   final int localRevision;
@@ -28,20 +22,14 @@ class Cursor {
   const Cursor({required this.position});
 }
 
-class Selection {
+class TextSelectionRange {
   final Position start;
   final Position end;
 
-  const Selection({required this.start, required this.end});
+  const TextSelectionRange({required this.start, required this.end});
 }
 
-enum AutoSavePolicy {
-  never,
-  afterDelay,
-  onFocusLost,
-  onWindowClose,
-  manual,
-}
+enum AutoSavePolicy { never, afterDelay, onFocusLost, onWindowClose, manual }
 
 class EditorDocument extends ChangeNotifier {
   final String id;
@@ -54,9 +42,12 @@ class EditorDocument extends ChangeNotifier {
   final bool readOnly;
 
   DocumentState state = DocumentState.clean;
-  DocumentVersion version = DocumentVersion(localRevision: 0, savedAt: DateTime.now());
+  DocumentVersion version = DocumentVersion(
+    localRevision: 0,
+    savedAt: DateTime.now(),
+  );
   Cursor cursor = const Cursor(position: Position(line: 1, column: 1));
-  Selection? selection;
+  TextSelectionRange? selection;
 
   // Session UI states
   int cursorLine = 1;

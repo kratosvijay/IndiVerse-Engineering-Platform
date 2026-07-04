@@ -7,7 +7,11 @@ class QuickOpenWidget extends StatefulWidget {
   final StudioState state;
   final VoidCallback onClose;
 
-  const QuickOpenWidget({super.key, required this.state, required this.onClose});
+  const QuickOpenWidget({
+    super.key,
+    required this.state,
+    required this.onClose,
+  });
 
   @override
   State<QuickOpenWidget> createState() => _QuickOpenWidgetState();
@@ -28,7 +32,9 @@ class _QuickOpenWidgetState extends State<QuickOpenWidget> {
   void _loadFiles() async {
     try {
       final res = await http.get(
-        Uri.parse('http://localhost:${widget.state.serverPort}/api/v1/workspace?path=&recursive=true'),
+        Uri.parse(
+          'http://localhost:${widget.state.serverPort}/api/v1/workspace?path=&recursive=true',
+        ),
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
@@ -58,7 +64,11 @@ class _QuickOpenWidgetState extends State<QuickOpenWidget> {
       return;
     }
 
-    final querySegments = query.toLowerCase().split(' ').where((s) => s.isNotEmpty).toList();
+    final querySegments = query
+        .toLowerCase()
+        .split(' ')
+        .where((s) => s.isNotEmpty)
+        .toList();
 
     setState(() {
       _filteredFiles = _allFiles.where((filePath) {
@@ -89,7 +99,9 @@ class _QuickOpenWidgetState extends State<QuickOpenWidget> {
               decoration: const InputDecoration(
                 hintText: 'Search files by name (e.g. "pla sdk")...',
                 hintStyle: TextStyle(color: Colors.white24),
-                border: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2C284D))),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF2C284D)),
+                ),
                 isDense: true,
               ),
               onChanged: _filterFiles,
@@ -99,24 +111,41 @@ class _QuickOpenWidgetState extends State<QuickOpenWidget> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredFiles.isEmpty
-                      ? const Center(child: Text('No matching files found.', style: TextStyle(color: Colors.white24, fontSize: 12)))
-                      : ListView.builder(
-                          itemCount: _filteredFiles.length,
-                          itemBuilder: (context, index) {
-                            final path = _filteredFiles[index];
-                            final name = path.split('/').last;
+                  ? const Center(
+                      child: Text(
+                        'No matching files found.',
+                        style: TextStyle(color: Colors.white24, fontSize: 12),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filteredFiles.length,
+                      itemBuilder: (context, index) {
+                        final path = _filteredFiles[index];
+                        final name = path.split('/').last;
 
-                            return ListTile(
-                              dense: true,
-                              title: Text(name, style: const TextStyle(fontSize: 13, color: Colors.white70)),
-                              subtitle: Text(path, style: const TextStyle(fontSize: 11, color: Colors.white24)),
-                              onTap: () {
-                                widget.state.navigation.openFile(path);
-                                widget.onClose();
-                              },
-                            );
+                        return ListTile(
+                          dense: true,
+                          title: Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          subtitle: Text(
+                            path,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white24,
+                            ),
+                          ),
+                          onTap: () {
+                            widget.state.navigation.openFile(path);
+                            widget.onClose();
                           },
-                        ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

@@ -43,11 +43,12 @@ class CommandRegistry {
   List<Command> all() => _commands.values.toList();
 }
 
-typedef CommandMiddleware = Future<OperationResult<void>> Function(
-  String commandId,
-  CommandContext context,
-  Future<OperationResult<void>> Function() next,
-);
+typedef CommandMiddleware =
+    Future<OperationResult<void>> Function(
+      String commandId,
+      CommandContext context,
+      Future<OperationResult<void>> Function() next,
+    );
 
 class CommandDispatcher {
   final CommandRegistry registry;
@@ -59,21 +60,28 @@ class CommandDispatcher {
     _middlewares.add(middleware);
   }
 
-  Future<OperationResult<void>> execute(String id, CommandContext context) async {
+  Future<OperationResult<void>> execute(
+    String id,
+    CommandContext context,
+  ) async {
     final cmd = registry.get(id);
     if (cmd == null) {
-      return OperationResult.fail(WorkbenchError(
-        code: "COMMAND_NOT_FOUND",
-        message: "Command '$id' not registered.",
-      ));
+      return OperationResult.fail(
+        WorkbenchError(
+          code: "COMMAND_NOT_FOUND",
+          message: "Command '$id' not registered.",
+        ),
+      );
     }
 
     final isEnabled = cmd.isEnabled?.call(context) ?? true;
     if (!isEnabled) {
-      return OperationResult.fail(WorkbenchError(
-        code: "COMMAND_DISABLED",
-        message: "Command '$id' is disabled.",
-      ));
+      return OperationResult.fail(
+        WorkbenchError(
+          code: "COMMAND_DISABLED",
+          message: "Command '$id' is disabled.",
+        ),
+      );
     }
 
     int index = 0;
@@ -85,10 +93,9 @@ class CommandDispatcher {
       try {
         return await cmd.execute(context);
       } catch (e) {
-        return OperationResult.fail(WorkbenchError(
-          code: "EXECUTION_ERROR",
-          message: e.toString(),
-        ));
+        return OperationResult.fail(
+          WorkbenchError(code: "EXECUTION_ERROR", message: e.toString()),
+        );
       }
     }
 

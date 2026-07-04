@@ -250,7 +250,17 @@ class StudioServer {
       } else if (path == '/api/v1/workspace') {
         await workspaceController.handleGetWorkspace(request, requestId);
       } else if (path == '/api/v1/workspace/file') {
-        await workspaceController.handleGetFileContent(request, requestId);
+        if (request.method == 'GET') {
+          await workspaceController.handleGetFileContent(request, requestId);
+        } else if (request.method == 'PUT') {
+          await workspaceController.handleSaveFile(request, requestId);
+        } else if (request.method == 'POST') {
+          await workspaceController.handleCreateFile(request, requestId);
+        } else if (request.method == 'DELETE') {
+          await workspaceController.handleDeleteFile(request, requestId);
+        }
+      } else if (path == '/api/v1/workspace/rename') {
+        await workspaceController.handleRenameFile(request, requestId);
       } else if (path == '/api/v1/workspace/stat') {
         await workspaceController.handleStat(request, requestId);
       } else if (path == '/api/v1/search') {

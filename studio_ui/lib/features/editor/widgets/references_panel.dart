@@ -34,10 +34,18 @@ class ReferencesPanel extends StatelessWidget {
               children: [
                 Text(
                   'References for "$symbolName" (${references.length} found)',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFA78BFA)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Color(0xFFA78BFA),
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 14, color: Colors.white54),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 14,
+                    color: Colors.white54,
+                  ),
                   onPressed: onClose,
                 ),
               ],
@@ -47,7 +55,10 @@ class ReferencesPanel extends StatelessWidget {
           Expanded(
             child: references.isEmpty
                 ? const Center(
-                    child: Text('No references found.', style: TextStyle(color: Colors.white24, fontSize: 12)),
+                    child: Text(
+                      'No references found.',
+                      style: TextStyle(color: Colors.white24, fontSize: 12),
+                    ),
                   )
                 : ListView.builder(
                     itemCount: references.length,
@@ -61,15 +72,26 @@ class ReferencesPanel extends StatelessWidget {
                         dense: true,
                         title: Text(
                           '$path : Line $line',
-                          style: const TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         subtitle: Text(
                           snippet,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.white30),
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            color: Colors.white30,
+                          ),
                         ),
                         onTap: () {
-                          state.workbench.navigation.jumpToLine(DocumentId(path), line);
+                          state.workbench.navigation.jumpToLine(
+                            DocumentId(path),
+                            line,
+                          );
                         },
                       );
                     },

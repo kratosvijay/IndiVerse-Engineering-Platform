@@ -44,12 +44,18 @@ class NavigationApi {
 
   void revealInExplorer(DocumentId id) {
     _api.state.revealInExplorer(id.value);
-    _api.state.eventBus.publish("Navigation", "Revealed in explorer: ${id.value}");
+    _api.state.eventBus.publish(
+      "Navigation",
+      "Revealed in explorer: ${id.value}",
+    );
   }
 
   void jumpToLine(DocumentId id, int line) {
     _api.state.openFile(id.value, line: line);
-    _api.state.eventBus.publish("Navigation", "Jumped to line $line in document ${id.value}");
+    _api.state.eventBus.publish(
+      "Navigation",
+      "Jumped to line $line in document ${id.value}",
+    );
   }
 
   void selectSymbol(SymbolId id) {
@@ -70,20 +76,23 @@ class EditorApi {
         _api.state.eventBus.publish("Editor", "Opened document: ${id.value}");
         return OperationResult.ok(doc);
       }
-      return const OperationResult.fail(WorkbenchError(
-        code: "FILE_NOT_FOUND",
-        message: "Failed to open document: file not found.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "FILE_NOT_FOUND",
+          message: "Failed to open document: file not found.",
+        ),
+      );
     } catch (e) {
-      return OperationResult.fail(WorkbenchError(
-        code: "LOAD_FAILED",
-        message: e.toString(),
-      ));
+      return OperationResult.fail(
+        WorkbenchError(code: "LOAD_FAILED", message: e.toString()),
+      );
     }
   }
 
   void closeDocument(DocumentId id) {
-    final idx = _api.state.editor.tabs.indexWhere((t) => t.document.path == id.value);
+    final idx = _api.state.editor.tabs.indexWhere(
+      (t) => t.document.path == id.value,
+    );
     if (idx != -1) {
       _api.state.editor.close(idx);
       _api.state.documentService.removeDocument(id);
@@ -92,11 +101,74 @@ class EditorApi {
   }
 
   void activateDocument(DocumentId id) {
-    final idx = _api.state.editor.tabs.indexWhere((t) => t.document.path == id.value);
+    final idx = _api.state.editor.tabs.indexWhere(
+      (t) => t.document.path == id.value,
+    );
     if (idx != -1) {
       _api.state.editor.activate(idx);
-      _api.state.eventBus.publish("Editor", "Activated tab for document: ${id.value}");
+      _api.state.eventBus.publish(
+        "Editor",
+        "Activated tab for document: ${id.value}",
+      );
     }
+  }
+
+  Future<OperationResult<void>> saveDocument(DocumentId id) async {
+    final doc = _api.state.documentService.getDocument(id);
+    if (doc == null) {
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "DOC_NOT_FOUND",
+          message: "Document not found in cache.",
+        ),
+      );
+    }
+    doc.state = DocumentState.saving;
+    _api.state.refreshUI();
+    final res = await _api.state.saveFileContent(id.value, doc.content);
+    if (!res.success) {
+      doc.state = DocumentState.dirty;
+      _api.state.refreshUI();
+    }
+    _api.state.eventBus.publish("Editor", "Saved document: ${id.value}");
+    return res;
+  }
+
+  Future<OperationResult<void>> createDocument(
+    String path, {
+    String content = '',
+  }) async {
+    final res = await _api.state.createFile(path, content);
+    if (res.success) {
+      await _api.state.openFile(path);
+      _api.state.eventBus.publish(
+        "Editor",
+        "Created and opened document: $path",
+      );
+    }
+    return res;
+  }
+
+  Future<OperationResult<void>> renameDocument(
+    DocumentId id,
+    String newPath,
+  ) async {
+    final res = await _api.state.renameFile(id.value, newPath);
+    if (res.success) {
+      _api.state.eventBus.publish(
+        "Editor",
+        "Renamed document: ${id.value} → $newPath",
+      );
+    }
+    return res;
+  }
+
+  Future<OperationResult<void>> deleteDocument(DocumentId id) async {
+    final res = await _api.state.deleteFile(id.value);
+    if (res.success) {
+      _api.state.eventBus.publish("Editor", "Deleted document: ${id.value}");
+    }
+    return res;
   }
 }
 
@@ -104,51 +176,62 @@ class SymbolApi {
   final WorkbenchApi _api;
   SymbolApi(this._api);
 
-  Future<OperationResult<List<Map<String, dynamic>>>> openOutline(DocumentId id) async {
+  Future<OperationResult<List<Map<String, dynamic>>>> openOutline(
+    DocumentId id,
+  ) async {
     try {
       final res = await _api.state.fetchOutline(id);
       return OperationResult.ok(res);
     } catch (e) {
-      return OperationResult.fail(WorkbenchError(
-        code: "OUTLINE_FAILED",
-        message: e.toString(),
-      ));
+      return OperationResult.fail(
+        WorkbenchError(code: "OUTLINE_FAILED", message: e.toString()),
+      );
     }
   }
 
-  Future<OperationResult<Map<String, dynamic>>> resolveDefinition(SymbolId id, CancellationToken token) async {
+  Future<OperationResult<Map<String, dynamic>>> resolveDefinition(
+    SymbolId id,
+    CancellationToken token,
+  ) async {
     try {
       final res = await _api.state.fetchDefinition(id);
       if (token.isCancelled) {
-        return const OperationResult.fail(WorkbenchError(code: "CANCELLED", message: "Operation cancelled"));
+        return const OperationResult.fail(
+          WorkbenchError(code: "CANCELLED", message: "Operation cancelled"),
+        );
       }
       if (res != null) {
         return OperationResult.ok(res);
       }
-      return const OperationResult.fail(WorkbenchError(
-        code: "SYMBOL_NOT_FOUND",
-        message: "Symbol declaration not found.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "SYMBOL_NOT_FOUND",
+          message: "Symbol declaration not found.",
+        ),
+      );
     } catch (e) {
-      return OperationResult.fail(WorkbenchError(
-        code: "RESOLVE_FAILED",
-        message: e.toString(),
-      ));
+      return OperationResult.fail(
+        WorkbenchError(code: "RESOLVE_FAILED", message: e.toString()),
+      );
     }
   }
 
-  Future<OperationResult<List<Map<String, dynamic>>>> findReferences(SymbolId id, CancellationToken token) async {
+  Future<OperationResult<List<Map<String, dynamic>>>> findReferences(
+    SymbolId id,
+    CancellationToken token,
+  ) async {
     try {
       final res = await _api.state.fetchReferences(id);
       if (token.isCancelled) {
-        return const OperationResult.fail(WorkbenchError(code: "CANCELLED", message: "Operation cancelled"));
+        return const OperationResult.fail(
+          WorkbenchError(code: "CANCELLED", message: "Operation cancelled"),
+        );
       }
       return OperationResult.ok(res);
     } catch (e) {
-      return OperationResult.fail(WorkbenchError(
-        code: "REFERENCES_FAILED",
-        message: e.toString(),
-      ));
+      return OperationResult.fail(
+        WorkbenchError(code: "REFERENCES_FAILED", message: e.toString()),
+      );
     }
   }
 }
@@ -177,10 +260,9 @@ class WorkspaceApi {
       final res = await _api.state.fetchIndexStatus();
       return OperationResult.ok(res);
     } catch (e) {
-      return OperationResult.fail(WorkbenchError(
-        code: "INDEX_STATUS_FAILED",
-        message: e.toString(),
-      ));
+      return OperationResult.fail(
+        WorkbenchError(code: "INDEX_STATUS_FAILED", message: e.toString()),
+      );
     }
   }
 }

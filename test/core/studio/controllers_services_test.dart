@@ -107,5 +107,55 @@ void main() {
           body: jsonEncode({"workflowId": workflowId}));
       expect(res3.statusCode, equals(200));
     });
+
+    test('Verify server CRUD workspace file REST APIs', () async {
+      // 1. Create a test file
+      final createUri = Uri.parse(
+          'http://localhost:$port/api/v1/workspace/file?path=test_temp.txt');
+      final res1 = await http.post(
+        createUri,
+        body: jsonEncode({"content": "hello integration"}),
+      );
+      expect(res1.statusCode, equals(200));
+      expect(jsonDecode(res1.body)["success"], isTrue);
+
+      // 2. Read back contents to verify
+      final readUri = Uri.parse(
+          'http://localhost:$port/api/v1/workspace/file?path=test_temp.txt');
+      final res2 = await http.get(readUri);
+      expect(res2.statusCode, equals(200));
+      expect(jsonDecode(res2.body)["data"]["content"],
+          equals("hello integration"));
+
+      // 3. Save updates to it
+      final saveUri = Uri.parse(
+          'http://localhost:$port/api/v1/workspace/file?path=test_temp.txt');
+      final res3 = await http.put(
+        saveUri,
+        body: jsonEncode({"content": "hello integration saved"}),
+      );
+      expect(res3.statusCode, equals(200));
+      expect(jsonDecode(res3.body)["success"], isTrue);
+
+      // 4. Rename
+      final renameUri =
+          Uri.parse('http://localhost:$port/api/v1/workspace/rename');
+      final res4 = await http.post(
+        renameUri,
+        body: jsonEncode({
+          "path": "test_temp.txt",
+          "newPath": "test_temp_renamed.txt",
+        }),
+      );
+      expect(res4.statusCode, equals(200));
+      expect(jsonDecode(res4.body)["success"], isTrue);
+
+      // 5. Delete
+      final deleteUri = Uri.parse(
+          'http://localhost:$port/api/v1/workspace/file?path=test_temp_renamed.txt');
+      final res5 = await http.delete(deleteUri);
+      expect(res5.statusCode, equals(200));
+      expect(jsonDecode(res5.body)["success"], isTrue);
+    });
   });
 }

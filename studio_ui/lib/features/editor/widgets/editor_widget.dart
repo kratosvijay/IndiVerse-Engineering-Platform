@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/state/studio_state.dart';
 import '../../../core/services/workbench_providers.dart';
+import '../../../core/services/workbench_commands.dart';
 import '../../../models/ids.dart';
+import '../../../models/editor_document.dart';
+import '../../../core/services/keyboard_shortcut_manager.dart';
 import '../highlighting/abstract_highlighter.dart';
 import '../highlighting/dart_highlighter.dart';
 import '../highlighting/json_highlighter.dart';
@@ -52,6 +55,69 @@ class _EditorWidgetState extends State<EditorWidget> {
     });
   }
 
+  void _handleCloseTab(int index) async {
+    final tab = widget.state.editor.tabs[index];
+    final doc = tab.document;
+
+    // Block closing while saving
+    if (doc.state == DocumentState.saving) return;
+
+    // If dirty, prompt user
+    if (doc.state == DocumentState.dirty) {
+      final result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF131024),
+          title: const Text(
+            'Unsaved Changes',
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          content: Text(
+            'Do you want to save changes to ${doc.name} before closing?',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('discard'),
+              child: const Text(
+                "Don't Save",
+                style: TextStyle(color: Colors.redAccent, fontSize: 12),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop('save'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (result == 'cancel' || result == null) return;
+      if (result == 'save') {
+        await widget.state.dispatcher.execute(
+          WorkbenchCommands.fileSave,
+          CommandContext(arguments: {}),
+        );
+      }
+    }
+    setState(() {
+      widget.state.editor.close(index);
+    });
+  }
+
   void _showGotoLineDialog() {
     final activeTab = widget.state.editor.activeTab;
     if (activeTab == null) return;
@@ -69,7 +135,10 @@ class _EditorWidgetState extends State<EditorWidget> {
           builder: (context, setState) {
             return AlertDialog(
               backgroundColor: const Color(0xFF131024),
-              title: const Text('Go to Line', style: TextStyle(color: Colors.white, fontSize: 14)),
+              title: const Text(
+                'Go to Line',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +169,10 @@ class _EditorWidgetState extends State<EditorWidget> {
                         errorText = 'Maximum line: $maxLine';
                       });
                     } else {
-                      widget.state.workbench.navigation.jumpToLine(DocumentId(doc.path), line);
+                      widget.state.workbench.navigation.jumpToLine(
+                        DocumentId(doc.path),
+                        line,
+                      );
                       Navigator.of(context).pop();
                     }
                   },
@@ -157,7 +229,9 @@ class _EditorWidgetState extends State<EditorWidget> {
   void _onFindPrev() {
     if (_matchLineIndices.isEmpty) return;
     setState(() {
-      _currentMatchIdx = (_currentMatchIdx - 1 + _matchLineIndices.length) % _matchLineIndices.length;
+      _currentMatchIdx =
+          (_currentMatchIdx - 1 + _matchLineIndices.length) %
+          _matchLineIndices.length;
     });
     _scrollToLine(_matchLineIndices[_currentMatchIdx]);
   }
@@ -204,7 +278,10 @@ class _EditorWidgetState extends State<EditorWidget> {
     if (name.isEmpty) return;
 
     final token = CancellationToken();
-    final res = await widget.state.workbench.symbol.resolveDefinition(SymbolId(name), token);
+    final res = await widget.state.workbench.symbol.resolveDefinition(
+      SymbolId(name),
+      token,
+    );
     if (res.success && res.data != null) {
       final path = res.data!["path"] ?? '';
       final line = res.data!["line"] ?? 1;
@@ -222,7 +299,10 @@ class _EditorWidgetState extends State<EditorWidget> {
     if (name.isEmpty) return;
 
     final token = CancellationToken();
-    final res = await widget.state.workbench.symbol.findReferences(SymbolId(name), token);
+    final res = await widget.state.workbench.symbol.findReferences(
+      SymbolId(name),
+      token,
+    );
     if (res.success && res.data != null) {
       setState(() {
         _symbolQuery = name;
@@ -281,34 +361,66 @@ class _EditorWidgetState extends State<EditorWidget> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: isCurrent ? const Color(0xFF0F0C1B) : const Color(0xFF131024),
+                      color: isCurrent
+                          ? const Color(0xFF0F0C1B)
+                          : const Color(0xFF131024),
                       border: Border(
                         right: const BorderSide(color: Color(0xFF2C284D)),
                         top: BorderSide(
-                          color: isCurrent ? const Color(0xFF8B5CF6) : Colors.transparent,
+                          color: isCurrent
+                              ? const Color(0xFF8B5CF6)
+                              : Colors.transparent,
                           width: 2,
                         ),
                       ),
                     ),
                     child: Row(
                       children: [
+                        // Dirty indicator dot
+                        if (tab.document.state == DocumentState.dirty ||
+                            tab.document.state == DocumentState.saving)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: tab.document.state == DocumentState.saving
+                                  ? const Color(0xFFFBBF24) // amber for saving
+                                  : Colors.white, // white dot for dirty
+                            ),
+                          ),
                         Text(
-                          tab.document.name,
+                          tab.document.state == DocumentState.dirty
+                              ? '${tab.document.name} •'
+                              : tab.document.name,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isCurrent
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             color: isCurrent ? Colors.white : Colors.white70,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              widget.state.editor.close(index);
-                            });
-                          },
-                          child: const Icon(Icons.close, size: 12, color: Colors.white30),
-                        ),
+                        if (tab.document.state == DocumentState.saving)
+                          const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: Color(0xFFFBBF24),
+                            ),
+                          )
+                        else
+                          GestureDetector(
+                            onTap: () => _handleCloseTab(index),
+                            child: const Icon(
+                              Icons.close,
+                              size: 12,
+                              color: Colors.white30,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -325,9 +437,16 @@ class _EditorWidgetState extends State<EditorWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Icon(Icons.psychology, size: 16, color: Color(0xFFA78BFA)),
+                const Icon(
+                  Icons.psychology,
+                  size: 16,
+                  color: Color(0xFFA78BFA),
+                ),
                 const SizedBox(width: 8),
-                const Text('Inspect Symbol: ', style: TextStyle(fontSize: 11, color: Colors.white30)),
+                const Text(
+                  'Inspect Symbol: ',
+                  style: TextStyle(fontSize: 11, color: Colors.white30),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -343,12 +462,18 @@ class _EditorWidgetState extends State<EditorWidget> {
                 TextButton.icon(
                   onPressed: _gotoDefinition,
                   icon: const Icon(Icons.gps_fixed, size: 12),
-                  label: const Text('Go to Definition (F12)', style: TextStyle(fontSize: 11)),
+                  label: const Text(
+                    'Go to Definition (F12)',
+                    style: TextStyle(fontSize: 11),
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: _findReferences,
                   icon: const Icon(Icons.travel_explore, size: 12),
-                  label: const Text('Find References', style: TextStyle(fontSize: 11)),
+                  label: const Text(
+                    'Find References',
+                    style: TextStyle(fontSize: 11),
+                  ),
                 ),
               ],
             ),
@@ -371,14 +496,18 @@ class _EditorWidgetState extends State<EditorWidget> {
                           final isHighlight = lineNum == doc.cursorLine;
 
                           // Search highlight checker
-                          final isSearchMatch = _findQuery.isNotEmpty && lineText.toLowerCase().contains(_findQuery.toLowerCase());
+                          final isSearchMatch =
+                              _findQuery.isNotEmpty &&
+                              lineText.toLowerCase().contains(
+                                _findQuery.toLowerCase(),
+                              );
 
                           return Container(
                             color: isHighlight
                                 ? const Color(0xFF2C1C4D)
                                 : isSearchMatch
-                                    ? const Color(0xFF3B2A1A)
-                                    : Colors.transparent,
+                                ? const Color(0xFF3B2A1A)
+                                : Colors.transparent,
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -391,17 +520,25 @@ class _EditorWidgetState extends State<EditorWidget> {
                                     style: TextStyle(
                                       fontFamily: 'monospace',
                                       fontSize: 12,
-                                      color: isHighlight ? const Color(0xFFA78BFA) : Colors.white24,
+                                      color: isHighlight
+                                          ? const Color(0xFFA78BFA)
+                                          : Colors.white24,
                                     ),
                                   ),
                                 ),
-                                const VerticalDivider(width: 1, color: Color(0xFF2C284D)),
+                                const VerticalDivider(
+                                  width: 1,
+                                  color: Color(0xFF2C284D),
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
                                     child: RichText(
-                                      text: highlighter.highlight(context, lineText),
+                                      text: highlighter.highlight(
+                                        context,
+                                        lineText,
+                                      ),
                                     ),
                                   ),
                                 ),

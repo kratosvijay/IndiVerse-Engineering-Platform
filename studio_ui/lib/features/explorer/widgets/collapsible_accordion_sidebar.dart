@@ -9,10 +9,12 @@ class CollapsibleAccordionSidebar extends StatefulWidget {
   const CollapsibleAccordionSidebar({super.key, required this.state});
 
   @override
-  State<CollapsibleAccordionSidebar> createState() => _CollapsibleAccordionSidebarState();
+  State<CollapsibleAccordionSidebar> createState() =>
+      _CollapsibleAccordionSidebarState();
 }
 
-class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSidebar> {
+class _CollapsibleAccordionSidebarState
+    extends State<CollapsibleAccordionSidebar> {
   bool _filesExpanded = true;
   bool _outlineExpanded = true;
   bool _workspaceExpanded = true;
@@ -48,9 +50,13 @@ class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSideba
                     child: OutlineWidget(state: widget.state),
                   ),
                 const Divider(height: 1, color: Color(0xFF2C284D)),
-                _buildAccordionHeader('WORKSPACE INDEX', _workspaceExpanded, () {
-                  setState(() => _workspaceExpanded = !_workspaceExpanded);
-                }),
+                _buildAccordionHeader(
+                  'WORKSPACE INDEX',
+                  _workspaceExpanded,
+                  () {
+                    setState(() => _workspaceExpanded = !_workspaceExpanded);
+                  },
+                ),
                 if (_workspaceExpanded)
                   Padding(
                     padding: const EdgeInsets.all(16),
@@ -64,7 +70,11 @@ class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSideba
     );
   }
 
-  Widget _buildAccordionHeader(String title, bool expanded, VoidCallback onTap) {
+  Widget _buildAccordionHeader(
+    String title,
+    bool expanded,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -76,7 +86,12 @@ class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSideba
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1.1),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.white54,
+                letterSpacing: 1.1,
+              ),
             ),
             Icon(
               expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
@@ -94,11 +109,21 @@ class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSideba
       future: widget.state.workbench.workspace.getIndexStatus(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Center(child: Text('Loading stats...', style: TextStyle(fontSize: 11, color: Colors.white24)));
+          return const Center(
+            child: Text(
+              'Loading stats...',
+              style: TextStyle(fontSize: 11, color: Colors.white24),
+            ),
+          );
         }
         final res = snapshot.data!;
         if (!res.success || res.data == null) {
-          return const Center(child: Text('No stats available.', style: TextStyle(fontSize: 11, color: Colors.white24)));
+          return const Center(
+            child: Text(
+              'No stats available.',
+              style: TextStyle(fontSize: 11, color: Colors.white24),
+            ),
+          );
         }
         final stats = res.data!;
 
@@ -110,7 +135,10 @@ class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSideba
             _buildStatRow('Classes', '${stats["classes"] ?? 0}'),
             _buildStatRow('Methods / Functions', '${stats["functions"] ?? 0}'),
             _buildStatRow('Enums', '${stats["enums"] ?? 0}'),
-            _buildStatRow('Indexer State', '${stats["indexerState"] ?? "Ready"}'),
+            _buildStatRow(
+              'Indexer State',
+              '${stats["indexerState"] ?? "Ready"}',
+            ),
           ],
         );
       },
@@ -123,8 +151,18 @@ class _CollapsibleAccordionSidebarState extends State<CollapsibleAccordionSideba
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.white30)),
-          Text(value, style: const TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.white30),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.white70,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

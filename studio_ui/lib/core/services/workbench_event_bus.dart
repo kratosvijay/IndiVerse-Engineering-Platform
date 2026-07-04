@@ -4,7 +4,8 @@ class WorkbenchEvent {
   final String id;
   final int sequence;
   final DateTime timestamp;
-  final String category; // Workspace, Editor, Search, Agent, Notification, Git, Plugin
+  final String
+  category; // Workspace, Editor, Search, Agent, Notification, Git, Plugin
   final dynamic payload;
 
   const WorkbenchEvent({
@@ -17,12 +18,15 @@ class WorkbenchEvent {
 }
 
 class WorkbenchEventBus {
-  final StreamController<WorkbenchEvent> _controller = StreamController<WorkbenchEvent>.broadcast();
+  final StreamController<WorkbenchEvent> _controller =
+      StreamController<WorkbenchEvent>.broadcast();
 
   Stream<WorkbenchEvent> get stream => _controller.stream;
 
   Stream<WorkbenchEvent> on(String category) {
-    return _controller.stream.where((event) => event.category.toLowerCase() == category.toLowerCase());
+    return _controller.stream.where(
+      (event) => event.category.toLowerCase() == category.toLowerCase(),
+    );
   }
 
   void publish(String category, dynamic payload) {

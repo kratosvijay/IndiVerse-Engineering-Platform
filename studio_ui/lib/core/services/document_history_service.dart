@@ -21,13 +21,18 @@ class DocumentHistoryService {
     history.redoStack.clear(); // Clear redo stack on new operation
   }
 
-  Future<OperationResult<void>> undo(EditorDocument doc, OperationContext context) async {
+  Future<OperationResult<void>> undo(
+    EditorDocument doc,
+    OperationContext context,
+  ) async {
     final history = _getOrCreateHistory(doc.id);
     if (history.undoStack.isEmpty) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "NO_UNDO_HISTORY",
-        message: "No operations to undo.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "NO_UNDO_HISTORY",
+          message: "No operations to undo.",
+        ),
+      );
     }
     final op = history.undoStack.removeLast();
     final res = await op.revert(doc, context);
@@ -39,13 +44,18 @@ class DocumentHistoryService {
     return res;
   }
 
-  Future<OperationResult<void>> redo(EditorDocument doc, OperationContext context) async {
+  Future<OperationResult<void>> redo(
+    EditorDocument doc,
+    OperationContext context,
+  ) async {
     final history = _getOrCreateHistory(doc.id);
     if (history.redoStack.isEmpty) {
-      return const OperationResult.fail(WorkbenchError(
-        code: "NO_REDO_HISTORY",
-        message: "No operations to redo.",
-      ));
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: "NO_REDO_HISTORY",
+          message: "No operations to redo.",
+        ),
+      );
     }
     final op = history.redoStack.removeLast();
     final res = await op.apply(doc, context);

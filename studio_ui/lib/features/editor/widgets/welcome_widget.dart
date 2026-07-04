@@ -65,14 +65,27 @@ class _WelcomeWidgetState extends State<WelcomeWidget> {
                       children: [
                         const Text(
                           'Recent Files',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white54),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white54,
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        const Text('• lib/main.dart', style: TextStyle(fontSize: 12, color: Colors.white30)),
+                        const Text(
+                          '• lib/main.dart',
+                          style: TextStyle(fontSize: 12, color: Colors.white30),
+                        ),
                         const SizedBox(height: 6),
-                        const Text('• lib/core/studio/server/server.dart', style: TextStyle(fontSize: 12, color: Colors.white30)),
+                        const Text(
+                          '• lib/core/studio/server/server.dart',
+                          style: TextStyle(fontSize: 12, color: Colors.white30),
+                        ),
                         const SizedBox(height: 6),
-                        const Text('• docs/adr/0015-workbench-command-architecture.md', style: TextStyle(fontSize: 12, color: Colors.white30)),
+                        const Text(
+                          '• docs/adr/0015-workbench-command-architecture.md',
+                          style: TextStyle(fontSize: 12, color: Colors.white30),
+                        ),
                       ],
                     ),
                   ),
@@ -83,7 +96,11 @@ class _WelcomeWidgetState extends State<WelcomeWidget> {
                       children: [
                         const Text(
                           'Quick Actions',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white54),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white54,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         _buildQuickAction('Open Folder', 'Cmd+O'),
@@ -108,16 +125,29 @@ class _WelcomeWidgetState extends State<WelcomeWidget> {
                   children: [
                     const Text(
                       'WORKSPACE STATISTICS',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFA78BFA)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFA78BFA),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildStat('Files Indexed', '${_stats["indexed"] ?? 0}'),
-                        _buildStat('Total Symbols', '${_stats["symbols"] ?? 0}'),
+                        _buildStat(
+                          'Files Indexed',
+                          '${_stats["indexed"] ?? 0}',
+                        ),
+                        _buildStat(
+                          'Total Symbols',
+                          '${_stats["symbols"] ?? 0}',
+                        ),
                         _buildStat('Git Branch', 'main'),
-                        _buildStat('Indexer State', '${_stats["indexerState"] ?? "Ready"}'),
+                        _buildStat(
+                          'Indexer State',
+                          '${_stats["indexerState"] ?? "Ready"}',
+                        ),
                       ],
                     ),
                   ],
@@ -136,8 +166,18 @@ class _WelcomeWidgetState extends State<WelcomeWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFFA78BFA))),
-          Text(shortcut, style: const TextStyle(fontSize: 11, color: Colors.white24, fontFamily: 'monospace')),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 12, color: Color(0xFFA78BFA)),
+          ),
+          Text(
+            shortcut,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.white24,
+              fontFamily: 'monospace',
+            ),
+          ),
         ],
       ),
     );
@@ -147,9 +187,19 @@ class _WelcomeWidgetState extends State<WelcomeWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.white30)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Colors.white30),
+        ),
         const SizedBox(height: 4),
-        Text(val, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white70)),
+        Text(
+          val,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white70,
+          ),
+        ),
       ],
     );
   }

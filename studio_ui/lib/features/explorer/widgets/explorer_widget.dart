@@ -17,43 +17,47 @@ class _ExplorerWidgetState extends State<ExplorerWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'PROJECT EXPLORER',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white30,
-                    fontWeight: FontWeight.bold,
-                  ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'PROJECT EXPLORER',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white30,
+                  fontWeight: FontWeight.bold,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 14, color: Colors.white30),
-                  onPressed: () {
-                    widget.state.reloadWorkspace();
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.refresh,
+                  size: 14,
+                  color: Colors.white30,
+                ),
+                onPressed: () {
+                  widget.state.reloadWorkspace();
+                },
+                tooltip: 'Reload Explorer',
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: widget.state.rootNodes.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  itemCount: widget.state.rootNodes.length,
+                  itemBuilder: (context, index) {
+                    return _buildNode(widget.state.rootNodes[index], 0);
                   },
-                  tooltip: 'Reload Explorer',
-                )
-              ],
-            ),
-          ),
-          Expanded(
-            child: widget.state.rootNodes.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: widget.state.rootNodes.length,
-                    itemBuilder: (context, index) {
-                      return _buildNode(widget.state.rootNodes[index], 0);
-                    },
-                  ),
-          ),
-        ],
-      );
+                ),
+        ),
+      ],
+    );
   }
 
   Widget _buildNode(TreeNode node, int depth) {
@@ -69,8 +73,11 @@ class _ExplorerWidgetState extends State<ExplorerWidget> {
               setState(() {
                 widget.state.explorer.toggleExpand(node.path);
               });
-              if (node.children.isEmpty && widget.state.explorer.isExpanded(node.path)) {
-                final children = await widget.state.fetchDirectoryContents(node.path);
+              if (node.children.isEmpty &&
+                  widget.state.explorer.isExpanded(node.path)) {
+                final children = await widget.state.fetchDirectoryContents(
+                  node.path,
+                );
                 setState(() {
                   node.children.clear();
                   node.children.addAll(children);
@@ -96,10 +103,14 @@ class _ExplorerWidgetState extends State<ExplorerWidget> {
               children: [
                 Icon(
                   node.isDirectory
-                      ? (isExp ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right)
+                      ? (isExp
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_right)
                       : Icons.description,
                   size: 16,
-                  color: node.isDirectory ? Colors.white54 : const Color(0xFFA78BFA),
+                  color: node.isDirectory
+                      ? Colors.white54
+                      : const Color(0xFFA78BFA),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

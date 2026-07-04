@@ -28,7 +28,8 @@ class _CommandPaletteWidgetState extends State<CommandPaletteWidget> {
 
   void _filter(String text) {
     setState(() {
-      _filteredCommands = widget.state.commandRegistry.all()
+      _filteredCommands = widget.state.commandRegistry
+          .all()
           .where(
             (c) =>
                 c.title.toLowerCase().contains(text.toLowerCase()) ||

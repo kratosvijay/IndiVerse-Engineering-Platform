@@ -75,7 +75,9 @@ class _StudioDashboardState extends State<StudioDashboard> {
       String? defaultPath;
       final rootNodes = _studioState.rootNodes;
 
-      final hasReadme = rootNodes.any((n) => n.name.toLowerCase() == 'readme.md');
+      final hasReadme = rootNodes.any(
+        (n) => n.name.toLowerCase() == 'readme.md',
+      );
       if (hasReadme) {
         defaultPath = 'README.md';
       } else {

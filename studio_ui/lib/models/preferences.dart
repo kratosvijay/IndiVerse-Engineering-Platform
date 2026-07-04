@@ -30,22 +30,23 @@ class WorkbenchPreferences {
   });
 
   Map<String, dynamic> toJson() => {
-        "theme": theme,
-        "fontSize": fontSize,
-        "fontFamily": fontFamily,
-        "lineHeight": lineHeight,
-        "tabSize": tabSize,
-        "wordWrap": wordWrap,
-        "showMinimap": showMinimap,
-        "showStickyScroll": showStickyScroll,
-        "autoSave": autoSave,
-        "autoRestoreSession": autoRestoreSession,
-        "sidebarWidth": sidebarWidth,
-        "inspectorWidth": inspectorWidth,
-        "bottomPanelHeight": bottomPanelHeight,
-      };
+    "theme": theme,
+    "fontSize": fontSize,
+    "fontFamily": fontFamily,
+    "lineHeight": lineHeight,
+    "tabSize": tabSize,
+    "wordWrap": wordWrap,
+    "showMinimap": showMinimap,
+    "showStickyScroll": showStickyScroll,
+    "autoSave": autoSave,
+    "autoRestoreSession": autoRestoreSession,
+    "sidebarWidth": sidebarWidth,
+    "inspectorWidth": inspectorWidth,
+    "bottomPanelHeight": bottomPanelHeight,
+  };
 
-  factory WorkbenchPreferences.fromJson(Map<String, dynamic> json) => WorkbenchPreferences(
+  factory WorkbenchPreferences.fromJson(Map<String, dynamic> json) =>
+      WorkbenchPreferences(
         theme: json["theme"] ?? "Dark Mode",
         fontSize: (json["fontSize"] as num?)?.toDouble() ?? 13.0,
         fontFamily: json["fontFamily"] ?? "monospace",
@@ -58,6 +59,7 @@ class WorkbenchPreferences {
         autoRestoreSession: json["autoRestoreSession"] ?? true,
         sidebarWidth: (json["sidebarWidth"] as num?)?.toDouble() ?? 250.0,
         inspectorWidth: (json["inspectorWidth"] as num?)?.toDouble() ?? 300.0,
-        bottomPanelHeight: (json["bottomPanelHeight"] as num?)?.toDouble() ?? 200.0,
+        bottomPanelHeight:
+            (json["bottomPanelHeight"] as num?)?.toDouble() ?? 200.0,
       );
 }

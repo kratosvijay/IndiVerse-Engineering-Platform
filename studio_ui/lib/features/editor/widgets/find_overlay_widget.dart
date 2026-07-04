@@ -72,18 +72,28 @@ class _FindOverlayWidgetState extends State<FindOverlayWidget> {
               }),
               const SizedBox(width: 8),
               Text(
-                widget.totalMatches > 0 ? '${widget.currentIdx + 1}/${widget.totalMatches}' : '0/0',
+                widget.totalMatches > 0
+                    ? '${widget.currentIdx + 1}/${widget.totalMatches}'
+                    : '0/0',
                 style: const TextStyle(fontSize: 11, color: Colors.white30),
               ),
               const SizedBox(width: 4),
               IconButton(
-                icon: const Icon(Icons.arrow_upward, size: 14, color: Colors.white54),
+                icon: const Icon(
+                  Icons.arrow_upward,
+                  size: 14,
+                  color: Colors.white54,
+                ),
                 onPressed: widget.onPrev,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
               IconButton(
-                icon: const Icon(Icons.arrow_downward, size: 14, color: Colors.white54),
+                icon: const Icon(
+                  Icons.arrow_downward,
+                  size: 14,
+                  color: Colors.white54,
+                ),
                 onPressed: widget.onNext,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -113,7 +123,11 @@ class _FindOverlayWidgetState extends State<FindOverlayWidget> {
         ),
         child: Text(
           label,
-          style: TextStyle(fontSize: 10, color: active ? Colors.white : Colors.white54, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 10,
+            color: active ? Colors.white : Colors.white54,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

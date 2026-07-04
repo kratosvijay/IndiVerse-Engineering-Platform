@@ -35,7 +35,10 @@ class BreadcrumbSymbolsWidget extends StatelessWidget {
       }
     }
 
-    final pathSegments = doc.path.split('/').where((s) => s.isNotEmpty).toList();
+    final pathSegments = doc.path
+        .split('/')
+        .where((s) => s.isNotEmpty)
+        .toList();
 
     return Container(
       height: 24,
@@ -46,21 +49,34 @@ class BreadcrumbSymbolsWidget extends StatelessWidget {
           ...pathSegments.map((segment) {
             return Row(
               children: [
-                Text(segment, style: const TextStyle(fontSize: 11, color: Colors.white30)),
-                const Icon(Icons.chevron_right, size: 12, color: Colors.white10),
+                Text(
+                  segment,
+                  style: const TextStyle(fontSize: 11, color: Colors.white30),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 12,
+                  color: Colors.white10,
+                ),
               ],
             );
           }),
           if (activeClass != null) ...[
             const Icon(Icons.category, size: 12, color: Color(0xFF3B82F6)),
             const SizedBox(width: 4),
-            Text(activeClass, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+            Text(
+              activeClass,
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
+            ),
             const Icon(Icons.chevron_right, size: 12, color: Colors.white10),
           ],
           if (activeMember != null) ...[
             const Icon(Icons.functions, size: 12, color: Color(0xFF10B981)),
             const SizedBox(width: 4),
-            Text(activeMember, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+            Text(
+              activeMember,
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
+            ),
           ],
         ],
       ),

@@ -83,7 +83,10 @@ class _OutlineWidgetState extends State<OutlineWidget> {
   Widget build(BuildContext context) {
     if (_currentDocId == null) {
       return const Center(
-        child: Text('No active document.', style: TextStyle(color: Colors.white24, fontSize: 12)),
+        child: Text(
+          'No active document.',
+          style: TextStyle(color: Colors.white24, fontSize: 12),
+        ),
       );
     }
 
@@ -93,34 +96,37 @@ class _OutlineWidgetState extends State<OutlineWidget> {
 
     if (_outline.isEmpty) {
       return const Center(
-        child: Text('No symbols found.', style: TextStyle(color: Colors.white24, fontSize: 12)),
+        child: Text(
+          'No symbols found.',
+          style: TextStyle(color: Colors.white24, fontSize: 12),
+        ),
       );
     }
 
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'DOCUMENT OUTLINE',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white30,
-                fontWeight: FontWeight.bold,
-              ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'DOCUMENT OUTLINE',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white30,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _outline.length,
-              itemBuilder: (context, index) {
-                return _buildOutlineItem(_outline[index], 0);
-              },
-            ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: _outline.length,
+            itemBuilder: (context, index) {
+              return _buildOutlineItem(_outline[index], 0);
+            },
           ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 
   Widget _buildOutlineItem(Map<String, dynamic> item, int depth) {
@@ -158,7 +164,10 @@ class _OutlineWidgetState extends State<OutlineWidget> {
     return Column(
       children: [
         ListTile(
-          contentPadding: EdgeInsets.only(left: 16.0 + (depth * 16.0), right: 16.0),
+          contentPadding: EdgeInsets.only(
+            left: 16.0 + (depth * 16.0),
+            right: 16.0,
+          ),
           dense: true,
           leading: Icon(icon, size: 14, color: iconColor),
           title: Text(
@@ -170,7 +179,10 @@ class _OutlineWidgetState extends State<OutlineWidget> {
           },
         ),
         if (children.isNotEmpty)
-          ...children.map((child) => _buildOutlineItem(Map<String, dynamic>.from(child), depth + 1)),
+          ...children.map(
+            (child) =>
+                _buildOutlineItem(Map<String, dynamic>.from(child), depth + 1),
+          ),
       ],
     );
   }

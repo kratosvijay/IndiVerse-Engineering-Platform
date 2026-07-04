@@ -202,6 +202,57 @@ class WorkspaceService {
       "diagnostics": <String>[]
     };
   }
+
+  Future<void> saveFile(String relativePath, String content) async {
+    if (relativePath.contains('..')) {
+      throw SecurityException("Access denied: path traversal attempt");
+    }
+    final file = File('${Directory.current.path}/$relativePath');
+    if (!file.existsSync()) {
+      throw FileNotFoundException("File not found: $relativePath");
+    }
+    file.writeAsStringSync(content);
+  }
+
+  Future<void> createFile(String relativePath, String content) async {
+    if (relativePath.contains('..')) {
+      throw SecurityException("Access denied: path traversal attempt");
+    }
+    final file = File('${Directory.current.path}/$relativePath');
+    if (file.existsSync()) {
+      throw Exception("File already exists: $relativePath");
+    }
+    // ensure parent directories exist
+    file.parent.createSync(recursive: true);
+    file.writeAsStringSync(content);
+  }
+
+  Future<void> renameFile(String relativePath, String newRelativePath) async {
+    if (relativePath.contains('..') || newRelativePath.contains('..')) {
+      throw SecurityException("Access denied: path traversal attempt");
+    }
+    final file = File('${Directory.current.path}/$relativePath');
+    if (!file.existsSync()) {
+      throw FileNotFoundException("File not found: $relativePath");
+    }
+    final newFile = File('${Directory.current.path}/$newRelativePath');
+    if (newFile.existsSync()) {
+      throw Exception("Destination file already exists: $newRelativePath");
+    }
+    newFile.parent.createSync(recursive: true);
+    file.renameSync(newFile.path);
+  }
+
+  Future<void> deleteFile(String relativePath) async {
+    if (relativePath.contains('..')) {
+      throw SecurityException("Access denied: path traversal attempt");
+    }
+    final file = File('${Directory.current.path}/$relativePath');
+    if (!file.existsSync()) {
+      throw FileNotFoundException("File not found: $relativePath");
+    }
+    file.deleteSync();
+  }
 }
 
 class DirectoryNotFoundException implements Exception {

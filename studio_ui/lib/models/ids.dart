@@ -2,7 +2,8 @@ class DocumentId {
   final String value;
   const DocumentId(this.value);
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DocumentId && other.value == value;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is DocumentId && other.value == value;
   @override
   int get hashCode => value.hashCode;
   @override
@@ -13,7 +14,8 @@ class SymbolId {
   final String value;
   const SymbolId(this.value);
   @override
-  bool operator ==(Object other) => identical(this, other) || other is SymbolId && other.value == value;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is SymbolId && other.value == value;
   @override
   int get hashCode => value.hashCode;
   @override
@@ -24,7 +26,8 @@ class WorkspaceId {
   final String value;
   const WorkspaceId(this.value);
   @override
-  bool operator ==(Object other) => identical(this, other) || other is WorkspaceId && other.value == value;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is WorkspaceId && other.value == value;
   @override
   int get hashCode => value.hashCode;
   @override
@@ -35,7 +38,8 @@ class NodeId {
   final String value;
   const NodeId(this.value);
   @override
-  bool operator ==(Object other) => identical(this, other) || other is NodeId && other.value == value;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is NodeId && other.value == value;
   @override
   int get hashCode => value.hashCode;
   @override
@@ -46,7 +50,8 @@ class AgentId {
   final String value;
   const AgentId(this.value);
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AgentId && other.value == value;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is AgentId && other.value == value;
   @override
   int get hashCode => value.hashCode;
   @override

@@ -22,7 +22,11 @@ class WorkbenchError {
   final String message;
   final String? details;
 
-  const WorkbenchError({required this.code, required this.message, this.details});
+  const WorkbenchError({
+    required this.code,
+    required this.message,
+    this.details,
+  });
 }
 
 abstract class WorkspaceProvider {
@@ -31,9 +35,18 @@ abstract class WorkspaceProvider {
 }
 
 abstract class CodeIntelligenceProvider {
-  Future<OperationResult<List<Map<String, dynamic>>>> getOutline(DocumentId id, CancellationToken token);
-  Future<OperationResult<Map<String, dynamic>>> resolveDefinition(SymbolId id, CancellationToken token);
-  Future<OperationResult<List<Map<String, dynamic>>>> findReferences(SymbolId id, CancellationToken token);
+  Future<OperationResult<List<Map<String, dynamic>>>> getOutline(
+    DocumentId id,
+    CancellationToken token,
+  );
+  Future<OperationResult<Map<String, dynamic>>> resolveDefinition(
+    SymbolId id,
+    CancellationToken token,
+  );
+  Future<OperationResult<List<Map<String, dynamic>>>> findReferences(
+    SymbolId id,
+    CancellationToken token,
+  );
 }
 
 abstract class NotificationProvider {
@@ -46,7 +59,10 @@ abstract class NotificationProvider {
 }
 
 abstract class SearchProvider {
-  Future<OperationResult<List<dynamic>>> search(String query, CancellationToken token);
+  Future<OperationResult<List<dynamic>>> search(
+    String query,
+    CancellationToken token,
+  );
 }
 
 abstract class EditorProvider {
