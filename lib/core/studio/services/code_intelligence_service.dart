@@ -4,6 +4,7 @@ import '../../../platform_sdk/platform_sdk.dart';
 import '../../knowledge/models/symbol.dart';
 import '../../diagnostics/diagnostic_models.dart';
 import '../../diagnostics/diagnostics_engine.dart';
+import '../../diagnostics/completion_provider.dart';
 
 class FileDiagnostics {
   final String path;
@@ -60,11 +61,59 @@ class CodeIntelligenceService {
   final List<String> _dirtyQueue = [];
   bool _isQueueProcessing = false;
 
+  late final List<CompletionContributor> completionContributors;
+
   CodeIntelligenceService(this.sdk) {
     indexer = WorkspaceIndexer(this);
     outlineBuilder = OutlineBuilder(this);
     definitionProvider = DefinitionProvider(this);
     referenceProvider = ReferenceProvider();
+    completionContributors = [
+      KeywordContributor(),
+      ScopeContributor(symbolIndex: symbolIndex),
+      SnippetContributor(),
+    ];
+  }
+
+  List<CompletionItem> getCompletions(
+    String path,
+    int line,
+    int column,
+    String prefix,
+  ) {
+    String content = '';
+    try {
+      final absolutePath =
+          path.startsWith('/') ? path : '${Directory.current.path}/$path';
+      final file = File(absolutePath);
+      if (file.existsSync()) {
+        content = file.readAsStringSync();
+      }
+    } catch (_) {}
+
+    final doc = DocumentSnapshot(
+      path: path,
+      content: content,
+      revision: 0,
+    );
+
+    final position = Position(line: line, column: column);
+    final results = <CompletionItem>[];
+
+    for (final contributor in completionContributors) {
+      results.addAll(contributor.getCompletions(doc, position, prefix));
+    }
+
+    final seen = <String>{};
+    final unique = <CompletionItem>[];
+    for (final item in results) {
+      if (!seen.contains(item.label)) {
+        seen.add(item.label);
+        unique.add(item);
+      }
+    }
+
+    return unique;
   }
 
   Future<void> initialize() async {

@@ -262,6 +262,15 @@ class Diagnostic {
   }
 }
 
+enum CompletionTriggerKind { automatic, manual, triggerCharacter, incomplete }
+
+class CompletionTrigger {
+  final CompletionTriggerKind kind;
+  final String? character;
+
+  const CompletionTrigger({required this.kind, this.character});
+}
+
 enum CompletionItemKind {
   text,
   method,
@@ -269,25 +278,16 @@ enum CompletionItemKind {
   constructor,
   field,
   variable,
-  class_,
+  classType,
   interface,
   module,
   property,
-  unit,
-  value,
-  enum_,
   keyword,
   snippet,
-  color,
   file,
-  reference,
   folder,
-  enumMember,
+  enumType,
   constant,
-  struct,
-  event,
-  operator,
-  typeParameter,
 }
 
 class CompletionItem {
@@ -295,17 +295,77 @@ class CompletionItem {
   final CompletionItemKind kind;
   final String? detail;
   final String? documentation;
-  final String? insertText;
-  final SelectionRange? range;
+  final String insertText;
+  final int insertTextFormat; // 1 = PlainText, 2 = Snippet
+  final TextEdit? textEdit;
+  final List<TextEdit>? additionalTextEdits;
+  final String? sortText;
+  final String? filterText;
+  final bool deprecated;
+  final bool preselect;
+  final double score;
 
   const CompletionItem({
     required this.label,
     required this.kind,
     this.detail,
     this.documentation,
-    this.insertText,
-    this.range,
+    required this.insertText,
+    this.insertTextFormat = 1,
+    this.textEdit,
+    this.additionalTextEdits,
+    this.sortText,
+    this.filterText,
+    this.deprecated = false,
+    this.preselect = false,
+    this.score = 0.0,
   });
+
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'kind': kind.name,
+    'detail': detail,
+    'documentation': documentation,
+    'insertText': insertText,
+    'insertTextFormat': insertTextFormat,
+    'textEdit': textEdit?.toJson(),
+    'additionalTextEdits': additionalTextEdits?.map((e) => e.toJson()).toList(),
+    'sortText': sortText,
+    'filterText': filterText,
+    'deprecated': deprecated,
+    'preselect': preselect,
+    'score': score,
+  };
+
+  factory CompletionItem.fromJson(Map<String, dynamic> json) {
+    final kindStr = json['kind'] as String;
+    final kind = CompletionItemKind.values.firstWhere(
+      (e) => e.name == kindStr,
+      orElse: () => CompletionItemKind.text,
+    );
+
+    final addEdits = (json['additionalTextEdits'] as List? ?? [])
+        .map((e) => TextEdit.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    return CompletionItem(
+      label: json['label'] as String,
+      kind: kind,
+      detail: json['detail'] as String?,
+      documentation: json['documentation'] as String?,
+      insertText: json['insertText'] as String? ?? json['label'] as String,
+      insertTextFormat: json['insertTextFormat'] as int? ?? 1,
+      textEdit: json['textEdit'] != null
+          ? TextEdit.fromJson(json['textEdit'] as Map<String, dynamic>)
+          : null,
+      additionalTextEdits: addEdits,
+      sortText: json['sortText'] as String?,
+      filterText: json['filterText'] as String?,
+      deprecated: json['deprecated'] as bool? ?? false,
+      preselect: json['preselect'] as bool? ?? false,
+      score: (json['score'] as num? ?? 0.0).toDouble(),
+    );
+  }
 }
 
 class ParameterInformation {
@@ -337,19 +397,6 @@ class SignatureHelp {
     this.activeSignature = 0,
     this.activeParameter = 0,
   });
-}
-
-class TextEdit {
-  final SelectionRange range;
-  final String newText;
-
-  const TextEdit({required this.range, required this.newText});
-}
-
-class WorkspaceEdit {
-  final Map<String, List<TextEdit>> changes;
-
-  const WorkspaceEdit({required this.changes});
 }
 
 class CodeAction {

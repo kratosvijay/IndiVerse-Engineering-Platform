@@ -155,4 +155,30 @@ class CodeIntelligenceController {
       ..headers.contentType = ContentType.json
       ..write(response.toJsonString());
   }
+
+  Future<void> handleGetCompletions(
+      HttpRequest request, String requestId) async {
+    final path = request.uri.queryParameters['path'] ?? '';
+    final lineStr = request.uri.queryParameters['line'] ?? '1';
+    final colStr = request.uri.queryParameters['column'] ?? '1';
+    final prefix = request.uri.queryParameters['prefix'] ?? '';
+
+    final line = int.tryParse(lineStr) ?? 1;
+    final column = int.tryParse(colStr) ?? 1;
+
+    final items = codeIntelService.getCompletions(path, line, column, prefix);
+    final results = items.map((item) => item.toJson()).toList();
+
+    final response = ApiResponse(
+      success: true,
+      timestamp: DateTime.now().toIso8601String(),
+      requestId: requestId,
+      data: {"items": results},
+    );
+
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType.json
+      ..write(response.toJsonString());
+  }
 }

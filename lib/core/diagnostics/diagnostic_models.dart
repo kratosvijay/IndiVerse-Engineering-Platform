@@ -194,3 +194,71 @@ class WorkspaceEdit {
     return WorkspaceEdit(changes: parsedChanges);
   }
 }
+
+enum CompletionItemKind {
+  text,
+  method,
+  function,
+  constructor,
+  field,
+  variable,
+  classType,
+  interface,
+  module,
+  property,
+  keyword,
+  snippet,
+  file,
+  folder,
+  enumType,
+  constant,
+}
+
+class CompletionItem {
+  final String label;
+  final CompletionItemKind kind;
+  final String? detail;
+  final String? documentation;
+  final String insertText;
+  final int insertTextFormat; // 1 = PlainText, 2 = Snippet
+  final TextEdit? textEdit;
+  final List<TextEdit>? additionalTextEdits;
+  final String? sortText;
+  final String? filterText;
+  final bool deprecated;
+  final bool preselect;
+  final double score;
+
+  const CompletionItem({
+    required this.label,
+    required this.kind,
+    this.detail,
+    this.documentation,
+    required this.insertText,
+    this.insertTextFormat = 1,
+    this.textEdit,
+    this.additionalTextEdits,
+    this.sortText,
+    this.filterText,
+    this.deprecated = false,
+    this.preselect = false,
+    this.score = 0.0,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'kind': kind.name,
+        'detail': detail,
+        'documentation': documentation,
+        'insertText': insertText,
+        'insertTextFormat': insertTextFormat,
+        'textEdit': textEdit?.toJson(),
+        'additionalTextEdits':
+            additionalTextEdits?.map((e) => e.toJson()).toList(),
+        'sortText': sortText,
+        'filterText': filterText,
+        'deprecated': deprecated,
+        'preselect': preselect,
+        'score': score,
+      };
+}

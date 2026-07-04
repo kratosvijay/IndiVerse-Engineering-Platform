@@ -296,6 +296,8 @@ class StudioServer {
         await codeIntelController.handleGetDiagnostics(request, requestId);
       } else if (path == '/api/v1/code/indexStatus') {
         await codeIntelController.handleGetIndexStatus(request, requestId);
+      } else if (path == '/api/v1/code/completions') {
+        await codeIntelController.handleGetCompletions(request, requestId);
       } else {
         final response = ApiResponse(
           success: false,

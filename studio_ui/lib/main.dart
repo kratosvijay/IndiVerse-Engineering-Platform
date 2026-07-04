@@ -13,10 +13,10 @@ import 'features/editor/widgets/welcome_widget.dart';
 import 'features/quick_open/widgets/quick_open_widget.dart';
 import 'features/diagnostics/diagnostics_widget.dart';
 import 'models/tree_node.dart';
-import 'models/editor_document.dart';
 import 'models/editor_status.dart';
 import 'models/workspace_events.dart';
 import 'core/services/keyboard_shortcut_manager.dart';
+import 'models/language_intelligence_models.dart';
 
 void main() {
   runApp(const StudioApp());
@@ -440,6 +440,14 @@ class _StudioDashboardState extends State<StudioDashboard> {
                 Text(
                   'AutoSave: ${status.autoSavePolicy.toString().split('.').last}',
                   style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Completion: ${_studioState.completionController.lastRequestCacheHit ? "Cache Hit" : "Regex"} | ${_studioState.completionController.activeSession?.items.length ?? 0} Items | ${_studioState.completionController.lastRequestLatencyMs.toInt()} ms',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.cyanAccent,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 const Text(

@@ -10,8 +10,9 @@ import '../../../models/editor_document.dart';
 import '../../../models/workspace_events.dart';
 import '../../../models/language_intelligence_models.dart';
 import '../../../models/edit_operation.dart';
+import '../../../../models/completion_session.dart';
+import 'completion_overlay_widget.dart';
 import 'dart:async';
-import '../../../core/services/semantic_token_cache.dart';
 import '../../../core/services/semantic_tokens_token_provider.dart';
 import '../../../core/services/keyboard_shortcut_manager.dart';
 import '../highlighting/abstract_highlighter.dart';
@@ -101,6 +102,7 @@ class _EditorWidgetState extends State<EditorWidget>
     });
 
     _scrollController.addListener(_handleScrollListener);
+    widget.state.addListener(_onStateChanged);
   }
 
   @override
@@ -611,6 +613,9 @@ class _EditorWidgetState extends State<EditorWidget>
     _controller?.removeListener(_rebuildOnControllerChange);
     _controller?.dispose();
     _focusNode.dispose();
+    widget.state.removeListener(_onStateChanged);
+    widget.state.completionController.closeSession();
+    _hideCompletionOverlay();
     super.dispose();
   }
 
@@ -916,6 +921,53 @@ class _EditorWidgetState extends State<EditorWidget>
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent || _controller == null) return;
     final doc = _controller!.document;
+    final compController = widget.state.completionController;
+
+    if (compController.isOverlayVisible) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        compController.closeSession();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.enter ||
+          event.logicalKey == LogicalKeyboardKey.tab) {
+        compController.commitActive();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        compController.selectPrevious();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+        compController.selectNext();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
+        compController.selectPageUp();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
+        compController.selectPageDown();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.home) {
+        compController.selectHome();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.end) {
+        compController.selectEnd();
+        setState(() {});
+        return;
+      }
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.space &&
+        HardwareKeyboard.instance.isControlPressed) {
+      compController.triggerCompletion(
+        const CompletionTrigger(kind: CompletionTriggerKind.manual),
+      );
+      setState(() {});
+      return;
+    }
 
     final context = CommandContext();
     if (widget.state.shortcutManager.handleKeyEvent(event, context)) {
@@ -994,6 +1046,22 @@ class _EditorWidgetState extends State<EditorWidget>
         );
         widget.state.history.recordOperation(doc.id, op);
         setState(() {});
+
+        // Autocomplete typing flow trigger
+        final triggerChar = keyChar == '.' ? '.' : null;
+        final triggerKind = triggerChar != null
+            ? CompletionTriggerKind.triggerCharacter
+            : CompletionTriggerKind.automatic;
+
+        if (compController.activeSession != null) {
+          compController.filterSession();
+        } else {
+          if (RegExp(r'[a-zA-Z0-9_.]').hasMatch(keyChar)) {
+            compController.triggerCompletion(
+              CompletionTrigger(kind: triggerKind, character: triggerChar),
+            );
+          }
+        }
       } else if (event.logicalKey == LogicalKeyboardKey.backspace) {
         final offset = doc.positionToOffset(doc.cursor);
         if (offset > 0) {
@@ -1005,6 +1073,10 @@ class _EditorWidgetState extends State<EditorWidget>
           );
           widget.state.history.recordOperation(doc.id, op);
           setState(() {});
+
+          if (compController.activeSession != null) {
+            compController.filterSession();
+          }
         }
       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
         final offset = doc.positionToOffset(doc.cursor);
@@ -1015,12 +1087,15 @@ class _EditorWidgetState extends State<EditorWidget>
         );
         widget.state.history.recordOperation(doc.id, op);
         setState(() {});
+
+        compController.closeSession();
       }
     }
   }
 
   void _handleTapDown(TapDownDetails details) {
     if (_controller == null) return;
+    widget.state.completionController.closeSession();
     _focusNode.requestFocus();
     final doc = _controller!.document;
     final localPosition = details.localPosition;
@@ -1475,5 +1550,65 @@ class _EditorWidgetState extends State<EditorWidget>
         ],
       ),
     );
+  }
+
+  void _onStateChanged() {
+    if (!mounted) return;
+    final compController = widget.state.completionController;
+    if (compController.isOverlayVisible &&
+        compController.activeSession != null) {
+      _showCompletionOverlay(compController.activeSession!);
+    } else {
+      _hideCompletionOverlay();
+    }
+  }
+
+  void _showCompletionOverlay(CompletionSession session) {
+    _hideCompletionOverlay();
+
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+    final doc = activeTab.document;
+    final cursor = doc.cursor;
+
+    final double gutterWidth = 52.0;
+    final double textPadding = 12.0;
+    final double charWidth = 7.2;
+    final double lineHeight = 20.0;
+
+    final visualLineIdx =
+        _controller?.actualToVisualLine(cursor.line) ?? (cursor.line - 1);
+    final caretY = visualLineIdx * lineHeight - _scrollController.offset;
+    final caretX =
+        gutterWidth +
+        textPadding +
+        (cursor.column * charWidth) -
+        (_controller?.viewport.horizontalOffset ?? 0.0);
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final globalOffset = renderBox.localToGlobal(Offset.zero);
+
+    final globalCursorX = globalOffset.dx + caretX;
+    final globalCursorY = globalOffset.dy + caretY + lineHeight;
+
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (context) {
+        return CompletionOverlayWidget(
+          session: session,
+          controller: widget.state.completionController,
+          globalX: globalCursorX,
+          globalY: globalCursorY,
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    widget.state.completionController.updateOverlay(entry);
+  }
+
+  void _hideCompletionOverlay() {
+    widget.state.completionController.hideOverlay();
   }
 }

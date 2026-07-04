@@ -101,6 +101,12 @@ class LanguageProviderRegistry {
     return (list != null && list.isNotEmpty) ? list.first : null;
   }
 
+  List<CompletionItemProvider> getCompletionProviders(String language) {
+    final list = _completionProviders[language] ?? [];
+    final fallback = _completionProviders['*'] ?? [];
+    return [...list, ...fallback];
+  }
+
   SignatureHelpProvider? getSignatureHelpProvider(String language) {
     final list = _signatureHelpProviders[language];
     return (list != null && list.isNotEmpty) ? list.first : null;

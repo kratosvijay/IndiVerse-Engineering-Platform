@@ -14,9 +14,15 @@ def run_validation():
         "templates", "rules", "prompts/architecture", "agents", "governance", "mcp", "scripts"
     ]
     for d in required_dirs:
-        dir_path = os.path.join(str(BASE_DIR), d)
-        if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-            errors.append(f"Missing required directory: {d}")
+        if d == "mcp":
+            dir_path = os.path.join(str(BASE_DIR), "mcp")
+            alt_path = os.path.join(str(BASE_DIR), "lib/core/mcp")
+            if not (os.path.exists(dir_path) and os.path.isdir(dir_path)) and not (os.path.exists(alt_path) and os.path.isdir(alt_path)):
+                errors.append(f"Missing required directory: mcp (checked root and lib/core/mcp)")
+        else:
+            dir_path = os.path.join(str(BASE_DIR), d)
+            if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
+                errors.append(f"Missing required directory: {d}")
 
     # 2. Verify single source version file
     version_file = os.path.join(str(BASE_DIR), "VERSION")

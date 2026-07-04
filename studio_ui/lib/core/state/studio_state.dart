@@ -28,6 +28,8 @@ import '../../models/language_intelligence_models.dart';
 import '../services/default_hover_provider.dart';
 import '../../models/diagnostic_collection.dart';
 import '../services/default_diagnostics_provider.dart';
+import '../../features/editor/controllers/completion_controller.dart';
+import '../services/default_completion_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:async';
@@ -92,6 +94,8 @@ class StudioState extends ChangeNotifier {
   final LanguageProviderRegistry languageRegistry = LanguageProviderRegistry();
   late final LanguageIntelligenceService languageIntel =
       LanguageIntelligenceService(languageRegistry);
+  LanguageIntelligenceService get intelligence => languageIntel;
+  late final CompletionController completionController;
   final DiagnosticCollection diagnostics = DiagnosticCollection();
   final Map<String, Timer> _diagTimers = {};
   WebSocketChannel? _wsChannel;
@@ -156,6 +160,7 @@ class StudioState extends ChangeNotifier {
   }
 
   StudioState() {
+    completionController = CompletionController(state: this);
     navigation = NavigationService(this);
     workbench = WorkbenchApi(this);
     history = DocumentHistoryService();
@@ -1031,6 +1036,23 @@ class StudioState extends ChangeNotifier {
     languageRegistry.registerDiagnosticsProvider(
       'markdown',
       DefaultDiagnosticsProvider(port: port),
+    );
+
+    languageRegistry.registerCompletionProvider(
+      'dart',
+      DefaultCompletionProvider(port: port),
+    );
+    languageRegistry.registerCompletionProvider(
+      'json',
+      DefaultCompletionProvider(port: port),
+    );
+    languageRegistry.registerCompletionProvider(
+      'yaml',
+      DefaultCompletionProvider(port: port),
+    );
+    languageRegistry.registerCompletionProvider(
+      'markdown',
+      DefaultCompletionProvider(port: port),
     );
 
     notifyListeners();
