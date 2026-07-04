@@ -76,9 +76,6 @@ class EditorController {
     final startOffset = doc.positionToOffset(
       Position(line: startLine, column: 1),
     );
-    final endOffset = doc.positionToOffset(
-      Position(line: endLine, column: doc.lines[endLine - 1].length + 1),
-    );
     final oldText = doc.lines.sublist(startLine - 1, endLine).join('\n');
 
     bool allCommented = true;
@@ -106,10 +103,7 @@ class EditorController {
       } else {
         final leadingSpaces = line.length - line.trimLeft().length;
         final updated =
-            line.substring(0, leadingSpaces) +
-            prefix +
-            ' ' +
-            line.substring(leadingSpaces);
+            '${line.substring(0, leadingSpaces)}$prefix ${line.substring(leadingSpaces)}';
         newLines.add(updated);
       }
     }
@@ -145,7 +139,7 @@ class EditorController {
       Position(line: endLine, column: doc.lines[endLine - 1].length + 1),
     );
 
-    final op = InsertTextOperation(index: insertOffset, text: '\n' + linesText);
+    final op = InsertTextOperation(index: insertOffset, text: '\n$linesText');
 
     final context = OperationContext(
       timestamp: DateTime.now(),
@@ -213,7 +207,7 @@ class EditorController {
       Position(line: endLine, column: doc.lines[endLine - 1].length + 1),
     );
     final originalText = doc.content.substring(startOffset, blockEndOffset);
-    final updatedText = blockText + '\n' + lineAboveText;
+    final updatedText = '$blockText\n$lineAboveText';
 
     final op = ReplaceTextOperation(
       index: startOffset,
@@ -253,7 +247,7 @@ class EditorController {
       Position(line: endLine + 1, column: doc.lines[endLine].length + 1),
     );
     final originalText = doc.content.substring(startOffset, blockEndOffset);
-    final updatedText = lineBelowText + '\n' + blockText;
+    final updatedText = '$lineBelowText\n$blockText';
 
     final op = ReplaceTextOperation(
       index: startOffset,

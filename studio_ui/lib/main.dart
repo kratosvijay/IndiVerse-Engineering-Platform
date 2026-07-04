@@ -13,6 +13,9 @@ import 'features/editor/widgets/welcome_widget.dart';
 import 'features/quick_open/widgets/quick_open_widget.dart';
 import 'features/diagnostics/diagnostics_widget.dart';
 import 'models/tree_node.dart';
+import 'models/editor_document.dart';
+import 'models/editor_status.dart';
+import 'models/workspace_events.dart';
 import 'core/services/keyboard_shortcut_manager.dart';
 
 void main() {
@@ -286,6 +289,38 @@ class _StudioDashboardState extends State<StudioDashboard> {
     final activeTab = _studioState.editor.activeTab;
     final doc = activeTab?.document;
 
+    EditorStatus? status;
+    if (doc != null) {
+      int foldedCount = 0;
+      for (final r in doc.foldingRegions) {
+        foldedCount += r.toFlatList().where((n) => n.collapsed).length;
+      }
+      status = EditorStatus(
+        cursor: doc.cursor,
+        encoding: doc.encoding,
+        newline: 'LF',
+        language: doc.language,
+        revision: doc.version.localRevision,
+        foldedRegions: foldedCount,
+        readOnly: doc.readOnly,
+        mode: EditorMode.insert,
+        watcherState: _studioState.watcherState,
+        recoveryActive: true,
+        queuedSaves: _studioState.saveQueue.length,
+        lastSaveTime: _studioState.lastSaveTime != null
+            ? '${_studioState.lastSaveTime!.hour.toString().padLeft(2, '0')}:${_studioState.lastSaveTime!.minute.toString().padLeft(2, '0')}:${_studioState.lastSaveTime!.second.toString().padLeft(2, '0')}'
+            : 'Never',
+        autoSavePolicy: _studioState.autoSavePolicy,
+      );
+    }
+
+    Color watcherColor = Colors.redAccent;
+    if (status?.watcherState == WorkspaceWatcherState.connected) {
+      watcherColor = Colors.green;
+    } else if (status?.watcherState == WorkspaceWatcherState.reconnecting) {
+      watcherColor = Colors.amber;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: const BoxDecoration(
@@ -295,15 +330,76 @@ class _StudioDashboardState extends State<StudioDashboard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Status: ${_studioState.agentWorkflowStatus}',
-            style: const TextStyle(fontSize: 11, color: Colors.white54),
+          Row(
+            children: [
+              Text(
+                'Status: ${_studioState.agentWorkflowStatus}',
+                style: const TextStyle(fontSize: 11, color: Colors.white54),
+              ),
+              if (doc != null && doc.lockReason != null) ...[
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.redAccent, width: 0.5),
+                  ),
+                  child: Text(
+                    'LOCK: ${doc.lockReason.toString().split('.').last.toUpperCase()}',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
-          if (doc != null) ...[
+          if (status != null) ...[
             Row(
               children: [
                 Text(
-                  'Ln ${doc.cursorLine}, Col ${doc.cursorColumn}',
+                  'Ln ${status.cursor.line}, Col ${status.cursor.column}',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  status.readOnly ? 'READ ONLY' : 'WRITE',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  status.mode == EditorMode.insert ? 'INS' : 'OVR',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Rev: ${status.revision}',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Folded: ${status.foldedRegions}',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Queue: ${status.queuedSaves}',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Saved: ${status.lastSaveTime}',
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'AutoSave: ${status.autoSavePolicy.toString().split('.').last}',
                   style: const TextStyle(fontSize: 11, color: Colors.white54),
                 ),
                 const SizedBox(width: 16),
@@ -312,19 +408,37 @@ class _StudioDashboardState extends State<StudioDashboard> {
                   style: TextStyle(fontSize: 11, color: Colors.white54),
                 ),
                 const SizedBox(width: 16),
-                const Text(
-                  'UTF-8',
-                  style: TextStyle(fontSize: 11, color: Colors.white54),
-                ),
-                const SizedBox(width: 16),
-                const Text(
-                  'LF',
-                  style: TextStyle(fontSize: 11, color: Colors.white54),
+                Text(
+                  status.encoding.toUpperCase(),
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  doc.language.toUpperCase(),
+                  status.newline,
                   style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  status.language.toUpperCase(),
+                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                ),
+                const SizedBox(width: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: watcherColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Watcher: ${status.watcherState.toString().split('.').last}',
+                      style: TextStyle(fontSize: 10, color: watcherColor),
+                    ),
+                  ],
                 ),
               ],
             ),

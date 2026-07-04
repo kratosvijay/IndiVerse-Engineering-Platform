@@ -1,8 +1,9 @@
 import os
 import json
 import re
+from pathlib import Path
 
-BASE_DIR = "/Users/kingofhell/Projects/indiverse-engineering-platform"
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def run_validation():
     errors = []
@@ -13,12 +14,12 @@ def run_validation():
         "templates", "rules", "prompts/architecture", "agents", "governance", "mcp", "scripts"
     ]
     for d in required_dirs:
-        dir_path = os.path.join(BASE_DIR, d)
+        dir_path = os.path.join(str(BASE_DIR), d)
         if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
             errors.append(f"Missing required directory: {d}")
 
     # 2. Verify single source version file
-    version_file = os.path.join(BASE_DIR, "VERSION")
+    version_file = os.path.join(str(BASE_DIR), "VERSION")
     version = "0.0.0"
     if not os.path.exists(version_file):
         errors.append("Missing VERSION file in repository root")
@@ -27,7 +28,7 @@ def run_validation():
             version = f.read().strip()
 
     # 3. Check prompts metadata headers
-    prompts_dir = os.path.join(BASE_DIR, "prompts")
+    prompts_dir = os.path.join(str(BASE_DIR), "prompts")
     prompt_files_count = 0
     if os.path.exists(prompts_dir):
         required_headers = [
@@ -45,7 +46,7 @@ def run_validation():
                             errors.append(f"Prompt {file} is missing required metadata header: {h}")
 
     # 4. Check agents metadata headers
-    agents_dir = os.path.join(BASE_DIR, "agents")
+    agents_dir = os.path.join(str(BASE_DIR), "agents")
     agents_files_count = 0
     if os.path.exists(agents_dir):
         required_headers = [
@@ -64,7 +65,7 @@ def run_validation():
     # 5. Check markdown relative links
     # Look for broken links of format: [Link Text](file:///...) or [Link Text](../...)
     link_pattern = re.compile(r'\[([^\]]+)\]\(([^\)]+)\)')
-    for root, _, files in os.walk(BASE_DIR):
+    for root, _, files in os.walk(str(BASE_DIR)):
         if "node_modules" in root or ".git" in root or ".gemini" in root:
             continue
         for file in files:
@@ -99,15 +100,20 @@ def run_validation():
         "statistics": {
             "total_prompts": prompt_files_count,
             "total_agents": agents_files_count,
-            "total_templates": len(os.listdir(os.path.join(BASE_DIR, "templates"))) if os.path.exists(os.path.join(BASE_DIR, "templates")) else 0,
-            "total_docs": sum(len(files) for _, _, files in os.walk(os.path.join(BASE_DIR, "docs")))
+            "total_templates": len(os.listdir(os.path.join(str(BASE_DIR), "templates"))) if os.path.exists(os.path.join(str(BASE_DIR), "templates")) else 0,
+            "total_docs": sum(len(files) for _, _, files in os.walk(os.path.join(str(BASE_DIR), "docs")))
         },
         "errors": errors
     }
 
-    report_path = os.path.join(BASE_DIR, "reports/platform_report.json")
-    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    report_dir = BASE_DIR / ".agents" / "reports"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir / "platform_report.json"
+    validation_path = report_dir / "validation.json"
+
     with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+    with open(validation_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
     if errors:

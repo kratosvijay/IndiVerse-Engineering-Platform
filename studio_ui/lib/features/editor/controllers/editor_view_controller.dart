@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import '../../../models/editor_document.dart';
+import '../../../models/folding_region.dart';
 import '../highlighting/abstract_highlighter.dart';
 
 class EditorViewport {
@@ -88,6 +89,9 @@ class EditorViewController extends ChangeNotifier {
   final ViewportCache viewportCache = ViewportCache();
   int _lastRevision = -1;
 
+  final List<int> _visualToActual = [];
+  final Map<int, int> _actualToVisual = {};
+
   EditorViewport viewport = const EditorViewport(
     firstVisibleLine: 1,
     lastVisibleLine: 1,
@@ -101,9 +105,22 @@ class EditorViewController extends ChangeNotifier {
       StreamController<EditorViewEvent>.broadcast();
   Stream<EditorViewEvent> get events => _eventController.stream;
 
+  List<int> get visualToActual => List.unmodifiable(_visualToActual);
+  int get visualLineCount => _visualToActual.length;
+
+  int actualToVisualLine(int actualLine) {
+    return _actualToVisual[actualLine] ?? (actualLine - 1);
+  }
+
+  int visualToActualLine(int visualIndex) {
+    if (visualIndex < 0 || visualIndex >= _visualToActual.length) return 1;
+    return _visualToActual[visualIndex];
+  }
+
   EditorViewController({required this.document, required this.tokenProvider}) {
     document.addListener(_onDocumentChanged);
     _lastRevision = document.version.localRevision;
+    _rebuildLineMappings();
   }
 
   @override
@@ -113,11 +130,32 @@ class EditorViewController extends ChangeNotifier {
     super.dispose();
   }
 
+  void _rebuildLineMappings() {
+    _visualToActual.clear();
+    _actualToVisual.clear();
+
+    int currentLine = 1;
+    int visualIndex = 0;
+    while (currentLine <= document.lineCount) {
+      _visualToActual.add(currentLine);
+      _actualToVisual[currentLine] = visualIndex;
+
+      final collapsedRegion = document.foldingLookup[currentLine];
+      if (collapsedRegion != null && collapsedRegion.collapsed) {
+        currentLine = collapsedRegion.endLine + 1;
+      } else {
+        currentLine++;
+      }
+      visualIndex++;
+    }
+  }
+
   void _onDocumentChanged() {
     if (document.version.localRevision != _lastRevision) {
       viewportCache.clear();
       _lastRevision = document.version.localRevision;
     }
+    _rebuildLineMappings();
     _eventController.add(CursorMovedEvent(document.cursor));
     if (document.selection != null) {
       _eventController.add(SelectionChangedEvent(document.selection));

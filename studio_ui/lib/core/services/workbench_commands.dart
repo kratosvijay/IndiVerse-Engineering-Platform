@@ -18,6 +18,17 @@ abstract final class EditorCommands {
   static const indent = "editor.indent";
   static const outdent = "editor.outdent";
   static const autoFormat = "editor.autoFormat";
+  static const fold = "editor.fold";
+  static const unfold = "editor.unfold";
+  static const foldAll = "editor.foldAll";
+  static const unfoldAll = "editor.unfoldAll";
+  static const foldRecursively = "editor.foldRecursively";
+  static const unfoldRecursively = "editor.unfoldRecursively";
+  static const foldLevel = "editor.foldLevel";
+  static const toggleFold = "editor.toggleFold";
+  static const gotoPreviousLocation = "editor.gotoPreviousLocation";
+  static const gotoNextLocation = "editor.gotoNextLocation";
+  static const toggleMinimap = "editor.toggleMinimap";
 }
 
 abstract final class WorkbenchCommands {

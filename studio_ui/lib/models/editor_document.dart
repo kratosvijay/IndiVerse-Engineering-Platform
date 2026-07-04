@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'folding_region.dart';
+import '../features/editor/controllers/folding_provider.dart';
 
 enum DocumentState { clean, dirty, saving, conflict, readOnly }
 
@@ -55,7 +57,16 @@ class DocumentSnapshot {
     : lines = List.unmodifiable(lines);
 }
 
-enum AutoSavePolicy { never, afterDelay, onFocusLost, onWindowClose, manual }
+enum AutoSavePolicy { manual, never, afterDelay, onFocusLost, onWindowClose }
+
+enum DocumentLockReason {
+  saving,
+  readOnly,
+  conflict,
+  recovering,
+  deleting,
+  renaming,
+}
 
 class EditorDocument extends ChangeNotifier {
   final String id;
@@ -68,6 +79,27 @@ class EditorDocument extends ChangeNotifier {
   final bool readOnly;
 
   DocumentState state = DocumentState.clean;
+  DocumentLockReason? _explicitLockReason;
+
+  DocumentLockReason? get lockReason {
+    if (_explicitLockReason != null) return _explicitLockReason;
+    switch (state) {
+      case DocumentState.saving:
+        return DocumentLockReason.saving;
+      case DocumentState.readOnly:
+        return DocumentLockReason.readOnly;
+      case DocumentState.conflict:
+        return DocumentLockReason.conflict;
+      default:
+        return null;
+    }
+  }
+
+  set lockReason(DocumentLockReason? val) {
+    _explicitLockReason = val;
+    notifyListeners();
+  }
+
   DocumentVersion version = DocumentVersion(
     localRevision: 0,
     savedAt: DateTime.now(),
@@ -76,8 +108,10 @@ class EditorDocument extends ChangeNotifier {
   Position cursor = const Position(line: 1, column: 1);
   SelectionRange? selection;
 
-  // Session UI states
   double scrollOffset = 0.0;
+
+  List<FoldingRegion> foldingRegions = [];
+  final Map<int, FoldingRegion> foldingLookup = {};
 
   int get cursorLine => cursor.line;
   int get cursorColumn => cursor.column;
@@ -91,12 +125,193 @@ class EditorDocument extends ChangeNotifier {
     required this.encoding,
     required this.lastModified,
     required this.readOnly,
-  }) : _lines = content.split('\n');
+  }) : _lines = content.split('\n') {
+    _reparseFoldingRegions();
+  }
 
   String get content => _lines.join('\n');
   List<String> get lines => List.unmodifiable(_lines);
   int get lineCount => _lines.length;
   int get size => content.length;
+
+  FoldingProvider _resolveFoldingProvider() {
+    switch (language.toLowerCase()) {
+      case 'dart':
+        return DartFoldingProvider();
+      case 'json':
+        return JsonFoldingProvider();
+      case 'yaml':
+        return YamlFoldingProvider();
+      case 'markdown':
+        return MarkdownFoldingProvider();
+      default:
+        return BracketFoldingProvider();
+    }
+  }
+
+  void _reparseFoldingRegions() {
+    final provider = _resolveFoldingProvider();
+    final newRoots = provider.build(this);
+
+    final List<FoldingRegion> oldFlat = [];
+    for (final r in foldingRegions) {
+      oldFlat.addAll(r.toFlatList());
+    }
+
+    final Map<String, FoldingRegion> oldBySig = {
+      for (final r in oldFlat) r.signature: r,
+    };
+
+    List<FoldingRegion> mergeState(List<FoldingRegion> regions) {
+      return regions.map((region) {
+        bool collapsed = false;
+
+        final matchedSig = oldBySig[region.signature];
+        if (matchedSig != null) {
+          collapsed = matchedSig.collapsed;
+        } else {
+          final proximityMatch = oldFlat.firstWhere(
+            (r) =>
+                r.signature.split('@').first ==
+                    region.signature.split('@').first &&
+                (r.startLine - region.startLine).abs() <= 10,
+            orElse: () =>
+                const FoldingRegion(startLine: -1, endLine: -1, signature: ''),
+          );
+          if (proximityMatch.startLine != -1) {
+            collapsed = proximityMatch.collapsed;
+          } else {
+            final lengthMatch = oldFlat.firstWhere(
+              (r) =>
+                  r.startLine == region.startLine &&
+                  (r.endLine -
+                              r.startLine -
+                              (region.endLine - region.startLine))
+                          .abs() <=
+                      5,
+              orElse: () => const FoldingRegion(
+                startLine: -1,
+                endLine: -1,
+                signature: '',
+              ),
+            );
+            if (lengthMatch.startLine != -1) {
+              collapsed = lengthMatch.collapsed;
+            }
+          }
+        }
+
+        final List<FoldingRegion> mergedChildren = mergeState(region.children);
+        return region.copyWith(collapsed: collapsed, children: mergedChildren);
+      }).toList();
+    }
+
+    foldingRegions = mergeState(newRoots);
+    _rebuildFoldingLookup();
+  }
+
+  void _rebuildFoldingLookup() {
+    foldingLookup.clear();
+    final List<FoldingRegion> flat = [];
+    for (final r in foldingRegions) {
+      flat.addAll(r.toFlatList());
+    }
+    for (final r in flat) {
+      foldingLookup[r.startLine] = r;
+    }
+  }
+
+  void reparseFolding() {
+    _reparseFoldingRegions();
+  }
+
+  void replaceBuffer(String newContent) {
+    _lines.clear();
+    _lines.addAll(newContent.split('\n'));
+    version = DocumentVersion(
+      localRevision: version.localRevision + 1,
+      savedAt: DateTime.now(),
+    );
+    _reparseFoldingRegions();
+    notifyListeners();
+  }
+
+  void toggleFold(int line) {
+    final region = foldingLookup[line];
+    if (region != null) {
+      _updateRegionCollapsed(foldingRegions, line, !region.collapsed);
+      _rebuildFoldingLookup();
+      notifyListeners();
+    }
+  }
+
+  void expand(int line) {
+    final region = foldingLookup[line];
+    if (region != null && region.collapsed) {
+      _updateRegionCollapsed(foldingRegions, line, false);
+      _rebuildFoldingLookup();
+      notifyListeners();
+    }
+  }
+
+  void collapse(int line) {
+    final region = foldingLookup[line];
+    if (region != null && !region.collapsed) {
+      _updateRegionCollapsed(foldingRegions, line, true);
+      _rebuildFoldingLookup();
+      notifyListeners();
+    }
+  }
+
+  bool _updateRegionCollapsed(
+    List<FoldingRegion> list,
+    int line,
+    bool collapsed,
+  ) {
+    for (int i = 0; i < list.length; i++) {
+      final r = list[i];
+      if (r.startLine == line) {
+        list[i] = r.copyWith(collapsed: collapsed);
+        return true;
+      }
+      final List<FoldingRegion> updatedChildren = List.from(r.children);
+      if (_updateRegionCollapsed(updatedChildren, line, collapsed)) {
+        list[i] = r.copyWith(children: updatedChildren);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void expandAll() {
+    void expandNode(List<FoldingRegion> list) {
+      for (int i = 0; i < list.length; i++) {
+        final r = list[i];
+        final List<FoldingRegion> children = List.from(r.children);
+        expandNode(children);
+        list[i] = r.copyWith(collapsed: false, children: children);
+      }
+    }
+
+    expandNode(foldingRegions);
+    _rebuildFoldingLookup();
+    notifyListeners();
+  }
+
+  void collapseAll() {
+    void collapseNode(List<FoldingRegion> list) {
+      for (int i = 0; i < list.length; i++) {
+        final r = list[i];
+        final List<FoldingRegion> children = List.from(r.children);
+        collapseNode(children);
+        list[i] = r.copyWith(collapsed: true, children: children);
+      }
+    }
+
+    collapseNode(foldingRegions);
+    _rebuildFoldingLookup();
+    notifyListeners();
+  }
 
   Position offsetToPosition(int offset) {
     if (offset <= 0) return const Position(line: 1, column: 1);
@@ -139,6 +354,7 @@ class EditorDocument extends ChangeNotifier {
       localRevision: version.localRevision + 1,
       savedAt: version.savedAt,
     );
+    _reparseFoldingRegions();
     notifyListeners();
   }
 
@@ -151,6 +367,7 @@ class EditorDocument extends ChangeNotifier {
       localRevision: version.localRevision + 1,
       savedAt: version.savedAt,
     );
+    _reparseFoldingRegions();
     notifyListeners();
   }
 
@@ -186,6 +403,7 @@ class EditorDocument extends ChangeNotifier {
       savedAt: version.savedAt,
     );
     cursor = endCursor;
+    _reparseFoldingRegions();
     notifyListeners();
   }
 
@@ -215,6 +433,7 @@ class EditorDocument extends ChangeNotifier {
       savedAt: version.savedAt,
     );
     cursor = startPos;
+    _reparseFoldingRegions();
     notifyListeners();
   }
 

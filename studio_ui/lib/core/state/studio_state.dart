@@ -19,7 +19,43 @@ import '../services/document_history_service.dart';
 import '../../models/edit_operation.dart';
 import '../../features/editor/controllers/editor_controller.dart';
 import '../../features/explorer/controllers/explorer_controller.dart';
+import '../services/navigation_history.dart';
+import '../../models/workspace_events.dart';
+import '../services/recovery_service.dart';
+import '../services/language_provider_registry.dart';
+import '../services/language_intelligence_service.dart';
+import '../../models/language_intelligence_models.dart';
+import '../services/default_hover_provider.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
+import 'dart:async';
+
+enum SaveReason { manual, autoDelay, focusLost, windowClose, recovery }
+
+enum SaveTaskState { queued, running, completed, failed }
+
+class SaveTask {
+  final String path;
+  final SaveReason reason;
+  final Completer<OperationResult<void>> completer = Completer();
+  SaveTaskState state = SaveTaskState.queued;
+
+  SaveTask({required this.path, required this.reason});
+
+  int get priority {
+    switch (reason) {
+      case SaveReason.manual:
+        return 3;
+      case SaveReason.focusLost:
+      case SaveReason.windowClose:
+        return 2;
+      case SaveReason.autoDelay:
+        return 1;
+      case SaveReason.recovery:
+        return 0;
+    }
+  }
+}
 
 class StudioState extends ChangeNotifier {
   String _activeTab = 'Workspace';
@@ -42,6 +78,7 @@ class StudioState extends ChangeNotifier {
   final WorkspaceCache workspaceCache = WorkspaceCache();
   late final NavigationService navigation;
   final EditorController editor = EditorController();
+  final NavigationHistory navigationHistory = NavigationHistory();
   final ExplorerController explorer = ExplorerController();
   final DocumentService documentService = DocumentService();
   final WorkbenchEventBus eventBus = WorkbenchEventBus();
@@ -50,7 +87,22 @@ class StudioState extends ChangeNotifier {
   late final CommandRegistry commandRegistry;
   late final CommandDispatcher dispatcher;
   late final KeyboardShortcutManager shortcutManager;
+  final LanguageProviderRegistry languageRegistry = LanguageProviderRegistry();
+  late final LanguageIntelligenceService languageIntel =
+      LanguageIntelligenceService(languageRegistry);
   WebSocketChannel? _wsChannel;
+  AutoSavePolicy autoSavePolicy = AutoSavePolicy.never;
+  WorkspaceWatcherState watcherState = WorkspaceWatcherState.disconnected;
+  late final RecoveryService _recoveryService = RecoveryService(
+    workspaceRoot: Directory.current.path,
+  );
+  final List<SaveTask> _saveQueue = [];
+  bool _isSavingQueue = false;
+  Timer? _autoSaveDebounceTimer;
+  DateTime? _lastSaveTime;
+
+  List<SaveTask> get saveQueue => List.unmodifiable(_saveQueue);
+  DateTime? get lastSaveTime => _lastSaveTime;
 
   List<dynamic> _searchResults = [];
 
@@ -615,6 +667,131 @@ class StudioState extends ChangeNotifier {
         },
       ),
     );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.fold,
+        title: "Fold",
+        category: "Editor",
+        description: "Fold region at cursor",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          active.document.collapse(active.document.cursorLine);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.unfold,
+        title: "Unfold",
+        category: "Editor",
+        description: "Unfold region at cursor",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          active.document.expand(active.document.cursorLine);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.foldAll,
+        title: "Fold All",
+        category: "Editor",
+        description: "Fold all regions in the active file",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          active.document.collapseAll();
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.unfoldAll,
+        title: "Unfold All",
+        category: "Editor",
+        description: "Unfold all regions in the active file",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          active.document.expandAll();
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.toggleFold,
+        title: "Toggle Fold",
+        category: "Editor",
+        description: "Toggle folding region at cursor",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          active.document.toggleFold(active.document.cursorLine);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.gotoPreviousLocation,
+        title: "Go Back",
+        category: "Navigation",
+        description: "Go back to previous file location",
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.arrowLeft,
+          alt: true,
+        ),
+        execute: (ctx) async {
+          final loc = navigationHistory.goBack();
+          if (loc != null) {
+            await openFile(loc.path, line: loc.line);
+          }
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.gotoNextLocation,
+        title: "Go Forward",
+        category: "Navigation",
+        description: "Go forward to next file location",
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.arrowRight,
+          alt: true,
+        ),
+        execute: (ctx) async {
+          final loc = navigationHistory.goForward();
+          if (loc != null) {
+            await openFile(loc.path, line: loc.line);
+          }
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.toggleMinimap,
+        title: "Toggle Minimap",
+        category: "Editor",
+        description: "Show or hide the editor minimap",
+        execute: (ctx) async {
+          eventBus.publish("Command", "toggleMinimap");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
   }
 
   /// Public wrapper for notifyListeners, callable from WorkbenchApi facade.
@@ -632,6 +809,21 @@ class StudioState extends ChangeNotifier {
     _isConnected = true;
     _fetchInitialData();
     _subscribeToEvents(port);
+    restoreRecoverySession();
+
+    languageRegistry.registerHoverProvider(
+      'dart',
+      DefaultHoverProvider(port: port),
+    );
+    languageRegistry.registerHoverProvider(
+      'json',
+      DefaultHoverProvider(port: port),
+    );
+    languageRegistry.registerHoverProvider(
+      'yaml',
+      DefaultHoverProvider(port: port),
+    );
+
     notifyListeners();
   }
 
@@ -671,6 +863,246 @@ class StudioState extends ChangeNotifier {
 
       await reloadWorkspace();
     } catch (_) {}
+  }
+
+  int _getPriority(SaveReason reason) {
+    switch (reason) {
+      case SaveReason.manual:
+        return 3;
+      case SaveReason.focusLost:
+      case SaveReason.windowClose:
+        return 2;
+      case SaveReason.autoDelay:
+        return 1;
+      case SaveReason.recovery:
+        return 0;
+    }
+  }
+
+  void handleAutoSaveOnEdit(String path) {
+    if (autoSavePolicy == AutoSavePolicy.afterDelay) {
+      _autoSaveDebounceTimer?.cancel();
+      _autoSaveDebounceTimer = Timer(const Duration(seconds: 2), () {
+        final doc = documentService.getDocument(DocumentId(path));
+        if (doc != null && doc.state == DocumentState.dirty) {
+          saveFileContent(path, doc.content, reason: SaveReason.autoDelay);
+        }
+      });
+    }
+    triggerRecoverySave();
+  }
+
+  Future<void> saveAllDirtyDocuments({
+    SaveReason reason = SaveReason.focusLost,
+  }) async {
+    final futures = <Future>[];
+    for (final tab in editor.tabs) {
+      final doc = tab.document;
+      if (doc.state == DocumentState.dirty) {
+        futures.add(saveFileContent(doc.path, doc.content, reason: reason));
+      }
+    }
+    if (futures.isNotEmpty) {
+      await Future.wait(futures);
+    }
+  }
+
+  void triggerRecoverySave() {
+    if (editor.tabs.isEmpty) {
+      _recoveryService.clear();
+      return;
+    }
+
+    final collapsedFolds = <String, List<RecoveredFold>>{};
+    for (final tab in editor.tabs) {
+      final doc = tab.document;
+      collapsedFolds[doc.path] = doc.foldingRegions
+          .expand((r) => r.toFlatList())
+          .where((n) => n.collapsed)
+          .map(
+            (n) => RecoveredFold(
+              startLine: n.startLine,
+              endLine: n.endLine,
+              collapsed: true,
+            ),
+          )
+          .toList();
+    }
+
+    _recoveryService.save(
+      RecoverySession(
+        workspace: Directory.current.path,
+        savedAt: DateTime.now(),
+        documents: editor.tabs.map((tab) {
+          final doc = tab.document;
+          return RecoveredDocument(
+            path: doc.path,
+            cursor: doc.cursor,
+            selection: doc.selection,
+            scrollOffset: doc.scrollOffset,
+            folds: collapsedFolds[doc.path] ?? [],
+            revision: doc.version.localRevision,
+            isDirty: doc.state == DocumentState.dirty,
+            buffer: doc.content,
+          );
+        }).toList(),
+        activeTabIndex: editor.activeTabIndex,
+      ),
+    );
+  }
+
+  Future<void> restoreRecoverySession() async {
+    final session = await _recoveryService.restore();
+    if (session == null) return;
+
+    for (final docData in session.documents) {
+      final doc = EditorDocument(
+        id: docData.path,
+        path: docData.path,
+        name: docData.path.split('/').last,
+        content: docData.buffer,
+        language: docData.path.split('.').last,
+        encoding: 'utf8',
+        lastModified: '',
+        readOnly: false,
+      );
+
+      doc.addListener(() {
+        handleAutoSaveOnEdit(doc.path);
+      });
+
+      doc.updateCursor(docData.cursor);
+      if (docData.selection != null) {
+        doc.updateSelection(docData.selection);
+      }
+      doc.scrollOffset = docData.scrollOffset;
+      doc.state = docData.isDirty ? DocumentState.dirty : DocumentState.clean;
+
+      doc.reparseFolding();
+      for (final fold in docData.folds) {
+        doc.collapse(fold.startLine);
+      }
+
+      editor.open(doc);
+      documentService.cacheDocument(DocumentId(doc.path), doc);
+    }
+
+    if (session.activeTabIndex >= 0 &&
+        session.activeTabIndex < editor.tabs.length) {
+      editor.activate(session.activeTabIndex);
+    }
+    notifyListeners();
+  }
+
+  Future<void> reloadFileFromDisk(String path) async {
+    final doc = documentService.getDocument(DocumentId(path));
+    if (doc == null) return;
+    try {
+      final fileRes = await http.get(
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
+        ),
+      );
+      final fileEnvelope = jsonDecode(fileRes.body);
+      if (fileEnvelope["success"] == true) {
+        final content = fileEnvelope["data"]["content"] ?? '';
+        doc.lockReason = null;
+        doc.state = DocumentState.clean;
+
+        final originalCursor = doc.cursor;
+        doc.replaceBuffer(content);
+        doc.updateCursor(
+          originalCursor.line <= doc.lineCount
+              ? originalCursor
+              : Position(line: doc.lineCount, column: 1),
+        );
+
+        eventBus.publish("Document", DocumentReloadedEvent(path));
+        notifyListeners();
+        triggerRecoverySave();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _processSaveQueue() async {
+    if (_isSavingQueue) return;
+    _isSavingQueue = true;
+
+    while (true) {
+      _saveQueue.sort((a, b) => b.priority.compareTo(a.priority));
+
+      SaveTask? nextTask;
+      for (final task in _saveQueue) {
+        if (task.state == SaveTaskState.queued) {
+          nextTask = task;
+          break;
+        }
+      }
+
+      if (nextTask == null) break;
+
+      nextTask.state = SaveTaskState.running;
+      notifyListeners();
+
+      OperationResult<void> res = const OperationResult.fail(null);
+      int retries = 3;
+      while (retries > 0) {
+        res = await _executeSaveFile(nextTask.path);
+        if (res.success) {
+          break;
+        }
+        retries--;
+        if (retries > 0) {
+          await Future.delayed(const Duration(milliseconds: 200));
+        }
+      }
+
+      if (res.success) {
+        nextTask.state = SaveTaskState.completed;
+        _lastSaveTime = DateTime.now();
+      } else {
+        nextTask.state = SaveTaskState.failed;
+      }
+
+      _saveQueue.remove(nextTask);
+      nextTask.completer.complete(res);
+      notifyListeners();
+    }
+
+    _isSavingQueue = false;
+    notifyListeners();
+  }
+
+  Future<OperationResult<void>> _executeSaveFile(String path) async {
+    final doc = documentService.getDocument(DocumentId(path));
+    if (doc == null) return const OperationResult.fail(null);
+    final previousState = doc.state;
+    doc.state = DocumentState.saving;
+    notifyListeners();
+
+    try {
+      final res = await http.put(
+        Uri.parse(
+          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
+        ),
+        body: jsonEncode({"content": doc.content}),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope["success"] == true) {
+        doc.markSaved(DateTime.now());
+        doc.state = DocumentState.clean;
+        notifyListeners();
+        return const OperationResult.ok(null);
+      } else {
+        doc.state = previousState;
+        notifyListeners();
+        return const OperationResult.fail(null);
+      }
+    } catch (_) {
+      doc.state = previousState;
+      notifyListeners();
+      return const OperationResult.fail(null);
+    }
   }
 
   Future<void> reloadWorkspace() async {
@@ -749,11 +1181,17 @@ class StudioState extends ChangeNotifier {
           readOnly: fileData["readOnly"] ?? true,
         );
 
+        doc.addListener(() {
+          handleAutoSaveOnEdit(doc.path);
+        });
+
         editor.open(doc);
         documentService.cacheDocument(DocumentId(path), doc);
         if (line != null) {
-          doc.cursorLine = line;
+          doc.updateCursor(Position(line: line, column: 1));
         }
+        navigationHistory.record(path, line ?? 1, 1);
+        triggerRecoverySave();
 
         // Set central selection
         _currentSelection = Selection(
@@ -768,37 +1206,34 @@ class StudioState extends ChangeNotifier {
 
   Future<OperationResult<void>> saveFileContent(
     String path,
-    String content,
-  ) async {
-    try {
-      final res = await http.put(
-        Uri.parse(
-          'http://localhost:$_serverPort/api/v1/workspace/file?path=$path',
-        ),
-        body: jsonEncode({"content": content}),
-      );
-      final envelope = jsonDecode(res.body);
-      if (envelope["success"] == true) {
-        final doc = documentService.getDocument(DocumentId(path));
-        if (doc != null) {
-          doc.markSaved(DateTime.now());
-        }
-        return const OperationResult.ok(null);
-      } else {
-        final err =
-            envelope["errors"] is List &&
-                (envelope["errors"] as List).isNotEmpty
-            ? envelope["errors"][0]
-            : "Unknown error";
-        return OperationResult.fail(
-          WorkbenchError(code: "SAVE_FAILED", message: err),
-        );
+    String content, {
+    SaveReason reason = SaveReason.manual,
+  }) async {
+    SaveTask? existing;
+    for (final task in _saveQueue) {
+      if (task.path == path && task.state == SaveTaskState.queued) {
+        existing = task;
+        break;
       }
-    } catch (e) {
-      return OperationResult.fail(
-        WorkbenchError(code: "SAVE_FAILED", message: e.toString()),
-      );
     }
+
+    if (existing != null) {
+      final newPri = _getPriority(reason);
+      final oldPri = _getPriority(existing.reason);
+      if (newPri > oldPri) {
+        _saveQueue.remove(existing);
+        final promoted = SaveTask(path: path, reason: reason);
+        _saveQueue.add(promoted);
+        _processSaveQueue();
+        return promoted.completer.future;
+      }
+      return existing.completer.future;
+    }
+
+    final task = SaveTask(path: path, reason: reason);
+    _saveQueue.add(task);
+    _processSaveQueue();
+    return task.completer.future;
   }
 
   Future<OperationResult<void>> createFile(String path, String content) async {
@@ -831,6 +1266,10 @@ class StudioState extends ChangeNotifier {
   }
 
   Future<OperationResult<void>> renameFile(String path, String newPath) async {
+    final doc = documentService.getDocument(DocumentId(path));
+    if (doc != null) {
+      doc.lockReason = DocumentLockReason.renaming;
+    }
     try {
       final res = await http.post(
         Uri.parse('http://localhost:$_serverPort/api/v1/workspace/rename'),
@@ -838,8 +1277,6 @@ class StudioState extends ChangeNotifier {
       );
       final envelope = jsonDecode(res.body);
       if (envelope["success"] == true) {
-        // Safe transaction updates:
-        final doc = documentService.getDocument(DocumentId(path));
         if (doc != null) {
           documentService.removeDocument(DocumentId(path));
           final newDoc = EditorDocument(
@@ -858,7 +1295,6 @@ class StudioState extends ChangeNotifier {
           newDoc.selection = doc.selection;
           documentService.cacheDocument(DocumentId(newPath), newDoc);
 
-          // Update active tab in editor if matching
           final existingTabIdx = editor.tabs.indexWhere(
             (t) => t.document.path == path,
           );
@@ -883,10 +1319,18 @@ class StudioState extends ChangeNotifier {
       return OperationResult.fail(
         WorkbenchError(code: "RENAME_FAILED", message: e.toString()),
       );
+    } finally {
+      if (doc != null) {
+        doc.lockReason = null;
+      }
     }
   }
 
   Future<OperationResult<void>> deleteFile(String path) async {
+    final doc = documentService.getDocument(DocumentId(path));
+    if (doc != null) {
+      doc.lockReason = DocumentLockReason.deleting;
+    }
     try {
       final res = await http.delete(
         Uri.parse(
@@ -919,6 +1363,10 @@ class StudioState extends ChangeNotifier {
       return OperationResult.fail(
         WorkbenchError(code: "DELETE_FAILED", message: e.toString()),
       );
+    } finally {
+      if (doc != null) {
+        doc.lockReason = null;
+      }
     }
   }
 
@@ -1000,13 +1448,24 @@ class StudioState extends ChangeNotifier {
     }
   }
 
+  int _wsRetryCount = 0;
+  Timer? _wsReconnectTimer;
+
   void _subscribeToEvents(int port) {
+    _wsReconnectTimer?.cancel();
     try {
+      watcherState = WorkspaceWatcherState.reconnecting;
+      notifyListeners();
+
       _wsChannel = WebSocketChannel.connect(
         Uri.parse('ws://localhost:$port/ws/events'),
       );
       _wsChannel!.stream.listen(
         (message) {
+          _wsRetryCount = 0;
+          watcherState = WorkspaceWatcherState.connected;
+          notifyListeners();
+
           final data = jsonDecode(message);
           final category = data['category'] ?? 'Event';
           final event = data['event'] ?? 'unknown';
@@ -1014,10 +1473,52 @@ class StudioState extends ChangeNotifier {
           final path = data['path'] ?? '';
 
           if (category == 'workspace') {
-            // Watcher invalidation
             if (path.isNotEmpty) {
               workspaceCache.invalidate(path);
               reloadWorkspace();
+
+              final doc = documentService.getDocument(DocumentId(path));
+              if (doc != null) {
+                final timestamp = DateTime.now();
+                if (event == 'modified') {
+                  eventBus.publish(
+                    "Workspace",
+                    WorkspaceModifiedEvent(path, timestamp),
+                  );
+                  if (doc.state == DocumentState.dirty) {
+                    doc.state = DocumentState.conflict;
+                    eventBus.publish(
+                      "Document",
+                      DocumentConflictEvent(
+                        path,
+                        timestamp.toIso8601String(),
+                        doc.version.localRevision,
+                      ),
+                    );
+                  } else {
+                    reloadFileFromDisk(path);
+                  }
+                } else if (event == 'deleted') {
+                  eventBus.publish(
+                    "Workspace",
+                    WorkspaceDeletedEvent(path, timestamp),
+                  );
+                  doc.state = DocumentState.conflict;
+                  eventBus.publish(
+                    "Document",
+                    DocumentConflictEvent(
+                      path,
+                      timestamp.toIso8601String(),
+                      doc.version.localRevision,
+                    ),
+                  );
+                } else if (event == 'created') {
+                  eventBus.publish(
+                    "Workspace",
+                    WorkspaceCreatedEvent(path, timestamp),
+                  );
+                }
+              }
             }
           }
 
@@ -1025,13 +1526,29 @@ class StudioState extends ChangeNotifier {
           notifyListeners();
         },
         onError: (_) {
-          disconnect();
+          _handleWsDisconnect(port);
         },
         onDone: () {
-          disconnect();
+          _handleWsDisconnect(port);
         },
       );
-    } catch (_) {}
+    } catch (_) {
+      _handleWsDisconnect(port);
+    }
+  }
+
+  void _handleWsDisconnect(int port) {
+    watcherState = WorkspaceWatcherState.disconnected;
+    _wsChannel?.sink.close();
+    notifyListeners();
+
+    _wsRetryCount++;
+    final delay = _wsRetryCount == 1 ? 1 : (_wsRetryCount == 2 ? 2 : 5);
+
+    _wsReconnectTimer?.cancel();
+    _wsReconnectTimer = Timer(Duration(seconds: delay), () {
+      _subscribeToEvents(port);
+    });
   }
 
   Future<List<Map<String, dynamic>>> fetchOutline(DocumentId id) async {

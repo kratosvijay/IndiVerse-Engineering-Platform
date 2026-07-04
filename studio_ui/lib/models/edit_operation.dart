@@ -30,13 +30,12 @@ class InsertTextOperation implements EditOperation {
     EditorDocument document,
     OperationContext context,
   ) async {
-    if (document.readOnly) {
-      return const OperationResult.fail(
-        WorkbenchError(
-          code: "READ_ONLY",
-          message: "Cannot edit a read-only document.",
-        ),
-      );
+    if (document.readOnly || document.lockReason != null) {
+      final code = document.readOnly ? "READ_ONLY" : "LOCKED";
+      final msg = document.readOnly
+          ? "Cannot edit a read-only document."
+          : "Document is locked. Reason: ${document.lockReason}";
+      return OperationResult.fail(WorkbenchError(code: code, message: msg));
     }
     if (index < 0 || index > document.size) {
       return const OperationResult.fail(
@@ -55,13 +54,12 @@ class InsertTextOperation implements EditOperation {
     EditorDocument document,
     OperationContext context,
   ) async {
-    if (document.readOnly) {
-      return const OperationResult.fail(
-        WorkbenchError(
-          code: "READ_ONLY",
-          message: "Cannot edit a read-only document.",
-        ),
-      );
+    if (document.readOnly || document.lockReason != null) {
+      final code = document.readOnly ? "READ_ONLY" : "LOCKED";
+      final msg = document.readOnly
+          ? "Cannot edit a read-only document."
+          : "Document is locked. Reason: ${document.lockReason}";
+      return OperationResult.fail(WorkbenchError(code: code, message: msg));
     }
     if (index < 0 || index + text.length > document.size) {
       return const OperationResult.fail(
@@ -87,13 +85,12 @@ class DeleteTextOperation implements EditOperation {
     EditorDocument document,
     OperationContext context,
   ) async {
-    if (document.readOnly) {
-      return const OperationResult.fail(
-        WorkbenchError(
-          code: "READ_ONLY",
-          message: "Cannot edit a read-only document.",
-        ),
-      );
+    if (document.readOnly || document.lockReason != null) {
+      final code = document.readOnly ? "READ_ONLY" : "LOCKED";
+      final msg = document.readOnly
+          ? "Cannot edit a read-only document."
+          : "Document is locked. Reason: ${document.lockReason}";
+      return OperationResult.fail(WorkbenchError(code: code, message: msg));
     }
     if (index < 0 || index + text.length > document.size) {
       return const OperationResult.fail(
@@ -112,13 +109,12 @@ class DeleteTextOperation implements EditOperation {
     EditorDocument document,
     OperationContext context,
   ) async {
-    if (document.readOnly) {
-      return const OperationResult.fail(
-        WorkbenchError(
-          code: "READ_ONLY",
-          message: "Cannot edit a read-only document.",
-        ),
-      );
+    if (document.readOnly || document.lockReason != null) {
+      final code = document.readOnly ? "READ_ONLY" : "LOCKED";
+      final msg = document.readOnly
+          ? "Cannot edit a read-only document."
+          : "Document is locked. Reason: ${document.lockReason}";
+      return OperationResult.fail(WorkbenchError(code: code, message: msg));
     }
     if (index < 0 || index > document.size) {
       return const OperationResult.fail(
@@ -149,13 +145,12 @@ class ReplaceTextOperation implements EditOperation {
     EditorDocument document,
     OperationContext context,
   ) async {
-    if (document.readOnly) {
-      return const OperationResult.fail(
-        WorkbenchError(
-          code: "READ_ONLY",
-          message: "Cannot edit a read-only document.",
-        ),
-      );
+    if (document.readOnly || document.lockReason != null) {
+      final code = document.readOnly ? "READ_ONLY" : "LOCKED";
+      final msg = document.readOnly
+          ? "Cannot edit a read-only document."
+          : "Document is locked. Reason: ${document.lockReason}";
+      return OperationResult.fail(WorkbenchError(code: code, message: msg));
     }
     if (index < 0 || index + oldText.length > document.size) {
       return const OperationResult.fail(
@@ -175,13 +170,12 @@ class ReplaceTextOperation implements EditOperation {
     EditorDocument document,
     OperationContext context,
   ) async {
-    if (document.readOnly) {
-      return const OperationResult.fail(
-        WorkbenchError(
-          code: "READ_ONLY",
-          message: "Cannot edit a read-only document.",
-        ),
-      );
+    if (document.readOnly || document.lockReason != null) {
+      final code = document.readOnly ? "READ_ONLY" : "LOCKED";
+      final msg = document.readOnly
+          ? "Cannot edit a read-only document."
+          : "Document is locked. Reason: ${document.lockReason}";
+      return OperationResult.fail(WorkbenchError(code: code, message: msg));
     }
     if (index < 0 || index + newText.length > document.size) {
       return const OperationResult.fail(
