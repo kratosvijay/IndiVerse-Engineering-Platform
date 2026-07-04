@@ -22,10 +22,10 @@ jobs:
         run: dart pub get
 
       - name: Format Check
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test tool benchmark bin
 
       - name: Analyze Code
-        run: dart analyze
+        run: dart analyze lib test tool benchmark bin
 
       - name: Run Unit Tests
         run: dart test
