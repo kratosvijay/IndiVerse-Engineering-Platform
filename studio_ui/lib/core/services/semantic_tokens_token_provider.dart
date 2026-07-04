@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/widgets.dart';
 import '../../models/editor_document.dart';
 import '../../models/semantic_token.dart';
@@ -154,7 +153,7 @@ class SemanticTokensTokenProvider implements TokenProvider {
     }
 
     controller?.viewportCache.clear();
-    controller?.notifyListeners();
+    controller?.refresh();
   }
 
   TextStyle _getStyleForTokenType(
@@ -223,9 +222,7 @@ class SemanticTokensTokenProvider implements TokenProvider {
         break;
     }
 
-    if (color != null) {
-      style = style.copyWith(color: color);
-    }
+    style = style.copyWith(color: color);
 
     if (modifiers.contains(SemanticTokenModifier.deprecated)) {
       style = style.copyWith(decoration: TextDecoration.lineThrough);

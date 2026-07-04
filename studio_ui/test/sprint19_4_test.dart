@@ -1,11 +1,8 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio_ui/models/editor_document.dart';
 import 'package:studio_ui/models/edit_operation.dart';
-import 'package:studio_ui/models/workspace_events.dart';
 import 'package:studio_ui/core/services/recovery_service.dart';
-import 'package:studio_ui/core/state/studio_state.dart';
 
 void main() {
   group('Workspace Locking Tests', () {

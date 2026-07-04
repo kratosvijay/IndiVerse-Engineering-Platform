@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import '../../../models/editor_document.dart';
-import '../../../models/folding_region.dart';
 import '../highlighting/abstract_highlighter.dart';
 
 class EditorViewport {
@@ -188,5 +187,9 @@ class EditorViewController extends ChangeNotifier {
     final tokens = tokenProvider.tokenizeLine(context, lineText, lineIndex);
     viewportCache.put(lineIndex, tokens);
     return tokens;
+  }
+
+  void refresh() {
+    notifyListeners();
   }
 }

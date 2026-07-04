@@ -344,7 +344,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.2),
+                    color: Colors.red.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: Colors.redAccent, width: 0.5),
                   ),

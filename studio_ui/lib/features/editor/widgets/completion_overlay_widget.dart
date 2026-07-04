@@ -59,7 +59,7 @@ class CompletionOverlayWidget extends StatelessWidget {
             border: Border.all(color: const Color(0xFF3F3F56), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),

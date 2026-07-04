@@ -90,7 +90,7 @@ Documentation source: *Local symbol index*
     if (start >= lineStr.length) start = lineStr.length - 1;
     if (start < 0) return null;
 
-    final isWordChar = (String char) => RegExp(r'[a-zA-Z0-9_]').hasMatch(char);
+    bool isWordChar(String char) => RegExp(r'[a-zA-Z0-9_]').hasMatch(char);
     if (!isWordChar(lineStr[start])) return null;
 
     while (start > 0 && isWordChar(lineStr[start - 1])) {

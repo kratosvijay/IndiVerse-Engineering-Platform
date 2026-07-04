@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/editor_document.dart';
 import '../controllers/editor_view_controller.dart';
-import '../../../models/folding_region.dart';
 
 class EditorTheme {
   final Color backgroundColor;

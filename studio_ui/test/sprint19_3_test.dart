@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio_ui/models/editor_document.dart';
-import 'package:studio_ui/models/folding_region.dart';
 import 'package:studio_ui/features/editor/controllers/folding_provider.dart';
 import 'package:studio_ui/core/services/navigation_history.dart';
 

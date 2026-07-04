@@ -214,7 +214,7 @@ class _EditorWidgetState extends State<EditorWidget>
     if (start >= lineStr.length) start = lineStr.length - 1;
     if (start < 0) return null;
 
-    final isWordChar = (String char) => RegExp(r'[a-zA-Z0-9_]').hasMatch(char);
+    bool isWordChar(String char) => RegExp(r'[a-zA-Z0-9_]').hasMatch(char);
     if (!isWordChar(lineStr[start])) return null;
 
     while (start > 0 && isWordChar(lineStr[start - 1])) {
@@ -306,8 +306,9 @@ class _EditorWidgetState extends State<EditorWidget>
         for (final diag in hoverDiags) {
           String severityEmoji = '❌';
           if (diag.severity == DiagnosticSeverity.warning) severityEmoji = '⚠️';
-          if (diag.severity == DiagnosticSeverity.information)
+          if (diag.severity == DiagnosticSeverity.information) {
             severityEmoji = 'ℹ️';
+          }
           if (diag.severity == DiagnosticSeverity.hint) severityEmoji = '💡';
 
           mergedContent.writeln('**$severityEmoji ${diag.message}**');
@@ -409,7 +410,7 @@ class _EditorWidgetState extends State<EditorWidget>
             border: Border.all(color: const Color(0xFF4C457D), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1255,7 +1256,7 @@ class _EditorWidgetState extends State<EditorWidget>
         height: 24,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF131024).withOpacity(0.95),
+          color: const Color(0xFF131024).withValues(alpha: 0.95),
           border: const Border(bottom: BorderSide(color: Color(0xFF2C284D))),
         ),
         child: Row(

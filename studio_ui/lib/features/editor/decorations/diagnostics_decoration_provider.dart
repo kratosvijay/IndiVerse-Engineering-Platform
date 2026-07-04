@@ -1,9 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../models/editor_document.dart';
 import '../../../models/language_intelligence_models.dart';
 import '../widgets/editor_renderer.dart';
-import '../controllers/editor_view_controller.dart';
 import '../../../core/state/studio_state.dart';
 
 class DiagnosticsDecorationProvider implements DecorationProvider {
@@ -110,7 +108,7 @@ class DiagnosticsDecorationProvider implements DecorationProvider {
   ) {
     if (diag.tags.contains(DiagnosticTag.unnecessary)) {
       final fadePaint = Paint()
-        ..color = context.theme.backgroundColor.withOpacity(0.5)
+        ..color = context.theme.backgroundColor.withValues(alpha: 0.5)
         ..style = PaintingStyle.fill;
       canvas.drawRect(
         Rect.fromLTWH(xStart, y + 2.0, xEnd - xStart, lineHeight - 4.0),

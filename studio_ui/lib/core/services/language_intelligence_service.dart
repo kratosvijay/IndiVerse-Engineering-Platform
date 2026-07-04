@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../../models/language_intelligence_models.dart';
-import 'language_intelligence_providers.dart';
 import 'language_provider_registry.dart';
 import 'workbench_providers.dart';
 import 'completion_cache.dart';

@@ -30,12 +30,15 @@ class _ProblemsPanelState extends State<ProblemsPanel> {
       if (_currentFileOnly && path != activeDoc?.path) return;
 
       final filtered = diags.where((d) {
-        if (d.severity == DiagnosticSeverity.error && !_showErrors)
+        if (d.severity == DiagnosticSeverity.error && !_showErrors) {
           return false;
-        if (d.severity == DiagnosticSeverity.warning && !_showWarnings)
+        }
+        if (d.severity == DiagnosticSeverity.warning && !_showWarnings) {
           return false;
-        if (d.severity == DiagnosticSeverity.information && !_showInfos)
+        }
+        if (d.severity == DiagnosticSeverity.information && !_showInfos) {
           return false;
+        }
         if (d.severity == DiagnosticSeverity.hint && !_showInfos) return false;
         return true;
       }).toList();
@@ -310,7 +313,7 @@ class _ProblemsPanelState extends State<ProblemsPanel> {
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFF4C457D)
-              : Colors.white.withOpacity(0.05),
+              : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: isSelected ? const Color(0xFF8B5CF6) : Colors.white10,
@@ -342,9 +345,9 @@ class _ProblemsPanelState extends State<ProblemsPanel> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: color.withOpacity(0.3), width: 1),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
           ),
           child: Text(
             label,

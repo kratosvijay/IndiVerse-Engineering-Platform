@@ -170,7 +170,7 @@ class MinimapPainter extends CustomPainter {
     final double viewBottom = (lastVisual + 1) * lineHeight;
 
     final viewportPaint = Paint()
-      ..color = Colors.white.withOpacity(0.08)
+      ..color = Colors.white.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
