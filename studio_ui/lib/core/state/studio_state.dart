@@ -236,6 +236,257 @@ class StudioState extends ChangeNotifier {
     );
     commandRegistry.register(
       Command(
+        id: EditorCommands.commentLine,
+        title: "Toggle Line Comment",
+        category: "Editor",
+        description: "Comment or uncomment active line(s)",
+        shortcut: const SingleActivator(LogicalKeyboardKey.slash, meta: true),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await editor.commentLine(active.document, history);
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.duplicateLine,
+        title: "Duplicate Line",
+        category: "Editor",
+        description: "Duplicate selected line(s) downwards",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await editor.duplicateLine(active.document, history);
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.deleteLine,
+        title: "Delete Line",
+        category: "Editor",
+        description: "Delete active or selected line(s)",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await editor.deleteLine(active.document, history);
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.moveLineUp,
+        title: "Move Line Up",
+        category: "Editor",
+        description: "Swap active line(s) with the line above",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await editor.moveLineUp(active.document, history);
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.moveLineDown,
+        title: "Move Line Down",
+        category: "Editor",
+        description: "Swap active line(s) with the line below",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final res = await editor.moveLineDown(active.document, history);
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.selectAll,
+        title: "Select All",
+        category: "Editor",
+        description: "Select entire document contents",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyA, meta: true),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          editor.selectAll(active.document);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.replace,
+        title: "Replace in Editor",
+        category: "Editor",
+        description: "Open find and replace overlay",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyH, meta: true),
+        execute: (ctx) async {
+          eventBus.publish("Command", "replace");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.commentBlock,
+        title: "Toggle Block Comment",
+        category: "Editor",
+        description: "Toggle block comment markers",
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyA,
+          meta: true,
+          shift: true,
+          alt: true,
+        ),
+        execute: (ctx) async {
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.indent,
+        title: "Indent Line",
+        category: "Editor",
+        description: "Indent line or selection by two spaces",
+        shortcut: const SingleActivator(LogicalKeyboardKey.tab),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final offset = active.document.positionToOffset(
+            active.document.cursor,
+          );
+          final op = InsertTextOperation(index: offset, text: "  ");
+          final res = await op.apply(
+            active.document,
+            OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+          );
+          if (res.success) {
+            history.recordOperation(active.document.id, op);
+          }
+          notifyListeners();
+          return res;
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.outdent,
+        title: "Outdent Line",
+        category: "Editor",
+        description: "Outdent line or selection",
+        shortcut: const SingleActivator(LogicalKeyboardKey.tab, shift: true),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final lineText =
+              active.document.lines[active.document.cursorLine - 1];
+          if (lineText.startsWith("  ")) {
+            final startOffset = active.document.positionToOffset(
+              Position(line: active.document.cursorLine, column: 1),
+            );
+            final op = DeleteTextOperation(index: startOffset, text: "  ");
+            final res = await op.apply(
+              active.document,
+              OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+            );
+            if (res.success) {
+              history.recordOperation(active.document.id, op);
+            }
+            notifyListeners();
+            return res;
+          }
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.autoFormat,
+        title: "Format Document",
+        category: "Editor",
+        description: "Auto-format document using standard rules",
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.keyF,
+          shift: true,
+          alt: true,
+        ),
+        execute: (ctx) async {
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
         id: WorkbenchCommands.showCommands,
         title: "Command Palette",
         category: "Command",

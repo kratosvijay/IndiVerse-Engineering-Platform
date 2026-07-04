@@ -1,10 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/state/studio_state.dart';
 import '../../../core/services/workbench_providers.dart';
 import '../../../core/services/workbench_commands.dart';
 import '../../../models/ids.dart';
 import '../../../models/editor_document.dart';
+import '../../../models/edit_operation.dart';
 import '../../../core/services/keyboard_shortcut_manager.dart';
 import '../highlighting/abstract_highlighter.dart';
 import '../highlighting/dart_highlighter.dart';
@@ -15,6 +18,8 @@ import '../highlighting/text_highlighter.dart';
 import 'breadcrumb_symbols_widget.dart';
 import 'references_panel.dart';
 import 'find_overlay_widget.dart';
+import '../controllers/editor_view_controller.dart';
+import 'editor_renderer.dart';
 
 class EditorWidget extends StatefulWidget {
   final StudioState state;
@@ -37,12 +42,21 @@ class _EditorWidgetState extends State<EditorWidget> {
   int _currentMatchIdx = 0;
   String _findQuery = '';
 
+  EditorViewController? _controller;
+  final FocusNode _focusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
+    _initController();
+
     widget.state.eventBus.stream.listen((evt) {
       if (evt.category == 'Command') {
         if (evt.payload == 'find') {
+          if (mounted) {
+            setState(() => _showFind = true);
+          }
+        } else if (evt.payload == 'replace') {
           if (mounted) {
             setState(() => _showFind = true);
           }
@@ -53,16 +67,80 @@ class _EditorWidgetState extends State<EditorWidget> {
         }
       }
     });
+
+    _scrollController.addListener(_handleScrollListener);
+  }
+
+  void _initController() {
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab != null) {
+      final doc = activeTab.document;
+      final provider = HighlighterTokenProvider(
+        _resolveHighlighter(doc.language),
+      );
+      _controller = EditorViewController(
+        document: doc,
+        tokenProvider: provider,
+      );
+      _controller!.addListener(_rebuildOnControllerChange);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleScrollListener();
+      });
+    }
+  }
+
+  void _rebuildOnControllerChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _handleScrollListener() {
+    if (_controller == null || !_scrollController.hasClients) return;
+    final scrollOffset = _scrollController.offset;
+    final viewportHeight = _scrollController.position.viewportDimension;
+
+    final int firstLine = (scrollOffset / 20.0).floor() + 1;
+    final int lastLine = ((scrollOffset + viewportHeight) / 20.0).ceil() + 1;
+
+    _controller!.updateViewport(
+      EditorViewport(
+        firstVisibleLine: firstLine.clamp(1, _controller!.document.lineCount),
+        lastVisibleLine: lastLine.clamp(1, _controller!.document.lineCount),
+        horizontalOffset: 0.0,
+        verticalOffset: scrollOffset,
+        viewportWidth: _scrollController.position.maxScrollExtent,
+        viewportHeight: viewportHeight,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant EditorWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab != null &&
+        (_controller == null || activeTab.document != _controller!.document)) {
+      _controller?.removeListener(_rebuildOnControllerChange);
+      _controller?.dispose();
+      _initController();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScrollListener);
+    _scrollController.dispose();
+    _controller?.removeListener(_rebuildOnControllerChange);
+    _controller?.dispose();
+    _focusNode.dispose();
+    super.dispose();
   }
 
   void _handleCloseTab(int index) async {
     final tab = widget.state.editor.tabs[index];
     final doc = tab.document;
 
-    // Block closing while saving
     if (doc.state == DocumentState.saving) return;
 
-    // If dirty, prompt user
     if (doc.state == DocumentState.dirty) {
       final result = await showDialog<String>(
         context: context,
@@ -119,11 +197,9 @@ class _EditorWidgetState extends State<EditorWidget> {
   }
 
   void _showGotoLineDialog() {
-    final activeTab = widget.state.editor.activeTab;
-    if (activeTab == null) return;
-    final doc = activeTab.document;
-    final lines = doc.content.split('\n');
-    final maxLine = lines.length;
+    if (_controller == null) return;
+    final doc = _controller!.document;
+    final maxLine = doc.lineCount;
 
     showDialog(
       context: context,
@@ -169,10 +245,8 @@ class _EditorWidgetState extends State<EditorWidget> {
                         errorText = 'Maximum line: $maxLine';
                       });
                     } else {
-                      widget.state.workbench.navigation.jumpToLine(
-                        DocumentId(doc.path),
-                        line,
-                      );
+                      doc.updateCursor(Position(line: line, column: 1));
+                      _scrollToLine(line);
                       Navigator.of(context).pop();
                     }
                   },
@@ -196,13 +270,12 @@ class _EditorWidgetState extends State<EditorWidget> {
       return;
     }
 
-    final activeTab = widget.state.editor.activeTab;
-    if (activeTab == null) return;
-    final lines = activeTab.document.content.split('\n');
+    if (_controller == null) return;
+    final doc = _controller!.document;
 
     final list = <int>[];
-    for (var i = 0; i < lines.length; i++) {
-      if (lines[i].toLowerCase().contains(query.toLowerCase())) {
+    for (var i = 0; i < doc.lineCount; i++) {
+      if (doc.lines[i].toLowerCase().contains(query.toLowerCase())) {
         list.add(i + 1);
       }
     }
@@ -215,25 +288,32 @@ class _EditorWidgetState extends State<EditorWidget> {
 
     if (list.isNotEmpty) {
       _scrollToLine(list[0]);
+      doc.updateCursor(Position(line: list[0], column: 1));
     }
   }
 
   void _onFindNext() {
-    if (_matchLineIndices.isEmpty) return;
+    if (_matchLineIndices.isEmpty || _controller == null) return;
     setState(() {
       _currentMatchIdx = (_currentMatchIdx + 1) % _matchLineIndices.length;
     });
     _scrollToLine(_matchLineIndices[_currentMatchIdx]);
+    _controller!.document.updateCursor(
+      Position(line: _matchLineIndices[_currentMatchIdx], column: 1),
+    );
   }
 
   void _onFindPrev() {
-    if (_matchLineIndices.isEmpty) return;
+    if (_matchLineIndices.isEmpty || _controller == null) return;
     setState(() {
       _currentMatchIdx =
           (_currentMatchIdx - 1 + _matchLineIndices.length) %
           _matchLineIndices.length;
     });
     _scrollToLine(_matchLineIndices[_currentMatchIdx]);
+    _controller!.document.updateCursor(
+      Position(line: _matchLineIndices[_currentMatchIdx], column: 1),
+    );
   }
 
   SyntaxHighlighter _resolveHighlighter(String language) {
@@ -248,17 +328,6 @@ class _EditorWidgetState extends State<EditorWidget> {
         return MarkdownHighlighter();
       default:
         return TextHighlighter();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant EditorWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final doc = widget.state.editor.activeTab?.document;
-    if (doc != null && doc.cursorLine > 1) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToLine(doc.cursorLine);
-      });
     }
   }
 
@@ -311,11 +380,111 @@ class _EditorWidgetState extends State<EditorWidget> {
     }
   }
 
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent || _controller == null) return;
+    final doc = _controller!.document;
+
+    final context = CommandContext();
+    if (widget.state.shortcutManager.handleKeyEvent(event, context)) {
+      setState(() {});
+      return;
+    }
+
+    final keyChar = event.character;
+    if (keyChar != null && keyChar.isNotEmpty) {
+      final offset = doc.positionToOffset(doc.cursor);
+      final op = InsertTextOperation(index: offset, text: keyChar);
+      op.apply(
+        doc,
+        OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+      );
+      widget.state.history.recordOperation(doc.id, op);
+      setState(() {});
+    } else if (event.logicalKey == LogicalKeyboardKey.backspace) {
+      final offset = doc.positionToOffset(doc.cursor);
+      if (offset > 0) {
+        final deleteText = doc.content.substring(offset - 1, offset);
+        final op = DeleteTextOperation(index: offset - 1, text: deleteText);
+        op.apply(
+          doc,
+          OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+        );
+        widget.state.history.recordOperation(doc.id, op);
+        setState(() {});
+      }
+    } else if (event.logicalKey == LogicalKeyboardKey.enter) {
+      final offset = doc.positionToOffset(doc.cursor);
+      final op = InsertTextOperation(index: offset, text: "\n");
+      op.apply(
+        doc,
+        OperationContext(timestamp: DateTime.now(), source: "keyboard"),
+      );
+      widget.state.history.recordOperation(doc.id, op);
+      setState(() {});
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      final cur = doc.cursor;
+      if (cur.column > 1) {
+        doc.updateCursor(Position(line: cur.line, column: cur.column - 1));
+      } else if (cur.line > 1) {
+        final prevLineLength = doc.lines[cur.line - 2].length;
+        doc.updateCursor(
+          Position(line: cur.line - 1, column: prevLineLength + 1),
+        );
+      }
+      setState(() {});
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      final cur = doc.cursor;
+      final curLineLength = doc.lines[cur.line - 1].length;
+      if (cur.column <= curLineLength) {
+        doc.updateCursor(Position(line: cur.line, column: cur.column + 1));
+      } else if (cur.line < doc.lineCount) {
+        doc.updateCursor(Position(line: cur.line + 1, column: 1));
+      }
+      setState(() {});
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      final cur = doc.cursor;
+      if (cur.line > 1) {
+        final prevLineLength = doc.lines[cur.line - 2].length;
+        final targetCol = cur.column.clamp(1, prevLineLength + 1);
+        doc.updateCursor(Position(line: cur.line - 1, column: targetCol));
+      }
+      setState(() {});
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      final cur = doc.cursor;
+      if (cur.line < doc.lineCount) {
+        final nextLineLength = doc.lines[cur.line].length;
+        final targetCol = cur.column.clamp(1, nextLineLength + 1);
+        doc.updateCursor(Position(line: cur.line + 1, column: targetCol));
+      }
+      setState(() {});
+    }
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (_controller == null) return;
+    _focusNode.requestFocus();
+    final doc = _controller!.document;
+    final localPosition = details.localPosition;
+
+    final int line = (localPosition.dy / 20.0).floor() + 1;
+    final targetLine = line.clamp(1, doc.lineCount);
+
+    final double charWidth = 7.2;
+    final double textX =
+        localPosition.dx - 48.0 - 12.0 + _controller!.viewport.horizontalOffset;
+    final int col = (textX / charWidth).round() + 1;
+    final targetCol = col.clamp(1, doc.lines[targetLine - 1].length + 1);
+
+    doc.updateCursor(Position(line: targetLine, column: targetCol));
+    doc.updateSelection(null);
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeTab = widget.state.editor.activeTab;
 
-    if (activeTab == null) {
+    if (activeTab == null || _controller == null) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -333,8 +502,16 @@ class _EditorWidgetState extends State<EditorWidget> {
     }
 
     final doc = activeTab.document;
-    final lines = doc.content.split('\n');
-    final highlighter = _resolveHighlighter(doc.language);
+    final double editorHeight = math.max(300.0, doc.lineCount * 20.0 + 40.0);
+
+    final paintCtx = PaintContext(
+      snapshot: doc.createSnapshot(),
+      viewport: _controller!.viewport,
+      theme: EditorTheme.defaultDark,
+      gutters: [LineNumberGutterProvider()],
+      decorations: [],
+      controller: _controller!,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0C1B),
@@ -376,7 +553,6 @@ class _EditorWidgetState extends State<EditorWidget> {
                     ),
                     child: Row(
                       children: [
-                        // Dirty indicator dot
                         if (tab.document.state == DocumentState.dirty ||
                             tab.document.state == DocumentState.saving)
                           Container(
@@ -386,8 +562,8 @@ class _EditorWidgetState extends State<EditorWidget> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: tab.document.state == DocumentState.saving
-                                  ? const Color(0xFFFBBF24) // amber for saving
-                                  : Colors.white, // white dot for dirty
+                                  ? const Color(0xFFFBBF24)
+                                  : Colors.white,
                             ),
                           ),
                         Text(
@@ -479,92 +655,26 @@ class _EditorWidgetState extends State<EditorWidget> {
             ),
           ),
           const Divider(height: 1, color: Color(0xFF2C284D)),
-          // Line-numbered read-only viewer + Minimap
+          // Custom Drawn Editor
           Expanded(
             child: Stack(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        itemCount: lines.length,
-                        itemExtent: 20.0,
-                        itemBuilder: (context, index) {
-                          final lineNum = index + 1;
-                          final lineText = lines[index];
-                          final isHighlight = lineNum == doc.cursorLine;
-
-                          // Search highlight checker
-                          final isSearchMatch =
-                              _findQuery.isNotEmpty &&
-                              lineText.toLowerCase().contains(
-                                _findQuery.toLowerCase(),
-                              );
-
-                          return Container(
-                            color: isHighlight
-                                ? const Color(0xFF2C1C4D)
-                                : isSearchMatch
-                                ? const Color(0xFF3B2A1A)
-                                : Colors.transparent,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 48,
-                                  alignment: Alignment.centerRight,
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: Text(
-                                    '$lineNum',
-                                    style: TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 12,
-                                      color: isHighlight
-                                          ? const Color(0xFFA78BFA)
-                                          : Colors.white24,
-                                    ),
-                                  ),
-                                ),
-                                const VerticalDivider(
-                                  width: 1,
-                                  color: Color(0xFF2C284D),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: RichText(
-                                      text: highlighter.highlight(
-                                        context,
-                                        lineText,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                KeyboardListener(
+                  focusNode: _focusNode,
+                  onKeyEvent: _handleKeyEvent,
+                  child: GestureDetector(
+                    onTapDown: _handleTapDown,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: SizedBox(
+                        height: editorHeight,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: EditorRenderer(context, paintCtx),
+                        ),
                       ),
                     ),
-                    // Minimap Sidebar Strip
-                    Container(
-                      width: 32,
-                      color: const Color(0xFF0F0C1B),
-                      child: ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: lines.length > 120 ? 120 : lines.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            height: 2.0,
-                            margin: const EdgeInsets.symmetric(vertical: 0.5),
-                            color: Colors.white10,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 if (_showFind)
                   FindOverlayWidget(

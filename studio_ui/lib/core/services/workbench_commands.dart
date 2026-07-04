@@ -1,5 +1,6 @@
 abstract final class EditorCommands {
   static const find = "editor.find";
+  static const replace = "editor.replace";
   static const gotoLine = "editor.gotoLine";
   static const gotoDefinition = "editor.gotoDefinition";
   static const undo = "editor.undo";
@@ -7,6 +8,16 @@ abstract final class EditorCommands {
   static const nextTab = "editor.nextTab";
   static const previousTab = "editor.previousTab";
   static const closeTab = "editor.close";
+  static const commentLine = "editor.commentLine";
+  static const commentBlock = "editor.commentBlock";
+  static const duplicateLine = "editor.duplicateLine";
+  static const deleteLine = "editor.deleteLine";
+  static const moveLineUp = "editor.moveLineUp";
+  static const moveLineDown = "editor.moveLineDown";
+  static const selectAll = "editor.selectAll";
+  static const indent = "editor.indent";
+  static const outdent = "editor.outdent";
+  static const autoFormat = "editor.autoFormat";
 }
 
 abstract final class WorkbenchCommands {

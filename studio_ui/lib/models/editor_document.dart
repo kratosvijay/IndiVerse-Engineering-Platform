@@ -14,19 +14,45 @@ class Position {
   final int column;
 
   const Position({required this.line, required this.column});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Position &&
+          runtimeType == other.runtimeType &&
+          line == other.line &&
+          column == other.column;
+
+  @override
+  int get hashCode => line.hashCode ^ column.hashCode;
 }
 
-class Cursor {
-  final Position position;
-
-  const Cursor({required this.position});
-}
-
-class TextSelectionRange {
+class SelectionRange {
   final Position start;
   final Position end;
 
-  const TextSelectionRange({required this.start, required this.end});
+  const SelectionRange({required this.start, required this.end});
+
+  bool get isEmpty => start.line == end.line && start.column == end.column;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SelectionRange &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end;
+
+  @override
+  int get hashCode => start.hashCode ^ end.hashCode;
+}
+
+class DocumentSnapshot {
+  final int revision;
+  final List<String> lines;
+
+  DocumentSnapshot({required this.revision, required List<String> lines})
+    : lines = List.unmodifiable(lines);
 }
 
 enum AutoSavePolicy { never, afterDelay, onFocusLost, onWindowClose, manual }
@@ -35,7 +61,7 @@ class EditorDocument extends ChangeNotifier {
   final String id;
   final String path;
   final String name;
-  String _content;
+  final List<String> _lines;
   final String language;
   final String encoding;
   final String lastModified;
@@ -46,13 +72,15 @@ class EditorDocument extends ChangeNotifier {
     localRevision: 0,
     savedAt: DateTime.now(),
   );
-  Cursor cursor = const Cursor(position: Position(line: 1, column: 1));
-  TextSelectionRange? selection;
+
+  Position cursor = const Position(line: 1, column: 1);
+  SelectionRange? selection;
 
   // Session UI states
-  int cursorLine = 1;
-  int cursorColumn = 1;
   double scrollOffset = 0.0;
+
+  int get cursorLine => cursor.line;
+  int get cursorColumn => cursor.column;
 
   EditorDocument({
     required this.id,
@@ -63,20 +91,151 @@ class EditorDocument extends ChangeNotifier {
     required this.encoding,
     required this.lastModified,
     required this.readOnly,
-  }) : _content = content;
+  }) : _lines = content.split('\n');
 
-  String get content => _content;
-  int get lineCount => _content.split('\n').length;
-  int get size => _content.length;
+  String get content => _lines.join('\n');
+  List<String> get lines => List.unmodifiable(_lines);
+  int get lineCount => _lines.length;
+  int get size => content.length;
+
+  Position offsetToPosition(int offset) {
+    if (offset <= 0) return const Position(line: 1, column: 1);
+
+    int currentOffset = 0;
+    for (int i = 0; i < _lines.length; i++) {
+      final line = _lines[i];
+      final lineLength = line.length + 1; // +1 for the newline character '\n'
+      if (currentOffset + lineLength > offset) {
+        return Position(line: i + 1, column: offset - currentOffset + 1);
+      }
+      currentOffset += lineLength;
+    }
+
+    return Position(line: _lines.length, column: _lines.last.length + 1);
+  }
+
+  int positionToOffset(Position pos) {
+    int offset = 0;
+    final targetLine = pos.line.clamp(1, _lines.length);
+    for (int i = 0; i < targetLine - 1; i++) {
+      offset += _lines[i].length + 1; // +1 for '\n'
+    }
+    final targetLineText = _lines[targetLine - 1];
+    final targetCol = pos.column.clamp(1, targetLineText.length + 1);
+    offset += targetCol - 1;
+    return offset;
+  }
+
+  DocumentSnapshot createSnapshot() {
+    return DocumentSnapshot(revision: version.localRevision, lines: _lines);
+  }
 
   void updateContentInternal(String newContent) {
     if (readOnly) return;
-    _content = newContent;
+    _lines.clear();
+    _lines.addAll(newContent.split('\n'));
     state = DocumentState.dirty;
     version = DocumentVersion(
       localRevision: version.localRevision + 1,
       savedAt: version.savedAt,
     );
+    notifyListeners();
+  }
+
+  void updateLinesInternal(List<String> newLines) {
+    if (readOnly) return;
+    _lines.clear();
+    _lines.addAll(newLines);
+    state = DocumentState.dirty;
+    version = DocumentVersion(
+      localRevision: version.localRevision + 1,
+      savedAt: version.savedAt,
+    );
+    notifyListeners();
+  }
+
+  void insertTextAtPosition(Position pos, String text) {
+    if (readOnly) return;
+    final targetLine = pos.line.clamp(1, _lines.length);
+    final lineText = _lines[targetLine - 1];
+    final targetCol = pos.column.clamp(1, lineText.length + 1);
+
+    final prefix = lineText.substring(0, targetCol - 1);
+    final suffix = lineText.substring(targetCol - 1);
+
+    final newParts = text.split('\n');
+    Position endCursor;
+    if (newParts.length == 1) {
+      _lines[targetLine - 1] = prefix + text + suffix;
+      endCursor = Position(line: targetLine, column: targetCol + text.length);
+    } else {
+      _lines[targetLine - 1] = prefix + newParts.first;
+      for (int i = 1; i < newParts.length - 1; i++) {
+        _lines.insert(targetLine - 1 + i, newParts[i]);
+      }
+      _lines.insert(targetLine - 2 + newParts.length, newParts.last + suffix);
+      endCursor = Position(
+        line: targetLine + newParts.length - 1,
+        column: newParts.last.length + 1,
+      );
+    }
+
+    state = DocumentState.dirty;
+    version = DocumentVersion(
+      localRevision: version.localRevision + 1,
+      savedAt: version.savedAt,
+    );
+    cursor = endCursor;
+    notifyListeners();
+  }
+
+  void deleteTextBetweenPositions(Position startPos, Position endPos) {
+    if (readOnly) return;
+    final sLine = startPos.line.clamp(1, _lines.length);
+    final sText = _lines[sLine - 1];
+    final sCol = startPos.column.clamp(1, sText.length + 1);
+
+    final eLine = endPos.line.clamp(1, _lines.length);
+    final eText = _lines[eLine - 1];
+    final eCol = endPos.column.clamp(1, eText.length + 1);
+
+    final prefix = sText.substring(0, sCol - 1);
+    final suffix = eText.substring(eCol - 1);
+
+    if (sLine == eLine) {
+      _lines[sLine - 1] = prefix + suffix;
+    } else {
+      _lines[sLine - 1] = prefix + suffix;
+      _lines.removeRange(sLine, eLine);
+    }
+
+    state = DocumentState.dirty;
+    version = DocumentVersion(
+      localRevision: version.localRevision + 1,
+      savedAt: version.savedAt,
+    );
+    cursor = startPos;
+    notifyListeners();
+  }
+
+  void insertTextAtOffset(int offset, String text) {
+    final pos = offsetToPosition(offset);
+    insertTextAtPosition(pos, text);
+  }
+
+  void deleteTextAtOffset(int offset, int length) {
+    final start = offsetToPosition(offset);
+    final end = offsetToPosition(offset + length);
+    deleteTextBetweenPositions(start, end);
+  }
+
+  void updateCursor(Position newCursor) {
+    cursor = newCursor;
+    notifyListeners();
+  }
+
+  void updateSelection(SelectionRange? newSelection) {
+    selection = newSelection;
     notifyListeners();
   }
 

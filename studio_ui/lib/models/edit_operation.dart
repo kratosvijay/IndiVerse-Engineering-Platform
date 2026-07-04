@@ -38,7 +38,7 @@ class InsertTextOperation implements EditOperation {
         ),
       );
     }
-    if (index < 0 || index > document.content.length) {
+    if (index < 0 || index > document.size) {
       return const OperationResult.fail(
         WorkbenchError(
           code: "OUT_OF_BOUNDS",
@@ -46,10 +46,7 @@ class InsertTextOperation implements EditOperation {
         ),
       );
     }
-    final content = document.content;
-    final prefix = content.substring(0, index);
-    final suffix = content.substring(index);
-    document.updateContentInternal(prefix + text + suffix);
+    document.insertTextAtOffset(index, text);
     return const OperationResult.ok(null);
   }
 
@@ -66,7 +63,7 @@ class InsertTextOperation implements EditOperation {
         ),
       );
     }
-    if (index < 0 || index + text.length > document.content.length) {
+    if (index < 0 || index + text.length > document.size) {
       return const OperationResult.fail(
         WorkbenchError(
           code: "OUT_OF_BOUNDS",
@@ -74,10 +71,7 @@ class InsertTextOperation implements EditOperation {
         ),
       );
     }
-    final content = document.content;
-    final prefix = content.substring(0, index);
-    final suffix = content.substring(index + text.length);
-    document.updateContentInternal(prefix + suffix);
+    document.deleteTextAtOffset(index, text.length);
     return const OperationResult.ok(null);
   }
 }
@@ -101,7 +95,7 @@ class DeleteTextOperation implements EditOperation {
         ),
       );
     }
-    if (index < 0 || index + text.length > document.content.length) {
+    if (index < 0 || index + text.length > document.size) {
       return const OperationResult.fail(
         WorkbenchError(
           code: "OUT_OF_BOUNDS",
@@ -109,10 +103,7 @@ class DeleteTextOperation implements EditOperation {
         ),
       );
     }
-    final content = document.content;
-    final prefix = content.substring(0, index);
-    final suffix = content.substring(index + text.length);
-    document.updateContentInternal(prefix + suffix);
+    document.deleteTextAtOffset(index, text.length);
     return const OperationResult.ok(null);
   }
 
@@ -129,7 +120,7 @@ class DeleteTextOperation implements EditOperation {
         ),
       );
     }
-    if (index < 0 || index > document.content.length) {
+    if (index < 0 || index > document.size) {
       return const OperationResult.fail(
         WorkbenchError(
           code: "OUT_OF_BOUNDS",
@@ -137,10 +128,7 @@ class DeleteTextOperation implements EditOperation {
         ),
       );
     }
-    final content = document.content;
-    final prefix = content.substring(0, index);
-    final suffix = content.substring(index);
-    document.updateContentInternal(prefix + text + suffix);
+    document.insertTextAtOffset(index, text);
     return const OperationResult.ok(null);
   }
 }
@@ -169,7 +157,7 @@ class ReplaceTextOperation implements EditOperation {
         ),
       );
     }
-    if (index < 0 || index + oldText.length > document.content.length) {
+    if (index < 0 || index + oldText.length > document.size) {
       return const OperationResult.fail(
         WorkbenchError(
           code: "OUT_OF_BOUNDS",
@@ -177,10 +165,8 @@ class ReplaceTextOperation implements EditOperation {
         ),
       );
     }
-    final content = document.content;
-    final prefix = content.substring(0, index);
-    final suffix = content.substring(index + oldText.length);
-    document.updateContentInternal(prefix + newText + suffix);
+    document.deleteTextAtOffset(index, oldText.length);
+    document.insertTextAtOffset(index, newText);
     return const OperationResult.ok(null);
   }
 
@@ -197,7 +183,7 @@ class ReplaceTextOperation implements EditOperation {
         ),
       );
     }
-    if (index < 0 || index + newText.length > document.content.length) {
+    if (index < 0 || index + newText.length > document.size) {
       return const OperationResult.fail(
         WorkbenchError(
           code: "OUT_OF_BOUNDS",
@@ -205,10 +191,8 @@ class ReplaceTextOperation implements EditOperation {
         ),
       );
     }
-    final content = document.content;
-    final prefix = content.substring(0, index);
-    final suffix = content.substring(index + newText.length);
-    document.updateContentInternal(prefix + oldText + suffix);
+    document.deleteTextAtOffset(index, newText.length);
+    document.insertTextAtOffset(index, oldText);
     return const OperationResult.ok(null);
   }
 }

@@ -303,7 +303,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
             Row(
               children: [
                 Text(
-                  'Ln ${doc.cursorLine}, Col 1',
+                  'Ln ${doc.cursorLine}, Col ${doc.cursorColumn}',
                   style: const TextStyle(fontSize: 11, color: Colors.white54),
                 ),
                 const SizedBox(width: 16),
