@@ -2,14 +2,63 @@ import 'dart:async';
 import 'dart:io';
 import '../../../platform_sdk/platform_sdk.dart';
 import '../../knowledge/models/symbol.dart';
+import '../../diagnostics/diagnostic_models.dart';
+import '../../diagnostics/diagnostics_engine.dart';
+
+class FileDiagnostics {
+  final String path;
+  final int revision;
+  final List<Diagnostic> diagnostics;
+
+  FileDiagnostics({
+    required this.path,
+    required this.revision,
+    required this.diagnostics,
+  });
+}
+
+class WorkspaceDiagnostics {
+  final Map<String, FileDiagnostics> _files = {};
+
+  List<Diagnostic> getForFile(String path, {int? revision}) {
+    final fileDiag = _files[path];
+    if (fileDiag == null) return [];
+    if (revision != null && fileDiag.revision != revision) {
+      return [];
+    }
+    return fileDiag.diagnostics;
+  }
+
+  List<Diagnostic> getAll() {
+    return _files.values.expand((f) => f.diagnostics).toList();
+  }
+
+  void updateForFile(String path, int revision, List<Diagnostic> diagnostics) {
+    _files[path] = FileDiagnostics(
+      path: path,
+      revision: revision,
+      diagnostics: diagnostics,
+    );
+  }
+
+  void removeFile(String path) {
+    _files.remove(path);
+  }
+}
 
 class CodeIntelligenceService {
   final PlatformSDK sdk;
   final SymbolIndex symbolIndex = SymbolIndex();
+  final WorkspaceDiagnostics workspaceDiagnostics = WorkspaceDiagnostics();
+  final DiagnosticsEngine diagnosticsEngine = DiagnosticsEngine();
+
   late final WorkspaceIndexer indexer;
   late final OutlineBuilder outlineBuilder;
   late final DefinitionProvider definitionProvider;
   late final ReferenceProvider referenceProvider;
+
+  final List<String> _dirtyQueue = [];
+  bool _isQueueProcessing = false;
 
   CodeIntelligenceService(this.sdk) {
     indexer = WorkspaceIndexer(this);
@@ -24,6 +73,41 @@ class CodeIntelligenceService {
 
   void handleFileChanged(String path) {
     indexer.indexFile(path);
+    enqueueFileForDiagnostics(path);
+  }
+
+  void enqueueFileForDiagnostics(String path) {
+    if (!_dirtyQueue.contains(path)) {
+      _dirtyQueue.add(path);
+    }
+    _processDirtyQueue();
+  }
+
+  Future<void> _processDirtyQueue() async {
+    if (_isQueueProcessing) return;
+    _isQueueProcessing = true;
+
+    while (_dirtyQueue.isNotEmpty) {
+      final path = _dirtyQueue.removeAt(0);
+      try {
+        final file = File('${Directory.current.path}/$path');
+        if (file.existsSync()) {
+          final content = await file.readAsString();
+          final doc = DocumentSnapshot(
+            path: path,
+            content: content,
+            revision: 0,
+          );
+          final diags = diagnosticsEngine.run(doc);
+          workspaceDiagnostics.updateForFile(path, 0, diags);
+        } else {
+          workspaceDiagnostics.removeFile(path);
+        }
+      } catch (_) {}
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    _isQueueProcessing = false;
   }
 }
 
@@ -92,6 +176,7 @@ class WorkspaceIndexer {
     final file = File('${Directory.current.path}/$relativePath');
     if (!file.existsSync()) {
       _service.symbolIndex.removeFile(relativePath);
+      _service.workspaceDiagnostics.removeFile(relativePath);
       return;
     }
 
@@ -99,6 +184,14 @@ class WorkspaceIndexer {
       final content = file.readAsStringSync();
       final symbols = _parseSymbols(content, relativePath);
       _service.symbolIndex.updateForFile(relativePath, symbols);
+
+      final doc = DocumentSnapshot(
+        path: relativePath,
+        content: content,
+        revision: 0,
+      );
+      final diags = _service.diagnosticsEngine.run(doc);
+      _service.workspaceDiagnostics.updateForFile(relativePath, 0, diags);
     } catch (_) {}
   }
 

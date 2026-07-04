@@ -231,7 +231,9 @@ class LanguageIntelligenceService {
     provider.metrics.requestCount++;
 
     try {
-      final res = await provider.provideDiagnostics(execCtx).timeout(req.timeout);
+      final res = await provider
+          .provideDiagnostics(execCtx)
+          .timeout(req.timeout);
       execCtx.stopwatch.stop();
       if (res.success && res.data != null) {
         provider.metrics.successCount++;
@@ -293,7 +295,9 @@ class LanguageIntelligenceService {
     provider.metrics.requestCount++;
 
     try {
-      final res = await provider.provideCompletions(execCtx).timeout(req.timeout);
+      final res = await provider
+          .provideCompletions(execCtx)
+          .timeout(req.timeout);
       execCtx.stopwatch.stop();
       if (res.success) {
         provider.metrics.successCount++;

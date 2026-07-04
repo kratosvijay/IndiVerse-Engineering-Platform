@@ -37,79 +37,85 @@ class TestHoverProvider implements HoverProvider {
     ProviderExecutionContext context,
   ) async {
     return const OperationResult.ok(
-      Hover(contents: '**TestSymbol**\n- Description inline\n- Code: `void main()`'),
+      Hover(
+        contents: '**TestSymbol**\n- Description inline\n- Code: `void main()`',
+      ),
     );
   }
 }
 
 void main() {
-  testWidgets('Hover presentation triggers and renders markdown tooltip overlay', (
-    WidgetTester tester,
-  ) async {
-    final state = StudioState();
-    state.connect(18080);
+  testWidgets(
+    'Hover presentation triggers and renders markdown tooltip overlay',
+    (WidgetTester tester) async {
+      final state = StudioState();
+      state.connect(18080);
 
-    // Register test hover provider
-    await state.languageRegistry.registerHoverProvider('dart', TestHoverProvider());
+      // Register test hover provider
+      await state.languageRegistry.registerHoverProvider(
+        'dart',
+        TestHoverProvider(),
+      );
 
-    // Create a mock doc
-    final doc = EditorDocument(
-      id: 'test.dart',
-      path: 'test.dart',
-      name: 'test.dart',
-      content: 'void main() { print("hello"); }',
-      language: 'dart',
-      encoding: 'utf8',
-      lastModified: '',
-      readOnly: false,
-    );
-    state.editor.open(doc);
-    state.documentService.cacheDocument(DocumentId(doc.path), doc);
+      // Create a mock doc
+      final doc = EditorDocument(
+        id: 'test.dart',
+        path: 'test.dart',
+        name: 'test.dart',
+        content: 'void main() { print("hello"); }',
+        language: 'dart',
+        encoding: 'utf8',
+        lastModified: '',
+        readOnly: false,
+      );
+      state.editor.open(doc);
+      state.documentService.cacheDocument(DocumentId(doc.path), doc);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            height: 600,
-            width: 800,
-            child: EditorWidget(state: state),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 600,
+              width: 800,
+              child: EditorWidget(state: state),
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Verify editor text canvas is mounted
-    expect(find.byType(CustomPaint), findsWidgets);
+      // Verify editor text canvas is mounted
+      expect(find.byType(CustomPaint), findsWidgets);
 
-    // Simulates hover gesture at (120, 20.0) which maps to "main"
-    // Gutter width is 52.0, text padding is 12.0.
-    // Offset X = 120.0 => textX = 120.0 - 52.0 - 12.0 = 56.0.
-    // charWidth = 7.2 => col = (56.0 / 7.2).round() + 1 = 8 + 1 = 9 => maps to "main"
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.addPointer(location: const Offset(0.0, 0.0));
+      // Simulates hover gesture at (120, 20.0) which maps to "main"
+      // Gutter width is 52.0, text padding is 12.0.
+      // Offset X = 120.0 => textX = 120.0 - 52.0 - 12.0 = 56.0.
+      // charWidth = 7.2 => col = (56.0 / 7.2).round() + 1 = 8 + 1 = 9 => maps to "main"
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(0.0, 0.0));
 
-    await tester.runAsync(() async {
-      await gesture.moveTo(const Offset(120.0, 109.0));
-      await Future.delayed(const Duration(milliseconds: 250));
-    });
+      await tester.runAsync(() async {
+        await gesture.moveTo(const Offset(120.0, 109.0));
+        await Future.delayed(const Duration(milliseconds: 250));
+      });
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Verify loading indicator/tooltip overlay appears
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    
-    // Verify markdown rich spans were rendered
-    expect(find.text('TestSymbol'), findsOneWidget);
-    expect(find.text('• '), findsNWidgets(2));
-    expect(
-      find.byWidgetPredicate(
-        (w) =>
-            w is RichText &&
-            w.text.toPlainText().contains('Description inline'),
-      ),
-      findsOneWidget,
-    );
-  });
+      // Verify loading indicator/tooltip overlay appears
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      // Verify markdown rich spans were rendered
+      expect(find.text('TestSymbol'), findsOneWidget);
+      expect(find.text('• '), findsNWidgets(2));
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is RichText &&
+              w.text.toPlainText().contains('Description inline'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 }

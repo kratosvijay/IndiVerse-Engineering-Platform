@@ -82,10 +82,4 @@ class SemanticStyle {
   });
 }
 
-enum SemanticCacheState {
-  loading,
-  ready,
-  timedOut,
-  failed,
-  stale,
-}
+enum SemanticCacheState { loading, ready, timedOut, failed, stale }

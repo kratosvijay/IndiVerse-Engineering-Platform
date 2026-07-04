@@ -66,7 +66,11 @@ class SemanticTokensTokenProvider implements TokenProvider {
       }
 
       const theme = EditorTheme.defaultDark;
-      final tokenStyle = _getStyleForTokenType(token.type, token.modifiers, theme);
+      final tokenStyle = _getStyleForTokenType(
+        token.type,
+        token.modifiers,
+        theme,
+      );
       spans.add(
         TextSpan(
           text: lineText.substring(startIdx, clampedEndIdx),
@@ -141,10 +145,9 @@ class SemanticTokensTokenProvider implements TokenProvider {
           index: const SemanticTokenIndex(tokensByLine: {}),
           localRevision: document.version.localRevision,
           providerVersion: 1,
-          state:
-              res.error?.code == 'TIMEOUT'
-                  ? SemanticCacheState.timedOut
-                  : SemanticCacheState.failed,
+          state: res.error?.code == 'TIMEOUT'
+              ? SemanticCacheState.timedOut
+              : SemanticCacheState.failed,
           timestamp: DateTime.now(),
         ),
       );

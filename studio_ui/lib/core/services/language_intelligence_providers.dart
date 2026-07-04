@@ -2,9 +2,7 @@ import '../../models/language_intelligence_models.dart';
 import 'workbench_providers.dart';
 
 abstract class HoverProvider implements LanguageProvider {
-  Future<OperationResult<Hover>> provideHover(
-    ProviderExecutionContext context,
-  );
+  Future<OperationResult<Hover>> provideHover(ProviderExecutionContext context);
 }
 
 abstract class SemanticTokensProvider implements LanguageProvider {

@@ -17,6 +17,13 @@ class Position {
 
   const Position({required this.line, required this.column});
 
+  factory Position.fromJson(Map<String, dynamic> json) {
+    return Position(
+      line: json['line'] as int? ?? 1,
+      column: json['column'] as int? ?? 1,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

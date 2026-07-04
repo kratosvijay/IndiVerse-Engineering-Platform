@@ -293,6 +293,8 @@ class StudioServer {
         await codeIntelController.handleSearchWorkspaceSymbols(
             request, requestId);
       } else if (path == '/api/v1/code/diagnostics') {
+        await codeIntelController.handleGetDiagnostics(request, requestId);
+      } else if (path == '/api/v1/code/indexStatus') {
         await codeIntelController.handleGetIndexStatus(request, requestId);
       } else {
         final response = ApiResponse(

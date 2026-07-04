@@ -363,6 +363,45 @@ class _StudioDashboardState extends State<StudioDashboard> {
           if (status != null) ...[
             Row(
               children: [
+                InkWell(
+                  onTap: () {
+                    _studioState.toggleProblemsPanel();
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 11,
+                        color: Colors.redAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_studioState.diagnostics.getAll().where((d) => d.severity == DiagnosticSeverity.error).length}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(
+                        Icons.warning_amber_outlined,
+                        size: 11,
+                        color: Colors.orangeAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_studioState.diagnostics.getAll().where((d) => d.severity == DiagnosticSeverity.warning).length}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
                 Text(
                   'Ln ${status.cursor.line}, Col ${status.cursor.column}',
                   style: const TextStyle(fontSize: 11, color: Colors.white54),

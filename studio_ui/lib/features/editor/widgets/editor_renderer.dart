@@ -271,6 +271,15 @@ class EditorRenderer extends CustomPainter {
       }
     }
 
+    // 3. Decorations Layer (Diagnostics, etc.)
+    for (final decoration in context.decorations) {
+      decoration.paint(
+        context,
+        canvas,
+        Rect.fromLTWH(gutterWidth, 0, size.width - gutterWidth, size.height),
+      );
+    }
+
     // 4. Cursor Layer
     final cursor = context.controller.document.cursor;
     final int cursorVisualIdx = context.controller.actualToVisualLine(
@@ -337,7 +346,7 @@ class EditorRenderer extends CustomPainter {
       }
     }
 
-    // 5. Overlay Layer (gutters and decorations)
+    // 5. Overlay Layer (gutters)
     double currentGutterX = 0.0;
     for (final gutter in context.gutters) {
       final width = gutter.getWidth(context);
@@ -347,14 +356,6 @@ class EditorRenderer extends CustomPainter {
         Rect.fromLTWH(currentGutterX, 0, width, size.height),
       );
       currentGutterX += width;
-    }
-
-    for (final decoration in context.decorations) {
-      decoration.paint(
-        context,
-        canvas,
-        Rect.fromLTWH(gutterWidth, 0, size.width - gutterWidth, size.height),
-      );
     }
   }
 

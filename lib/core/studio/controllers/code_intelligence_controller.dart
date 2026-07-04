@@ -61,6 +61,36 @@ class CodeIntelligenceController {
       ..write(response.toJsonString());
   }
 
+  Future<void> handleGetDiagnostics(
+      HttpRequest request, String requestId) async {
+    final path = request.uri.queryParameters['path'];
+    final revisionStr = request.uri.queryParameters['revision'];
+    final revision = revisionStr != null ? int.tryParse(revisionStr) : null;
+
+    final results = <Map<String, dynamic>>[];
+
+    if (path != null && path.isNotEmpty) {
+      final diags = codeIntelService.workspaceDiagnostics
+          .getForFile(path, revision: revision);
+      results.addAll(diags.map((d) => d.toJson()));
+    } else {
+      final diags = codeIntelService.workspaceDiagnostics.getAll();
+      results.addAll(diags.map((d) => d.toJson()));
+    }
+
+    final response = ApiResponse(
+      success: true,
+      timestamp: DateTime.now().toIso8601String(),
+      requestId: requestId,
+      data: {"diagnostics": results},
+    );
+
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType.json
+      ..write(response.toJsonString());
+  }
+
   Future<void> handleGetIndexStatus(
       HttpRequest request, String requestId) async {
     final idx = codeIntelService.symbolIndex;
@@ -78,7 +108,7 @@ class CodeIntelligenceController {
           .where((s) => s.kind == 'Function' || s.kind == 'Method')
           .length,
       "enums": idx.allSymbols().where((s) => s.kind == 'Enum').length,
-      "diagnostics": 0,
+      "diagnostics": codeIntelService.workspaceDiagnostics.getAll().length,
       "indexerState": idx.indexerState,
       "lastIndexed": idx.lastIndexed.toIso8601String(),
       "durationMs": idx.indexDuration.inMilliseconds,

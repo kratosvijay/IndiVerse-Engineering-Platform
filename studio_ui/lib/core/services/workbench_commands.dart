@@ -47,3 +47,10 @@ abstract final class GitCommands {
   static const commit = "git.commit";
   static const stage = "git.stage";
 }
+
+abstract final class ProblemsCommands {
+  static const nextError = "problems.nextError";
+  static const nextWarning = "problems.nextWarning";
+  static const previous = "problems.previous";
+  static const togglePanel = "problems.togglePanel";
+}

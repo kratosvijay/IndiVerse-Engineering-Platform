@@ -57,7 +57,8 @@ class DefaultHoverProvider implements HoverProvider {
           final path = data["path"] ?? '';
           final line = data["line"] ?? 1;
 
-          final docString = '''
+          final docString =
+              '''
 **Symbol**: `$word`
 **Defined at**: `$path` (Line $line)
 
@@ -66,7 +67,8 @@ Documentation source: *Local symbol index*
           return OperationResult.ok(Hover(contents: docString));
         }
       }
-      final fallbackDoc = '''
+      final fallbackDoc =
+          '''
 **Symbol**: `$word`
 
 *No documentation definition found.*

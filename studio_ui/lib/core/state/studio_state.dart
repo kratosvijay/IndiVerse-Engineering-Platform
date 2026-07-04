@@ -26,6 +26,8 @@ import '../services/language_provider_registry.dart';
 import '../services/language_intelligence_service.dart';
 import '../../models/language_intelligence_models.dart';
 import '../services/default_hover_provider.dart';
+import '../../models/diagnostic_collection.dart';
+import '../services/default_diagnostics_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:async';
@@ -90,6 +92,8 @@ class StudioState extends ChangeNotifier {
   final LanguageProviderRegistry languageRegistry = LanguageProviderRegistry();
   late final LanguageIntelligenceService languageIntel =
       LanguageIntelligenceService(languageRegistry);
+  final DiagnosticCollection diagnostics = DiagnosticCollection();
+  final Map<String, Timer> _diagTimers = {};
   WebSocketChannel? _wsChannel;
   AutoSavePolicy autoSavePolicy = AutoSavePolicy.never;
   WorkspaceWatcherState watcherState = WorkspaceWatcherState.disconnected;
@@ -103,6 +107,14 @@ class StudioState extends ChangeNotifier {
 
   List<SaveTask> get saveQueue => List.unmodifiable(_saveQueue);
   DateTime? get lastSaveTime => _lastSaveTime;
+
+  bool _showProblemsPanel = false;
+  bool get showProblemsPanel => _showProblemsPanel;
+
+  void toggleProblemsPanel() {
+    _showProblemsPanel = !_showProblemsPanel;
+    notifyListeners();
+  }
 
   List<dynamic> _searchResults = [];
 
@@ -792,11 +804,191 @@ class StudioState extends ChangeNotifier {
         },
       ),
     );
+    commandRegistry.register(
+      Command(
+        id: ProblemsCommands.togglePanel,
+        title: "Toggle Problems Panel",
+        category: "Problems",
+        description: "Show or hide the problems panel",
+        execute: (ctx) async {
+          toggleProblemsPanel();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: ProblemsCommands.nextError,
+        title: "Next Error",
+        category: "Problems",
+        description: "Go to next error in the document",
+        shortcut: const SingleActivator(LogicalKeyboardKey.f8),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          final doc = active.document;
+          final diags = diagnostics.getForFile(doc.path);
+          final errors = diags
+              .where((d) => d.severity == DiagnosticSeverity.error)
+              .toList();
+          if (errors.isEmpty) return const OperationResult.ok(null);
+
+          errors.sort(
+            (a, b) => a.range.start.line != b.range.start.line
+                ? a.range.start.line.compareTo(b.range.start.line)
+                : a.range.start.column.compareTo(b.range.start.column),
+          );
+
+          final current = doc.cursor;
+          final next = errors.firstWhere(
+            (e) =>
+                e.range.start.line > current.line ||
+                (e.range.start.line == current.line &&
+                    e.range.start.column > current.column),
+            orElse: () => errors.first,
+          );
+
+          doc.updateCursor(
+            Position(
+              line: next.range.start.line,
+              column: next.range.start.column,
+            ),
+          );
+          doc.updateSelection(next.range);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: ProblemsCommands.nextWarning,
+        title: "Next Warning",
+        category: "Problems",
+        description: "Go to next warning in the document",
+        shortcut: const SingleActivator(LogicalKeyboardKey.f8, shift: true),
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          final doc = active.document;
+          final diags = diagnostics.getForFile(doc.path);
+          final warnings = diags
+              .where((d) => d.severity == DiagnosticSeverity.warning)
+              .toList();
+          if (warnings.isEmpty) return const OperationResult.ok(null);
+
+          warnings.sort(
+            (a, b) => a.range.start.line != b.range.start.line
+                ? a.range.start.line.compareTo(b.range.start.line)
+                : a.range.start.column.compareTo(b.range.start.column),
+          );
+
+          final current = doc.cursor;
+          final next = warnings.firstWhere(
+            (e) =>
+                e.range.start.line > current.line ||
+                (e.range.start.line == current.line &&
+                    e.range.start.column > current.column),
+            orElse: () => warnings.first,
+          );
+
+          doc.updateCursor(
+            Position(
+              line: next.range.start.line,
+              column: next.range.start.column,
+            ),
+          );
+          doc.updateSelection(next.range);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: ProblemsCommands.previous,
+        title: "Previous Problem",
+        category: "Problems",
+        description: "Go to previous warning/error in the document",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) return const OperationResult.fail(null);
+          final doc = active.document;
+          final diags = diagnostics.getForFile(doc.path).toList();
+          if (diags.isEmpty) return const OperationResult.ok(null);
+
+          diags.sort(
+            (a, b) => a.range.start.line != b.range.start.line
+                ? a.range.start.line.compareTo(b.range.start.line)
+                : a.range.start.column.compareTo(b.range.start.column),
+          );
+
+          final current = doc.cursor;
+          final prev = diags.lastWhere(
+            (e) =>
+                e.range.start.line < current.line ||
+                (e.range.start.line == current.line &&
+                    e.range.start.column < current.column),
+            orElse: () => diags.last,
+          );
+
+          doc.updateCursor(
+            Position(
+              line: prev.range.start.line,
+              column: prev.range.start.column,
+            ),
+          );
+          doc.updateSelection(prev.range);
+          notifyListeners();
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
   }
 
   /// Public wrapper for notifyListeners, callable from WorkbenchApi facade.
   void refreshUI() {
     notifyListeners();
+  }
+
+  void triggerDiagnosticsDebounced(String path) {
+    _diagTimers[path]?.cancel();
+    _diagTimers[path] = Timer(const Duration(milliseconds: 300), () {
+      refreshDiagnosticsForFile(path);
+    });
+  }
+
+  Future<void> refreshDiagnosticsForFile(String path) async {
+    final doc = documentService.getDocument(DocumentId(path));
+    if (doc == null) return;
+
+    final fileColl = diagnostics.files[path];
+    if (fileColl != null) {
+      final providerDiags = fileColl.providers['default-diagnostics'];
+      if (providerDiags != null &&
+          providerDiags.revision == doc.version.localRevision) {
+        return;
+      }
+    }
+
+    final languageContext = LanguageContext(
+      document: doc,
+      position: const Position(line: 1, column: 1),
+      workspace: "",
+      workspaceRevision: 0,
+      token: CancellationToken(),
+    );
+
+    final res = await languageIntel.getDiagnostics(languageContext);
+    if (res.success && res.data != null) {
+      diagnostics.updateForFile(
+        path: path,
+        providerId: 'default-diagnostics',
+        revision: doc.version.localRevision,
+        diagnostics: res.data!,
+      );
+      notifyListeners();
+    }
   }
 
   void setTab(String tab) {
@@ -822,6 +1014,23 @@ class StudioState extends ChangeNotifier {
     languageRegistry.registerHoverProvider(
       'yaml',
       DefaultHoverProvider(port: port),
+    );
+
+    languageRegistry.registerDiagnosticsProvider(
+      'dart',
+      DefaultDiagnosticsProvider(port: port),
+    );
+    languageRegistry.registerDiagnosticsProvider(
+      'json',
+      DefaultDiagnosticsProvider(port: port),
+    );
+    languageRegistry.registerDiagnosticsProvider(
+      'yaml',
+      DefaultDiagnosticsProvider(port: port),
+    );
+    languageRegistry.registerDiagnosticsProvider(
+      'markdown',
+      DefaultDiagnosticsProvider(port: port),
     );
 
     notifyListeners();
@@ -969,6 +1178,7 @@ class StudioState extends ChangeNotifier {
 
       doc.addListener(() {
         handleAutoSaveOnEdit(doc.path);
+        triggerDiagnosticsDebounced(doc.path);
       });
 
       doc.updateCursor(docData.cursor);
@@ -1060,6 +1270,7 @@ class StudioState extends ChangeNotifier {
       if (res.success) {
         nextTask.state = SaveTaskState.completed;
         _lastSaveTime = DateTime.now();
+        refreshDiagnosticsForFile(nextTask.path);
       } else {
         nextTask.state = SaveTaskState.failed;
       }
@@ -1183,10 +1394,12 @@ class StudioState extends ChangeNotifier {
 
         doc.addListener(() {
           handleAutoSaveOnEdit(doc.path);
+          triggerDiagnosticsDebounced(doc.path);
         });
 
         editor.open(doc);
         documentService.cacheDocument(DocumentId(path), doc);
+        refreshDiagnosticsForFile(path);
         if (line != null) {
           doc.updateCursor(Position(line: line, column: 1));
         }

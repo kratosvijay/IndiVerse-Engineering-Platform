@@ -138,22 +138,128 @@ class Hover {
   const Hover({required this.contents, this.range});
 }
 
+class DiagnosticId {
+  final String source;
+  final String code;
+  final String path;
+  final int revision;
+
+  const DiagnosticId({
+    required this.source,
+    required this.code,
+    required this.path,
+    required this.revision,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DiagnosticId &&
+          runtimeType == other.runtimeType &&
+          source == other.source &&
+          code == other.code &&
+          path == other.path &&
+          revision == other.revision;
+
+  @override
+  int get hashCode =>
+      source.hashCode ^ code.hashCode ^ path.hashCode ^ revision.hashCode;
+}
+
 enum DiagnosticSeverity { error, warning, information, hint }
 
+enum DiagnosticTag { unnecessary, deprecated }
+
+class DiagnosticRelatedInformation {
+  final String path;
+  final SelectionRange range;
+  final String message;
+
+  const DiagnosticRelatedInformation({
+    required this.path,
+    required this.range,
+    required this.message,
+  });
+}
+
 class Diagnostic {
+  final String id;
   final String message;
   final SelectionRange range;
   final DiagnosticSeverity severity;
-  final String? code;
-  final String? source;
+  final String code;
+  final String source;
+  final List<DiagnosticTag> tags;
+  final List<DiagnosticRelatedInformation> relatedInformation;
+  final bool hasCodeActions;
 
   const Diagnostic({
+    required this.id,
     required this.message,
     required this.range,
     this.severity = DiagnosticSeverity.error,
-    this.code,
-    this.source,
+    required this.code,
+    required this.source,
+    this.tags = const [],
+    this.relatedInformation = const [],
+    this.hasCodeActions = false,
   });
+
+  factory Diagnostic.fromJson(Map<String, dynamic> json) {
+    final severityStr = json['severity'] as String? ?? 'error';
+    final severity = DiagnosticSeverity.values.firstWhere(
+      (e) => e.name == severityStr,
+      orElse: () => DiagnosticSeverity.error,
+    );
+
+    final tagsList = (json['tags'] as List? ?? []);
+    final tags = tagsList.map((tagStr) {
+      return DiagnosticTag.values.firstWhere(
+        (e) => e.name == tagStr,
+        orElse: () => DiagnosticTag.deprecated,
+      );
+    }).toList();
+
+    final relatedList = (json['relatedInformation'] as List? ?? []);
+    final related = relatedList.map((r) {
+      final map = r as Map<String, dynamic>;
+      final start = Position.fromJson(
+        map['range']['start'] as Map<String, dynamic>,
+      );
+      final end = Position.fromJson(
+        map['range']['end'] as Map<String, dynamic>,
+      );
+      return DiagnosticRelatedInformation(
+        path: map['path'] as String? ?? '',
+        range: SelectionRange(start: start, end: end),
+        message: map['message'] as String? ?? '',
+      );
+    }).toList();
+
+    final startMap = json['range']['start'] as Map<String, dynamic>;
+    final endMap = json['range']['end'] as Map<String, dynamic>;
+
+    return Diagnostic(
+      id: json['id'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      range: SelectionRange(
+        start: Position(
+          line: startMap['line'] as int? ?? 1,
+          column: startMap['column'] as int? ?? 1,
+        ),
+        end: Position(
+          line: endMap['line'] as int? ?? 1,
+          column: endMap['column'] as int? ?? 1,
+        ),
+      ),
+      severity: severity,
+      code: json['code'] as String? ?? '',
+      source: json['source'] as String? ?? '',
+      tags: tags,
+      relatedInformation: related,
+      hasCodeActions: json['hasCodeActions'] as bool? ?? false,
+    );
+  }
 }
 
 enum CompletionItemKind {

@@ -20,9 +20,12 @@ import '../highlighting/json_highlighter.dart';
 import '../highlighting/yaml_highlighter.dart';
 import '../highlighting/markdown_highlighter.dart';
 import '../highlighting/text_highlighter.dart';
+import '../decorations/diagnostics_decoration_provider.dart';
+import '../gutters/diagnostics_gutter_provider.dart';
 import 'breadcrumb_symbols_widget.dart';
 import 'references_panel.dart';
 import 'find_overlay_widget.dart';
+import '../../problems/widgets/problems_panel.dart';
 import '../controllers/editor_view_controller.dart';
 import 'editor_renderer.dart';
 import 'minimap_widget.dart';
@@ -47,7 +50,6 @@ class _EditorWidgetState extends State<EditorWidget>
   bool _showFind = false;
   List<int> _matchLineIndices = [];
   int _currentMatchIdx = 0;
-
 
   // Minimap properties
   bool _showMinimap = true;
@@ -223,6 +225,18 @@ class _EditorWidgetState extends State<EditorWidget>
     return lineStr.substring(start, end);
   }
 
+  List<Diagnostic> _getDiagnosticsAt(String path, Position pos) {
+    final docDiags = widget.state.diagnostics.getForFile(path);
+    return docDiags.where((d) {
+      final s = d.range.start;
+      final e = d.range.end;
+      if (pos.line < s.line || pos.line > e.line) return false;
+      if (pos.line == s.line && pos.column < s.column) return false;
+      if (pos.line == e.line && pos.column > e.column) return false;
+      return true;
+    }).toList();
+  }
+
   void _handleMouseHover(PointerHoverEvent event) {
     final localPosition = event.localPosition;
     final pos = _offsetToPosition(localPosition);
@@ -237,14 +251,16 @@ class _EditorWidgetState extends State<EditorWidget>
     final doc = activeTab.document;
 
     final word = _getWordAt(doc, pos);
-    if (word == null || word.isEmpty) {
+    final hoverDiags = _getDiagnosticsAt(doc.path, pos);
+
+    if ((word == null || word.isEmpty) && hoverDiags.isEmpty) {
       _clearHoverState();
       return;
     }
 
     if (_hoverTokenPosition != null &&
         _hoverTokenPosition!.line == pos.line &&
-        _getWordAt(doc, _hoverTokenPosition!) == word) {
+        _hoverTokenPosition!.column == pos.column) {
       return;
     }
 
@@ -263,11 +279,16 @@ class _EditorWidgetState extends State<EditorWidget>
         final visualLineIdx = _controller!.actualToVisualLine(pos.line);
         final tokenY = visualLineIdx * lineHeight - _scrollController.offset;
 
-        final lineStr = doc.lines[pos.line - 1];
+        final lineStr = pos.line <= doc.lines.length
+            ? doc.lines[pos.line - 1]
+            : '';
         int startCol = pos.column - 1;
-        while (startCol > 0 &&
-            RegExp(r'[a-zA-Z0-9_]').hasMatch(lineStr[startCol - 1])) {
-          startCol--;
+        if (lineStr.isNotEmpty) {
+          while (startCol > 0 &&
+              startCol < lineStr.length &&
+              RegExp(r'[a-zA-Z0-9_]').hasMatch(lineStr[startCol - 1])) {
+            startCol--;
+          }
         }
         final tokenX =
             gutterWidth +
@@ -278,26 +299,58 @@ class _EditorWidgetState extends State<EditorWidget>
         _hoverPosition = Offset(tokenX, tokenY);
       });
 
-      _hoverCancelToken = CancellationToken();
-      final ctx = LanguageContext(
-        document: doc,
-        position: pos,
-        workspace: widget.state.activeProject,
-        workspaceRevision: 1,
-        token: _hoverCancelToken!,
-      );
+      final mergedContent = StringBuffer();
+      if (hoverDiags.isNotEmpty) {
+        for (final diag in hoverDiags) {
+          String severityEmoji = '❌';
+          if (diag.severity == DiagnosticSeverity.warning) severityEmoji = '⚠️';
+          if (diag.severity == DiagnosticSeverity.information)
+            severityEmoji = 'ℹ️';
+          if (diag.severity == DiagnosticSeverity.hint) severityEmoji = '💡';
 
-      final res = await widget.state.languageIntel.getHover(ctx);
-      if (!mounted) return;
+          mergedContent.writeln('**$severityEmoji ${diag.message}**');
+          mergedContent.writeln('_${diag.source} (${diag.code})_\n');
+        }
+      }
 
-      if (res.success && res.data != null && !_hoverCancelToken!.isCancelled) {
-        setState(() {
-          _hoverLoading = false;
-          _hoverData = res.data;
-        });
+      if (word != null && word.isNotEmpty) {
+        _hoverCancelToken = CancellationToken();
+        final ctx = LanguageContext(
+          document: doc,
+          position: pos,
+          workspace: widget.state.activeProject,
+          workspaceRevision: 1,
+          token: _hoverCancelToken!,
+        );
+
+        final res = await widget.state.languageIntel.getHover(ctx);
+        if (!mounted) return;
+
+        if (res.success &&
+            res.data != null &&
+            !_hoverCancelToken!.isCancelled) {
+          if (mergedContent.isNotEmpty) {
+            mergedContent.writeln('---');
+          }
+          mergedContent.write(res.data!.contents);
+          setState(() {
+            _hoverLoading = false;
+            _hoverData = Hover(contents: mergedContent.toString());
+          });
+        } else {
+          setState(() {
+            _hoverLoading = false;
+            if (mergedContent.isNotEmpty) {
+              _hoverData = Hover(contents: mergedContent.toString());
+            }
+          });
+        }
       } else {
         setState(() {
           _hoverLoading = false;
+          if (mergedContent.isNotEmpty) {
+            _hoverData = Hover(contents: mergedContent.toString());
+          }
         });
       }
     });
@@ -360,22 +413,21 @@ class _EditorWidgetState extends State<EditorWidget>
               ),
             ],
           ),
-          child:
-              _hoverLoading
-                  ? const SizedBox(
-                    height: 30,
-                    child: Center(
-                      child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          color: Color(0xFF8B5CF6),
-                        ),
+          child: _hoverLoading
+              ? const SizedBox(
+                  height: 30,
+                  child: Center(
+                    child: SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: Color(0xFF8B5CF6),
                       ),
                     ),
-                  )
-                  : _buildMarkdownContent(_hoverData!.contents),
+                  ),
+                )
+              : _buildMarkdownContent(_hoverData!.contents),
         ),
       ),
     );
@@ -1192,8 +1244,11 @@ class _EditorWidgetState extends State<EditorWidget>
       snapshot: doc.createSnapshot(),
       viewport: _controller!.viewport,
       theme: EditorTheme.defaultDark,
-      gutters: [LineNumberGutterProvider()],
-      decorations: [],
+      gutters: [
+        LineNumberGutterProvider(),
+        DiagnosticsGutterProvider(widget.state),
+      ],
+      decorations: [DiagnosticsDecorationProvider(widget.state)],
       controller: _controller!,
       bracketMatches: bracketMatches,
     );
@@ -1373,6 +1428,7 @@ class _EditorWidgetState extends State<EditorWidget>
                       MinimapWidget(
                         viewController: _controller!,
                         scrollController: _scrollController,
+                        state: widget.state,
                       ),
                   ],
                 ),
@@ -1407,6 +1463,13 @@ class _EditorWidgetState extends State<EditorWidget>
                   _references = [];
                   _symbolQuery = '';
                 });
+              },
+            ),
+          if (widget.state.showProblemsPanel)
+            ProblemsPanel(
+              state: widget.state,
+              onClose: () {
+                widget.state.toggleProblemsPanel();
               },
             ),
         ],

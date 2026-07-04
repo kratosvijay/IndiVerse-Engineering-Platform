@@ -1,15 +1,20 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../models/minimap_snapshot.dart';
+import '../../../core/state/studio_state.dart';
+import '../../../models/language_intelligence_models.dart';
 import '../controllers/editor_view_controller.dart';
 
 class MinimapWidget extends StatelessWidget {
   final EditorViewController viewController;
   final ScrollController scrollController;
+  final StudioState state;
 
   const MinimapWidget({
     super.key,
     required this.viewController,
     required this.scrollController,
+    required this.state,
   });
 
   @override
@@ -35,6 +40,7 @@ class MinimapWidget extends StatelessWidget {
           painter: MinimapPainter(
             snapshot: snapshot,
             viewController: viewController,
+            state: state,
           ),
         ),
       ),
@@ -57,8 +63,13 @@ class MinimapWidget extends StatelessWidget {
 class MinimapPainter extends CustomPainter {
   final MinimapSnapshot snapshot;
   final EditorViewController viewController;
+  final StudioState state;
 
-  MinimapPainter({required this.snapshot, required this.viewController});
+  MinimapPainter({
+    required this.snapshot,
+    required this.viewController,
+    required this.state,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -115,6 +126,38 @@ class MinimapPainter extends CustomPainter {
           linePaint,
         );
       }
+    }
+
+    final diags = state.diagnostics.getForFile(viewController.document.path);
+    for (final diag in diags) {
+      final actualLine = diag.range.start.line;
+      final visualIdx = viewController.actualToVisualLine(actualLine);
+      final double y = visualIdx * lineHeight;
+      if (y > minimapHeight) continue;
+
+      Color markerColor;
+      switch (diag.severity) {
+        case DiagnosticSeverity.error:
+          markerColor = Colors.redAccent;
+          break;
+        case DiagnosticSeverity.warning:
+          markerColor = Colors.orangeAccent;
+          break;
+        case DiagnosticSeverity.information:
+          markerColor = Colors.blueAccent;
+          break;
+        case DiagnosticSeverity.hint:
+          markerColor = Colors.grey;
+          break;
+      }
+
+      final paint = Paint()
+        ..color = markerColor
+        ..style = PaintingStyle.fill;
+      canvas.drawRect(
+        Rect.fromLTWH(minimapWidth - 4.0, y, 4.0, math.max(2.0, lineHeight)),
+        paint,
+      );
     }
 
     final int firstVisual = viewController.actualToVisualLine(

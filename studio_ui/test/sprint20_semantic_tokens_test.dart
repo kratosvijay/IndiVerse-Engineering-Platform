@@ -66,9 +66,17 @@ void main() {
       // Token 2: same line (delta 0), start relative by 6 (col 5 + 6 = 11), length 6, method (7), async modifier (32)
       // Token 3: line 2 (delta 1), start relative to col 1 (deltaStart 2 => col 3), length 3, keyword (17), deprecated (16)
       final List<int> rawData = [
-        0, 4, 4, 1, 8,      // Token 1: Line 1, Col 5 (0+1=1 line, 0+4=4 offset => col 5)
-        0, 6, 6, 7, 32,     // Token 2: Line 1, Col 11 (col 5 + 6 = 11)
-        1, 2, 3, 17, 16,    // Token 3: Line 2, Col 3 (1+1=2 line, 2 offset => col 3)
+        0,
+        4,
+        4,
+        1,
+        8, // Token 1: Line 1, Col 5 (0+1=1 line, 0+4=4 offset => col 5)
+        0, 6, 6, 7, 32, // Token 2: Line 1, Col 11 (col 5 + 6 = 11)
+        1,
+        2,
+        3,
+        17,
+        16, // Token 3: Line 2, Col 3 (1+1=2 line, 2 offset => col 3)
       ];
 
       final decoded = SemanticTokenDecoder.decode(rawData);
@@ -78,26 +86,32 @@ void main() {
       expect(decoded[0].start.column, 5);
       expect(decoded[0].length, 4);
       expect(decoded[0].type, SemanticTokenType.classType);
-      expect(decoded[0].modifiers.contains(SemanticTokenModifier.staticToken), true);
+      expect(
+        decoded[0].modifiers.contains(SemanticTokenModifier.staticToken),
+        true,
+      );
 
       expect(decoded[1].start.line, 1);
       expect(decoded[1].start.column, 11);
       expect(decoded[1].length, 6);
       expect(decoded[1].type, SemanticTokenType.method);
-      expect(decoded[1].modifiers.contains(SemanticTokenModifier.abstractToken), true);
+      expect(
+        decoded[1].modifiers.contains(SemanticTokenModifier.abstractToken),
+        true,
+      );
 
       expect(decoded[2].start.line, 2);
       expect(decoded[2].start.column, 3);
       expect(decoded[2].length, 3);
       expect(decoded[2].type, SemanticTokenType.number);
-      expect(decoded[2].modifiers.contains(SemanticTokenModifier.deprecated), true);
+      expect(
+        decoded[2].modifiers.contains(SemanticTokenModifier.deprecated),
+        true,
+      );
     });
 
     test('Validator checks boundaries and validates line lengths', () {
-      final List<String> docLines = [
-        'class Test { }',
-        'var x = 1;',
-      ];
+      final List<String> docLines = ['class Test { }', 'var x = 1;'];
 
       final tokenValid = SemanticToken(
         start: const Position(line: 1, column: 1),
@@ -120,9 +134,26 @@ void main() {
         modifiers: const {},
       );
 
-      expect(SemanticTokenValidator.isValid(tokenValid, docLines.length, docLines), true);
-      expect(SemanticTokenValidator.isValid(tokenInvalidLine, docLines.length, docLines), false);
-      expect(SemanticTokenValidator.isValid(tokenInvalidCol, docLines.length, docLines), false);
+      expect(
+        SemanticTokenValidator.isValid(tokenValid, docLines.length, docLines),
+        true,
+      );
+      expect(
+        SemanticTokenValidator.isValid(
+          tokenInvalidLine,
+          docLines.length,
+          docLines,
+        ),
+        false,
+      );
+      expect(
+        SemanticTokenValidator.isValid(
+          tokenInvalidCol,
+          docLines.length,
+          docLines,
+        ),
+        false,
+      );
     });
 
     test('Normalizer deduplicates and sorts tokens correctly', () {
@@ -159,7 +190,10 @@ void main() {
       expect(normalized[0].start.line, 1);
       expect(normalized[0].start.column, 5);
       // Duplicate merged modifiers check
-      expect(normalized[0].modifiers.contains(SemanticTokenModifier.deprecated), true);
+      expect(
+        normalized[0].modifiers.contains(SemanticTokenModifier.deprecated),
+        true,
+      );
 
       expect(normalized[1].start.line, 1);
       expect(normalized[1].start.column, 10);
@@ -240,10 +274,7 @@ void main() {
       // void: keyword (17), main: method (7)
       // col 1: 'void' starts at col 1 (delta 0, deltaStart 0, length 4, keyword=17, modifier=0)
       // col 6: 'main' starts at col 6 (delta 0, deltaStart 5, length 4, method=7, modifier=0)
-      final List<int> testTokens = [
-        0, 0, 4, 17, 0,
-        0, 5, 4, 7, 0,
-      ];
+      final List<int> testTokens = [0, 0, 4, 17, 0, 0, 5, 4, 7, 0];
 
       await state.languageRegistry.registerSemanticTokensProvider(
         'dart',
