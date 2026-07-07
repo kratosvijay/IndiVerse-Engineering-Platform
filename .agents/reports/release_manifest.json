@@ -1,0 +1,15 @@
+{
+  "version": "0.20.0-rc1",
+  "commit": "6d40e7292ab54f26cca07c61e00d93cea12ca39a",
+  "dartSdk": "3.12.2",
+  "flutterSdk": "3.44.4",
+  "adr": [
+    "0014",
+    "0015",
+    "0016",
+    "0017"
+  ],
+  "backendTests": "passed",
+  "frontendTests": "passed",
+  "benchmarks": "passed"
+}
