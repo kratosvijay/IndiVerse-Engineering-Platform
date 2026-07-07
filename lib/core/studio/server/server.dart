@@ -298,6 +298,10 @@ class StudioServer {
         await codeIntelController.handleGetIndexStatus(request, requestId);
       } else if (path == '/api/v1/code/completions') {
         await codeIntelController.handleGetCompletions(request, requestId);
+      } else if (path == '/api/v1/code/signatureHelp') {
+        await codeIntelController.handleGetSignatureHelp(request, requestId);
+      } else if (path == '/api/v1/code/codeActions') {
+        codeIntelController.handleGetCodeActions(request);
       } else {
         final response = ApiResponse(
           success: false,

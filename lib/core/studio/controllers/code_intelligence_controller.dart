@@ -1,6 +1,7 @@
 import 'dart:io';
 import '../dto/api_response.dart';
 import '../services/code_intelligence_service.dart';
+import '../../diagnostics/diagnostic_models.dart';
 
 class CodeIntelligenceController {
   final CodeIntelligenceService codeIntelService;
@@ -174,6 +175,130 @@ class CodeIntelligenceController {
       timestamp: DateTime.now().toIso8601String(),
       requestId: requestId,
       data: {"items": results},
+    );
+
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType.json
+      ..write(response.toJsonString());
+  }
+
+  Future<void> handleGetSignatureHelp(
+      HttpRequest request, String requestId) async {
+    final path = request.uri.queryParameters['path'] ?? '';
+    final lineStr = request.uri.queryParameters['line'] ?? '1';
+    final colStr = request.uri.queryParameters['column'] ?? '1';
+    final revStr = request.uri.queryParameters['revision'] ?? '0';
+
+    final line = int.tryParse(lineStr) ?? 1;
+    final column = int.tryParse(colStr) ?? 1;
+    final revision = int.tryParse(revStr) ?? 0;
+
+    final signatureHelp = codeIntelService.signatureHelpProvider
+        .getSignatureHelp(path, line, column);
+
+    String providerName = 'regex';
+    if (signatureHelp != null && signatureHelp.signatures.isNotEmpty) {
+      final label = signatureHelp.signatures.first.label;
+      if (label.contains('print') ||
+          label.contains('Color.fromARGB') ||
+          label.contains('showDialog')) {
+        providerName = 'sdk';
+      }
+    }
+
+    final response = ApiResponse(
+      success: true,
+      timestamp: DateTime.now().toIso8601String(),
+      requestId: requestId,
+      data: {
+        "revision": revision,
+        "provider": providerName,
+        "signatureHelp": signatureHelp?.toJson() ??
+            {
+              "activeSignature": 0,
+              "activeParameter": 0,
+              "signatures": <dynamic>[]
+            }
+      },
+    );
+
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType.json
+      ..write(response.toJsonString());
+  }
+
+  void handleGetCodeActions(HttpRequest request) {
+    final uri = request.uri;
+    final path = uri.queryParameters['path'] ?? '';
+    final revision = int.tryParse(uri.queryParameters['revision'] ?? '') ?? 0;
+    final line = int.tryParse(uri.queryParameters['line'] ?? '') ?? 1;
+    final column = int.tryParse(uri.queryParameters['column'] ?? '') ?? 1;
+    final requestId = uri.queryParameters['requestId'] ??
+        'req-${DateTime.now().millisecondsSinceEpoch}';
+
+    final selectionStartLine =
+        int.tryParse(uri.queryParameters['selectionStartLine'] ?? '') ?? line;
+    final selectionStartCol =
+        int.tryParse(uri.queryParameters['selectionStartColumn'] ?? '') ??
+            column;
+    final selectionEndLine =
+        int.tryParse(uri.queryParameters['selectionEndLine'] ?? '') ?? line;
+    final selectionEndCol =
+        int.tryParse(uri.queryParameters['selectionEndColumn'] ?? '') ?? column;
+
+    String content = '';
+    try {
+      final absolutePath =
+          path.startsWith('/') ? path : '${Directory.current.path}/$path';
+      final file = File(absolutePath);
+      if (file.existsSync()) {
+        content = file.readAsStringSync();
+      }
+    } catch (_) {}
+
+    if (content.isEmpty) {
+      final response = ApiResponse(
+        success: false,
+        timestamp: DateTime.now().toIso8601String(),
+        requestId: requestId,
+        data: {},
+        errors: ['File not found or empty: $path'],
+      );
+      request.response
+        ..statusCode = HttpStatus.notFound
+        ..headers.contentType = ContentType.json
+        ..write(response.toJsonString());
+      return;
+    }
+
+    final document = DocumentSnapshot(
+      path: path,
+      content: content,
+      revision: revision,
+    );
+
+    final selection = Range(
+      start: Position(line: selectionStartLine, column: selectionStartCol),
+      end: Position(line: selectionEndLine, column: selectionEndCol),
+    );
+
+    final diagnostics = codeIntelService.workspaceDiagnostics.getForFile(path);
+    final actions = codeIntelService.codeActionProvider.getCodeActions(
+      document,
+      selection,
+      diagnostics,
+    );
+
+    final response = ApiResponse(
+      success: true,
+      timestamp: DateTime.now().toIso8601String(),
+      requestId: requestId,
+      data: {
+        "revision": revision,
+        "actions": actions.map((a) => a.toJson()).toList(),
+      },
     );
 
     request.response

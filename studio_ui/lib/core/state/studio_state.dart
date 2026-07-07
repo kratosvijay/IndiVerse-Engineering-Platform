@@ -29,7 +29,11 @@ import '../services/default_hover_provider.dart';
 import '../../models/diagnostic_collection.dart';
 import '../services/default_diagnostics_provider.dart';
 import '../../features/editor/controllers/completion_controller.dart';
+import '../../features/editor/controllers/signature_help_controller.dart';
+import '../../features/editor/controllers/code_action_controller.dart';
 import '../services/default_completion_provider.dart';
+import '../services/default_signature_help_provider.dart';
+import '../services/default_code_action_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:async';
@@ -96,6 +100,8 @@ class StudioState extends ChangeNotifier {
       LanguageIntelligenceService(languageRegistry);
   LanguageIntelligenceService get intelligence => languageIntel;
   late final CompletionController completionController;
+  late final SignatureHelpController signatureHelpController;
+  late final CodeActionController codeActionController;
   final DiagnosticCollection diagnostics = DiagnosticCollection();
   final Map<String, Timer> _diagTimers = {};
   WebSocketChannel? _wsChannel;
@@ -161,6 +167,8 @@ class StudioState extends ChangeNotifier {
 
   StudioState() {
     completionController = CompletionController(state: this);
+    signatureHelpController = SignatureHelpController(state: this);
+    codeActionController = CodeActionController(state: this);
     navigation = NavigationService(this);
     workbench = WorkbenchApi(this);
     history = DocumentHistoryService();
@@ -230,6 +238,105 @@ class StudioState extends ChangeNotifier {
         shortcut: const SingleActivator(LogicalKeyboardKey.keyF, meta: true),
         execute: (ctx) async {
           eventBus.publish("Command", "find");
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.codeAction,
+        title: "Code Actions / Quick Fixes",
+        category: "Editor",
+        description: "Show available quick fixes and code actions",
+        shortcut: const SingleActivator(
+          LogicalKeyboardKey.period,
+          control: true,
+        ),
+        execute: (ctx) async {
+          codeActionController.triggerCodeActions(isManual: true);
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.quickFix,
+        title: "Quick Fix",
+        category: "Editor",
+        description: "Apply quick fix at cursor",
+        execute: (ctx) async {
+          codeActionController.triggerCodeActions(isManual: true);
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.organizeImports,
+        title: "Organize Imports",
+        category: "Editor",
+        description: "Organize import directives alphabetically",
+        execute: (ctx) async {
+          final activeTab = editor.activeTab;
+          if (activeTab == null) return const OperationResult.ok(null);
+          final doc = activeTab.document;
+          final pos = doc.cursor;
+
+          final token = CancellationToken();
+          final languageCtx = LanguageContext(
+            document: doc,
+            position: pos,
+            workspace: activeProject,
+            workspaceRevision: 0,
+            token: token,
+          );
+
+          final res = await languageIntel.getCodeActions(languageCtx, []);
+          if (res.success && res.data != null) {
+            for (final action in res.data!) {
+              if (action.kind == CodeActionKind.sourceOrganizeImports) {
+                await codeActionController.executeAction(action);
+                break;
+              }
+            }
+          }
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.fixAll,
+        title: "Fix All",
+        category: "Editor",
+        description: "Apply all recommended fixes in document",
+        execute: (ctx) async {
+          final activeTab = editor.activeTab;
+          if (activeTab == null) return const OperationResult.ok(null);
+          final doc = activeTab.document;
+          final pos = doc.cursor;
+
+          final token = CancellationToken();
+          final languageCtx = LanguageContext(
+            document: doc,
+            position: pos,
+            workspace: activeProject,
+            workspaceRevision: 0,
+            token: token,
+          );
+
+          final diags = diagnostics.getForFile(doc.path);
+          final diagIds = diags.map((d) => d.id).toList();
+
+          final res = await languageIntel.getCodeActions(languageCtx, diagIds);
+          if (res.success && res.data != null) {
+            for (final action in res.data!) {
+              if (action.kind == CodeActionKind.sourceFixAll) {
+                await codeActionController.executeAction(action);
+                break;
+              }
+            }
+          }
           return const OperationResult.ok(null);
         },
       ),
@@ -1055,6 +1162,16 @@ class StudioState extends ChangeNotifier {
       DefaultCompletionProvider(port: port),
     );
 
+    languageRegistry.registerSignatureHelpProvider(
+      'dart',
+      DefaultSignatureHelpProvider(port: port),
+    );
+
+    languageRegistry.registerCodeActionProvider(
+      'dart',
+      DefaultCodeActionProvider(port: port),
+    );
+
     notifyListeners();
   }
 
@@ -1849,4 +1966,20 @@ class StudioState extends ChangeNotifier {
     } catch (_) {}
     return {};
   }
+
+  int get signatureRequests => languageIntel.signatureRequests;
+  int get signatureCacheHits => languageIntel.signatureCacheHits;
+  int get signatureTimeouts => languageIntel.signatureTimeouts;
+  String get activeSignatureProvider => languageIntel.activeSignatureProvider;
+  Duration get totalSignatureLatency => languageIntel.totalSignatureLatency;
+
+  int get codeActionRequests => languageIntel.codeActionRequests;
+  int get codeActionCacheHits => languageIntel.codeActionCacheHits;
+  int get codeActionTimeouts => languageIntel.codeActionTimeouts;
+  int get codeActionsApplied => languageIntel.codeActionsApplied;
+  int get codeActionsFailed => languageIntel.codeActionsFailed;
+  String get activeCodeActionProvider => languageIntel.activeCodeActionProvider;
+  Duration get totalCodeActionLatency => languageIntel.totalCodeActionLatency;
+  Duration get totalCodeActionApplyTime =>
+      languageIntel.totalCodeActionApplyTime;
 }

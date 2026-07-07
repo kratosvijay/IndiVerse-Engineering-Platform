@@ -3,6 +3,8 @@ import '../../models/language_intelligence_models.dart';
 import 'language_provider_registry.dart';
 import 'workbench_providers.dart';
 import 'completion_cache.dart';
+import 'signature_help_cache.dart';
+import 'code_action_cache.dart';
 
 class IntelligenceCacheEntry<T> {
   final T result;
@@ -27,10 +29,29 @@ class LanguageIntelligenceService {
   final Map<ProviderCacheKey, IntelligenceCacheEntry<List<Diagnostic>>>
   _diagnosticsCache = {};
   final CompletionCache completionCache = CompletionCache();
+  final SignatureHelpCache signatureHelpCache = SignatureHelpCache();
+  final CodeActionCache codeActionCache = CodeActionCache();
 
   // Metric fields for autocomplete
   int completionRequests = 0;
   int completionCacheHits = 0;
+
+  // Metric fields for signature help
+  int signatureRequests = 0;
+  int signatureCacheHits = 0;
+  int signatureTimeouts = 0;
+  String activeSignatureProvider = 'none';
+  Duration totalSignatureLatency = Duration.zero;
+
+  // Metric fields for code actions
+  int codeActionRequests = 0;
+  int codeActionCacheHits = 0;
+  int codeActionTimeouts = 0;
+  int codeActionsApplied = 0;
+  int codeActionsFailed = 0;
+  Duration totalCodeActionLatency = Duration.zero;
+  Duration totalCodeActionApplyTime = Duration.zero;
+  String activeCodeActionProvider = '';
 
   LanguageIntelligenceService(this.registry);
 
@@ -39,6 +60,8 @@ class LanguageIntelligenceService {
     _semanticTokensCache.removeWhere((key, val) => key.documentId == path);
     _diagnosticsCache.removeWhere((key, val) => key.documentId == path);
     completionCache.invalidatePath(path);
+    signatureHelpCache.invalidatePath(path);
+    codeActionCache.invalidatePath(path);
   }
 
   Future<OperationResult<Hover>> getHover(LanguageContext context) async {
@@ -381,5 +404,211 @@ class LanguageIntelligenceService {
     );
 
     return OperationResult.ok(unique);
+  }
+
+  Future<OperationResult<SignatureHelp>> getSignatureHelp(
+    LanguageContext context,
+    SignatureTriggerKind triggerKind,
+  ) async {
+    signatureRequests++;
+    final language = context.document.language;
+    final path = context.document.path;
+    final revision = context.document.version.localRevision;
+
+    final provider = registry.getSignatureHelpProvider(language);
+    if (provider == null) {
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: 'UNSUPPORTED_LANGUAGE',
+          message: 'No signature help provider registered.',
+        ),
+      );
+    }
+
+    activeSignatureProvider = provider.id;
+
+    String symbol = '';
+    try {
+      final pos = context.position;
+      final lineContent = context.document.lines[pos.line - 1];
+      final col = pos.column - 1;
+      int openParen = -1;
+      int depth = 0;
+      for (int i = col - 1; i >= 0; i--) {
+        if (lineContent[i] == ')') depth++;
+        else if (lineContent[i] == '(') {
+          depth--;
+          if (depth < 0) {
+            openParen = i;
+            break;
+          }
+        }
+      }
+      if (openParen != -1) {
+        int idx = openParen - 1;
+        while (idx >= 0 && RegExp(r'\s').hasMatch(lineContent[idx])) {
+          idx--;
+        }
+        int end = idx + 1;
+        while (idx >= 0 && RegExp(r'[a-zA-Z0-9_.]').hasMatch(lineContent[idx])) {
+          idx--;
+        }
+        symbol = lineContent.substring(idx + 1, end).trim();
+      }
+    } catch (_) {}
+
+    final cached = signatureHelpCache.get(
+      context.workspace,
+      path,
+      revision,
+      symbol,
+    );
+    if (cached != null) {
+      signatureCacheHits++;
+      return OperationResult.ok(cached);
+    }
+
+    final req = LanguageRequest(
+      id: 'sig-${DateTime.now().millisecondsSinceEpoch}',
+      context: context,
+      timeout: const Duration(seconds: 3),
+    );
+
+    final execCtx = ProviderExecutionContext(
+      request: req,
+      stopwatch: Stopwatch()..start(),
+      metrics: provider.metrics,
+      capabilities: registry.getCapabilities(language),
+    );
+
+    provider.metrics.requestCount++;
+
+    try {
+      final res = await provider
+          .provideSignatureHelp(execCtx)
+          .timeout(req.timeout);
+      execCtx.stopwatch.stop();
+      if (res.success && res.data != null) {
+        provider.metrics.successCount++;
+        provider.metrics.totalLatency += execCtx.stopwatch.elapsed;
+        totalSignatureLatency += execCtx.stopwatch.elapsed;
+        signatureHelpCache.put(
+          context.workspace,
+          path,
+          revision,
+          symbol,
+          res.data!,
+        );
+      } else {
+        provider.metrics.failedCount++;
+      }
+      return res;
+    } on TimeoutException {
+      signatureTimeouts++;
+      provider.metrics.failedCount++;
+      context.token.cancel();
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: 'TIMEOUT',
+          message: 'Signature help request timed out.',
+        ),
+      );
+    } catch (e) {
+      provider.metrics.failedCount++;
+      return OperationResult.fail(
+        WorkbenchError(code: 'INTERNAL_ERROR', message: e.toString()),
+      );
+    }
+  }
+
+  Future<OperationResult<List<CodeAction>>> getCodeActions(
+    LanguageContext context,
+    List<String> diagnosticIds,
+  ) async {
+    codeActionRequests++;
+    final language = context.document.language;
+    final path = context.document.path;
+    final revision = context.document.version.localRevision;
+
+    final cached = codeActionCache.get(
+      context.workspace,
+      path,
+      revision,
+      context.position,
+      diagnosticIds,
+    );
+    if (cached != null) {
+      codeActionCacheHits++;
+      return OperationResult.ok(cached);
+    }
+
+    final provider = registry.getCodeActionProvider(language);
+    if (provider == null) {
+      return const OperationResult.ok([]);
+    }
+
+    activeCodeActionProvider = provider.id;
+
+    final req = LanguageRequest(
+      id: 'code-action-${DateTime.now().millisecondsSinceEpoch}',
+      context: context,
+      timeout: const Duration(seconds: 3),
+    );
+
+    final execCtx = ProviderExecutionContext(
+      request: req,
+      stopwatch: Stopwatch()..start(),
+      metrics: provider.metrics,
+      capabilities: registry.getCapabilities(language),
+    );
+
+    provider.metrics.requestCount++;
+
+    try {
+      final res = await provider
+          .provideCodeActions(execCtx)
+          .timeout(req.timeout);
+      execCtx.stopwatch.stop();
+      if (res.success && res.data != null) {
+        provider.metrics.successCount++;
+        provider.metrics.totalLatency += execCtx.stopwatch.elapsed;
+        totalCodeActionLatency += execCtx.stopwatch.elapsed;
+        codeActionCache.put(
+          context.workspace,
+          path,
+          revision,
+          context.position,
+          diagnosticIds,
+          res.data!,
+        );
+      } else {
+        provider.metrics.failedCount++;
+      }
+      return res;
+    } on TimeoutException {
+      codeActionTimeouts++;
+      provider.metrics.failedCount++;
+      context.token.cancel();
+      return const OperationResult.fail(
+        WorkbenchError(
+          code: 'TIMEOUT',
+          message: 'Code action request timed out.',
+        ),
+      );
+    } catch (e) {
+      provider.metrics.failedCount++;
+      return OperationResult.fail(
+        WorkbenchError(code: 'INTERNAL_ERROR', message: e.toString()),
+      );
+    }
+  }
+
+  void recordAppliedAction(String kind, Duration latency) {
+    codeActionsApplied++;
+    totalCodeActionApplyTime += latency;
+  }
+
+  void recordFailedAction(String kind) {
+    codeActionsFailed++;
   }
 }

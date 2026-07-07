@@ -29,6 +29,10 @@ abstract final class EditorCommands {
   static const gotoPreviousLocation = "editor.gotoPreviousLocation";
   static const gotoNextLocation = "editor.gotoNextLocation";
   static const toggleMinimap = "editor.toggleMinimap";
+  static const codeAction = "editor.codeAction";
+  static const quickFix = "editor.quickFix";
+  static const organizeImports = "editor.organizeImports";
+  static const fixAll = "editor.fixAll";
 }
 
 abstract final class WorkbenchCommands {

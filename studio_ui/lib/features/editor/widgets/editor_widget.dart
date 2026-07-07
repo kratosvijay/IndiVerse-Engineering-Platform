@@ -9,9 +9,14 @@ import '../../../models/ids.dart';
 import '../../../models/editor_document.dart';
 import '../../../models/workspace_events.dart';
 import '../../../models/language_intelligence_models.dart';
-import '../../../models/edit_operation.dart';
+import '../../../../models/language_intelligence_models.dart';
 import '../../../../models/completion_session.dart';
 import 'completion_overlay_widget.dart';
+import '../../editor/controllers/signature_help_controller.dart';
+import '../../editor/controllers/code_action_controller.dart';
+import 'signature_help_overlay_widget.dart';
+import 'code_action_lightbulb.dart';
+import 'code_action_overlay_widget.dart';
 import 'dart:async';
 import '../../../core/services/semantic_tokens_token_provider.dart';
 import '../../../core/services/keyboard_shortcut_manager.dart';
@@ -65,6 +70,7 @@ class _EditorWidgetState extends State<EditorWidget>
   Timer? _hoverDebounceTimer;
   bool _hoverLoading = false;
   CancellationToken? _hoverCancelToken;
+  Position? _lastCursorPos;
 
   @override
   void initState() {
@@ -569,7 +575,14 @@ class _EditorWidgetState extends State<EditorWidget>
   }
 
   void _rebuildOnControllerChange() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+
+    final cur = _controller?.document.cursor;
+    if (cur != null && cur != _lastCursorPos) {
+      _lastCursorPos = cur;
+      widget.state.codeActionController.triggerCodeActions(isManual: false);
+    }
   }
 
   void _handleScrollListener() {
@@ -923,13 +936,63 @@ class _EditorWidgetState extends State<EditorWidget>
     if (event is! KeyDownEvent || _controller == null) return;
     final doc = _controller!.document;
     final compController = widget.state.completionController;
+    final sigController = widget.state.signatureHelpController;
+    final actionController = widget.state.codeActionController;
+    final actionSession = actionController.activeSession;
+
+    final isControl =
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed;
+    final isShift = HardwareKeyboard.instance.isShiftPressed;
+
+    if (isControl && event.logicalKey == LogicalKeyboardKey.period) {
+      actionController.triggerCodeActions(isManual: true);
+      return;
+    }
+
+    if (actionSession != null && actionSession.isVisible) {
+      final actions = actionSession.actions;
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        actionController.closeSession();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.enter) {
+        actionController.executeSelectedAction();
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        if (actions.isNotEmpty) {
+          actionSession.selectedIndex =
+              (actionSession.selectedIndex - 1 + actions.length) %
+              actions.length;
+        }
+        setState(() {});
+        return;
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+        if (actions.isNotEmpty) {
+          actionSession.selectedIndex =
+              (actionSession.selectedIndex + 1) % actions.length;
+        }
+        setState(() {});
+        return;
+      }
+    }
+
+    // Detect Ctrl+Shift+Space or Cmd+Shift+Space to trigger signature help manually
+    if (isControl && isShift && event.logicalKey == LogicalKeyboardKey.space) {
+      sigController.triggerSignatureHelp(SignatureTriggerKind.manual);
+      return;
+    }
 
     if (compController.isOverlayVisible) {
       if (event.logicalKey == LogicalKeyboardKey.escape) {
         compController.closeSession();
+        sigController.closeSession();
+        actionController.closeSession();
         setState(() {});
         return;
-      } else if (event.logicalKey == LogicalKeyboardKey.enter ||
+      }
+      if (event.logicalKey == LogicalKeyboardKey.enter ||
           event.logicalKey == LogicalKeyboardKey.tab) {
         compController.commitActive();
         setState(() {});
@@ -956,6 +1019,12 @@ class _EditorWidgetState extends State<EditorWidget>
         return;
       } else if (event.logicalKey == LogicalKeyboardKey.end) {
         compController.selectEnd();
+        setState(() {});
+        return;
+      }
+    } else if (sigController.isOverlayVisible) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        sigController.closeSession();
         setState(() {});
         return;
       }
@@ -1063,6 +1132,16 @@ class _EditorWidgetState extends State<EditorWidget>
             );
           }
         }
+
+        // Signature help typing flow trigger
+        final sigController = widget.state.signatureHelpController;
+        if (keyChar == '(' || keyChar == ',') {
+          sigController.triggerSignatureHelp(SignatureTriggerKind.automatic);
+        } else if (keyChar == ')') {
+          sigController.closeSession();
+        } else if (sigController.isOverlayVisible) {
+          sigController.triggerSignatureHelp(SignatureTriggerKind.automatic);
+        }
       } else if (event.logicalKey == LogicalKeyboardKey.backspace) {
         final offset = doc.positionToOffset(doc.cursor);
         if (offset > 0) {
@@ -1077,6 +1156,11 @@ class _EditorWidgetState extends State<EditorWidget>
 
           if (compController.activeSession != null) {
             compController.filterSession();
+          }
+
+          final sigController = widget.state.signatureHelpController;
+          if (sigController.isOverlayVisible) {
+            sigController.triggerSignatureHelp(SignatureTriggerKind.automatic);
           }
         }
       } else if (event.logicalKey == LogicalKeyboardKey.enter) {
@@ -1562,6 +1646,28 @@ class _EditorWidgetState extends State<EditorWidget>
     } else {
       _hideCompletionOverlay();
     }
+
+    final sigController = widget.state.signatureHelpController;
+    if (sigController.isOverlayVisible && sigController.activeSession != null) {
+      _showSignatureOverlay(sigController.activeSession!);
+    } else {
+      _hideSignatureOverlay();
+    }
+
+    final actionController = widget.state.codeActionController;
+    final actionSession = actionController.activeSession;
+    if (actionSession != null) {
+      if (actionSession.isVisible) {
+        _hideCodeActionLightbulb();
+        _showCodeActionsOverlay(actionSession);
+      } else {
+        _hideCodeActionsOverlay();
+        _showCodeActionLightbulb(actionSession);
+      }
+    } else {
+      _hideCodeActionLightbulb();
+      _hideCodeActionsOverlay();
+    }
   }
 
   void _showCompletionOverlay(CompletionSession session) {
@@ -1611,5 +1717,144 @@ class _EditorWidgetState extends State<EditorWidget>
 
   void _hideCompletionOverlay() {
     widget.state.completionController.hideOverlay();
+  }
+
+  void _showSignatureOverlay(SignatureSession session) {
+    _hideSignatureOverlay();
+
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+
+    final double gutterWidth = 52.0;
+    final double textPadding = 12.0;
+    final double charWidth = 7.2;
+    final double lineHeight = 20.0;
+
+    final anchor = session.anchorPosition;
+    final visualLineIdx =
+        _controller?.actualToVisualLine(anchor.line) ?? (anchor.line - 1);
+    final caretY = visualLineIdx * lineHeight - _scrollController.offset;
+    final caretX =
+        gutterWidth +
+        textPadding +
+        (anchor.column * charWidth) -
+        (_controller?.viewport.horizontalOffset ?? 0.0);
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final globalOffset = renderBox.localToGlobal(Offset.zero);
+
+    final globalCursorX = globalOffset.dx + caretX;
+    final globalCursorY = globalOffset.dy + caretY + lineHeight + 4;
+
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (context) {
+        return SignatureHelpOverlayWidget(
+          session: session,
+          controller: widget.state.signatureHelpController,
+          globalX: globalCursorX,
+          globalY: globalCursorY,
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    widget.state.signatureHelpController.updateOverlay(entry);
+  }
+
+  void _hideSignatureOverlay() {
+    widget.state.signatureHelpController.hideOverlay();
+  }
+
+  void _showCodeActionLightbulb(CodeActionSession session) {
+    _hideCodeActionLightbulb();
+
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+
+    final double gutterWidth = 52.0;
+    final double lineHeight = 20.0;
+
+    final pos = session.position;
+    final visualLineIdx =
+        _controller?.actualToVisualLine(pos.line) ?? (pos.line - 1);
+    final caretY = visualLineIdx * lineHeight - _scrollController.offset;
+
+    final caretX = gutterWidth - 28.0;
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final globalOffset = renderBox.localToGlobal(Offset.zero);
+
+    final globalCursorX = globalOffset.dx + caretX;
+    final globalCursorY = globalOffset.dy + caretY + 1.0;
+
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (context) {
+        return CodeActionLightbulb(
+          session: session,
+          controller: widget.state.codeActionController,
+          globalX: globalCursorX,
+          globalY: globalCursorY,
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    widget.state.codeActionController.updateLightbulbOverlay(entry);
+  }
+
+  void _hideCodeActionLightbulb() {
+    widget.state.codeActionController.updateLightbulbOverlay(null);
+  }
+
+  void _showCodeActionsOverlay(CodeActionSession session) {
+    _hideCodeActionsOverlay();
+
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+
+    final double gutterWidth = 52.0;
+    final double textPadding = 12.0;
+    final double charWidth = 7.2;
+    final double lineHeight = 20.0;
+
+    final pos = session.position;
+    final visualLineIdx =
+        _controller?.actualToVisualLine(pos.line) ?? (pos.line - 1);
+    final caretY = visualLineIdx * lineHeight - _scrollController.offset;
+    final caretX =
+        gutterWidth +
+        textPadding +
+        (pos.column * charWidth) -
+        (_controller?.viewport.horizontalOffset ?? 0.0);
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final globalOffset = renderBox.localToGlobal(Offset.zero);
+
+    final globalCursorX = globalOffset.dx + caretX;
+    final globalCursorY = globalOffset.dy + caretY + lineHeight + 2.0;
+
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (context) {
+        return CodeActionOverlayWidget(
+          session: session,
+          controller: widget.state.codeActionController,
+          globalX: globalCursorX,
+          globalY: globalCursorY,
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    widget.state.codeActionController.updateActionsOverlay(entry);
+  }
+
+  void _hideCodeActionsOverlay() {
+    widget.state.codeActionController.updateActionsOverlay(null);
   }
 }

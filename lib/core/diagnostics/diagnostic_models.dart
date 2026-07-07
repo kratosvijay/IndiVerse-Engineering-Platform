@@ -262,3 +262,335 @@ class CompletionItem {
         'score': score,
       };
 }
+
+class ParameterInformation {
+  final String label;
+  final String? documentation;
+
+  const ParameterInformation({required this.label, this.documentation});
+
+  ParameterInformation copyWith({
+    String? label,
+    String? documentation,
+  }) {
+    return ParameterInformation(
+      label: label ?? this.label,
+      documentation: documentation ?? this.documentation,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'documentation': documentation,
+      };
+
+  factory ParameterInformation.fromJson(Map<String, dynamic> json) =>
+      ParameterInformation(
+        label: json['label'] as String,
+        documentation: json['documentation'] as String?,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParameterInformation &&
+          runtimeType == other.runtimeType &&
+          label == other.label &&
+          documentation == other.documentation;
+
+  @override
+  int get hashCode => label.hashCode ^ documentation.hashCode;
+}
+
+class SignatureInformation {
+  final String label;
+  final String? documentation;
+  final List<ParameterInformation> parameters;
+
+  const SignatureInformation({
+    required this.label,
+    this.documentation,
+    required this.parameters,
+  });
+
+  SignatureInformation copyWith({
+    String? label,
+    String? documentation,
+    List<ParameterInformation>? parameters,
+  }) {
+    return SignatureInformation(
+      label: label ?? this.label,
+      documentation: documentation ?? this.documentation,
+      parameters: parameters ?? this.parameters,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'documentation': documentation,
+        'parameters': parameters.map((p) => p.toJson()).toList(),
+      };
+
+  factory SignatureInformation.fromJson(Map<String, dynamic> json) =>
+      SignatureInformation(
+        label: json['label'] as String,
+        documentation: json['documentation'] as String?,
+        parameters: (json['parameters'] as List? ?? [])
+            .map(
+                (p) => ParameterInformation.fromJson(p as Map<String, dynamic>))
+            .toList(),
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SignatureInformation &&
+          runtimeType == other.runtimeType &&
+          label == other.label &&
+          documentation == other.documentation &&
+          _listEquals(parameters, other.parameters);
+
+  @override
+  int get hashCode =>
+      label.hashCode ^ documentation.hashCode ^ _listHashCode(parameters);
+
+  static bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static int _listHashCode<T>(List<T> list) {
+    int hash = 0;
+    for (final item in list) {
+      hash ^= item.hashCode;
+    }
+    return hash;
+  }
+}
+
+class SignatureHelp {
+  final List<SignatureInformation> signatures;
+  final int activeSignature;
+  final int activeParameter;
+
+  const SignatureHelp({
+    required this.signatures,
+    this.activeSignature = 0,
+    this.activeParameter = 0,
+  });
+
+  SignatureHelp copyWith({
+    List<SignatureInformation>? signatures,
+    int? activeSignature,
+    int? activeParameter,
+  }) {
+    return SignatureHelp(
+      signatures: signatures ?? this.signatures,
+      activeSignature: activeSignature ?? this.activeSignature,
+      activeParameter: activeParameter ?? this.activeParameter,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'signatures': signatures.map((s) => s.toJson()).toList(),
+        'activeSignature': activeSignature,
+        'activeParameter': activeParameter,
+      };
+
+  factory SignatureHelp.fromJson(Map<String, dynamic> json) => SignatureHelp(
+        signatures: (json['signatures'] as List? ?? [])
+            .map(
+                (s) => SignatureInformation.fromJson(s as Map<String, dynamic>))
+            .toList(),
+        activeSignature: json['activeSignature'] as int? ?? 0,
+        activeParameter: json['activeParameter'] as int? ?? 0,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SignatureHelp &&
+          runtimeType == other.runtimeType &&
+          activeSignature == other.activeSignature &&
+          activeParameter == other.activeParameter &&
+          SignatureInformation._listEquals(signatures, other.signatures);
+
+  @override
+  int get hashCode =>
+      signatures.hashCode ^ activeSignature.hashCode ^ activeParameter.hashCode;
+}
+
+enum CodeActionKind {
+  quickFix('quickfix'),
+  refactor('refactor'),
+  refactorExtract('refactor.extract'),
+  refactorInline('refactor.inline'),
+  refactorRewrite('refactor.rewrite'),
+  source('source'),
+  sourceOrganizeImports('source.organizeImports'),
+  sourceFixAll('source.fixAll');
+
+  final String value;
+  const CodeActionKind(this.value);
+
+  static CodeActionKind fromString(String val) {
+    return CodeActionKind.values.firstWhere(
+      (e) => e.value == val || e.name == val,
+      orElse: () => CodeActionKind.quickFix,
+    );
+  }
+}
+
+class CodeAction {
+  final String id;
+  final String title;
+  final CodeActionKind kind;
+  final WorkspaceEdit? edit;
+  final bool isPreferred;
+  final bool requiresConfirmation;
+  final bool isPreviewable;
+  final String? disabledReason;
+  final String? providerId;
+  final String? command;
+  final List<Diagnostic>? diagnostics;
+
+  const CodeAction({
+    required this.id,
+    required this.title,
+    required this.kind,
+    this.edit,
+    this.isPreferred = false,
+    this.requiresConfirmation = false,
+    this.isPreviewable = false,
+    this.disabledReason,
+    this.providerId,
+    this.command,
+    this.diagnostics,
+  });
+
+  CodeAction copyWith({
+    String? id,
+    String? title,
+    CodeActionKind? kind,
+    WorkspaceEdit? edit,
+    bool? isPreferred,
+    bool? requiresConfirmation,
+    bool? isPreviewable,
+    String? disabledReason,
+    String? providerId,
+    String? command,
+    List<Diagnostic>? diagnostics,
+  }) {
+    return CodeAction(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      kind: kind ?? this.kind,
+      edit: edit ?? this.edit,
+      isPreferred: isPreferred ?? this.isPreferred,
+      requiresConfirmation: requiresConfirmation ?? this.requiresConfirmation,
+      isPreviewable: isPreviewable ?? this.isPreviewable,
+      disabledReason: disabledReason ?? this.disabledReason,
+      providerId: providerId ?? this.providerId,
+      command: command ?? this.command,
+      diagnostics: diagnostics ?? this.diagnostics,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'kind': kind.value,
+        'edit': edit?.toJson(),
+        'isPreferred': isPreferred,
+        'requiresConfirmation': requiresConfirmation,
+        'isPreviewable': isPreviewable,
+        'disabledReason': disabledReason,
+        'providerId': providerId,
+        'command': command,
+        'diagnostics': diagnostics?.map((d) => d.toJson()).toList(),
+      };
+
+  factory CodeAction.fromJson(Map<String, dynamic> json) {
+    final kindStr = json['kind'] as String? ?? 'quickfix';
+    final kind = CodeActionKind.fromString(kindStr);
+
+    final editVal = json['edit'];
+    final edit = editVal != null
+        ? WorkspaceEdit.fromJson(editVal as Map<String, dynamic>)
+        : null;
+
+    final diagList = json['diagnostics'] as List?;
+    final diagnostics = diagList != null
+        ? diagList
+            .map((d) => Diagnostic.fromJson(d as Map<String, dynamic>))
+            .toList()
+        : null;
+
+    return CodeAction(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      kind: kind,
+      edit: edit,
+      isPreferred: json['isPreferred'] as bool? ?? false,
+      requiresConfirmation: json['requiresConfirmation'] as bool? ?? false,
+      isPreviewable: json['isPreviewable'] as bool? ?? false,
+      disabledReason: json['disabledReason'] as String?,
+      providerId: json['providerId'] as String?,
+      command: json['command'] as String?,
+      diagnostics: diagnostics,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CodeAction &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          kind == other.kind &&
+          edit == other.edit &&
+          isPreferred == other.isPreferred &&
+          requiresConfirmation == other.requiresConfirmation &&
+          isPreviewable == other.isPreviewable &&
+          disabledReason == other.disabledReason &&
+          providerId == other.providerId &&
+          command == other.command &&
+          _listEquals(diagnostics, other.diagnostics);
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      title.hashCode ^
+      kind.hashCode ^
+      edit.hashCode ^
+      isPreferred.hashCode ^
+      requiresConfirmation.hashCode ^
+      isPreviewable.hashCode ^
+      disabledReason.hashCode ^
+      providerId.hashCode ^
+      command.hashCode ^
+      _listHashCode(diagnostics);
+
+  static bool _listEquals<T>(List<T>? a, List<T>? b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static int _listHashCode<T>(List<T>? list) {
+    if (list == null) return 0;
+    int hash = 0;
+    for (final item in list) {
+      hash ^= item.hashCode;
+    }
+    return hash;
+  }
+}

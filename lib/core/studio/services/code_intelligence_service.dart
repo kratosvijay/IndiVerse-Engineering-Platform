@@ -5,6 +5,8 @@ import '../../knowledge/models/symbol.dart';
 import '../../diagnostics/diagnostic_models.dart';
 import '../../diagnostics/diagnostics_engine.dart';
 import '../../diagnostics/completion_provider.dart';
+import '../../signature/signature_help_provider.dart';
+import '../../code_actions/code_action_provider.dart';
 
 class FileDiagnostics {
   final String path;
@@ -57,6 +59,8 @@ class CodeIntelligenceService {
   late final OutlineBuilder outlineBuilder;
   late final DefinitionProvider definitionProvider;
   late final ReferenceProvider referenceProvider;
+  late final SignatureHelpProvider signatureHelpProvider;
+  late final CodeActionProvider codeActionProvider;
 
   final List<String> _dirtyQueue = [];
   bool _isQueueProcessing = false;
@@ -68,6 +72,8 @@ class CodeIntelligenceService {
     outlineBuilder = OutlineBuilder(this);
     definitionProvider = DefinitionProvider(this);
     referenceProvider = ReferenceProvider();
+    signatureHelpProvider = SignatureHelpProvider(this);
+    codeActionProvider = CodeActionProvider();
     completionContributors = [
       KeywordContributor(),
       ScopeContributor(symbolIndex: symbolIndex),
