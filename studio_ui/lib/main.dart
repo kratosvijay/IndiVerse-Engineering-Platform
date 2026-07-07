@@ -12,6 +12,8 @@ import 'features/explorer/widgets/collapsible_accordion_sidebar.dart';
 import 'features/editor/widgets/welcome_widget.dart';
 import 'features/quick_open/widgets/quick_open_widget.dart';
 import 'features/diagnostics/diagnostics_widget.dart';
+import 'features/chat/widgets/chat_panel.dart';
+import 'features/chat/controllers/chat_controller.dart';
 import 'models/tree_node.dart';
 import 'models/editor_status.dart';
 import 'models/workspace_events.dart';
@@ -52,6 +54,7 @@ class StudioDashboard extends StatefulWidget {
 
 class _StudioDashboardState extends State<StudioDashboard> {
   final StudioState _studioState = StudioState();
+  late final ChatController _chatController;
   bool _showCommandPalette = false;
   bool _showQuickOpen = false;
 
@@ -59,6 +62,10 @@ class _StudioDashboardState extends State<StudioDashboard> {
   void initState() {
     super.initState();
     _studioState.connect(18080);
+    _chatController = ChatController(
+      aiService: _studioState.aiService,
+      workspace: _studioState.activeProject,
+    )..initialize();
     _initializeWorkspaceSession();
 
     _studioState.eventBus.stream.listen((evt) {
@@ -128,6 +135,16 @@ class _StudioDashboardState extends State<StudioDashboard> {
         return MetricsWidget(state: _studioState);
       case 'Diagnostics':
         return DiagnosticsWidget(state: _studioState);
+      case 'Copilot':
+        return ChatPanel(
+          controller: _chatController,
+          onInsertCode: (code) {
+            _studioState.dispatcher.execute(
+              'editor.insertText',
+              CommandContext(arguments: {'text': code}),
+            );
+          },
+        );
       default:
         return EditorWidget(state: _studioState);
     }
@@ -237,6 +254,7 @@ class _StudioDashboardState extends State<StudioDashboard> {
                   'Architecture',
                   'Metrics',
                   'Diagnostics',
+                  'Copilot',
                 ].map((tab) {
                   final active = _studioState.activeTab == tab;
                   return Padding(

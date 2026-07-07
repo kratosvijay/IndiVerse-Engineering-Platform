@@ -35,6 +35,7 @@ import '../services/default_completion_provider.dart';
 import '../services/default_signature_help_provider.dart';
 import '../services/default_code_action_provider.dart';
 import '../services/ai_service.dart';
+import '../services/overlay_manager.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:async';
@@ -101,6 +102,7 @@ class StudioState extends ChangeNotifier {
       LanguageIntelligenceService(languageRegistry);
   LanguageIntelligenceService get intelligence => languageIntel;
   late final AIService aiService;
+  final OverlayManager overlayManager = OverlayManager();
   late final CompletionController completionController;
   late final SignatureHelpController signatureHelpController;
   late final CodeActionController codeActionController;
@@ -1056,6 +1058,42 @@ class StudioState extends ChangeNotifier {
           doc.updateSelection(prev.range);
           notifyListeners();
           return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: "editor.insertText",
+        title: "Insert Text",
+        category: "Editor",
+        description: "Insert text at the current cursor position",
+        execute: (ctx) async {
+          final active = editor.activeTab;
+          if (active == null) {
+            return const OperationResult.fail(
+              WorkbenchError(
+                code: "NO_ACTIVE_FILE",
+                message: "No active file open.",
+              ),
+            );
+          }
+          final text = ctx.arguments['text'] as String?;
+          if (text == null || text.isEmpty) {
+            return const OperationResult.ok(null);
+          }
+          final offset = active.document.positionToOffset(
+            active.document.cursor,
+          );
+          final op = InsertTextOperation(index: offset, text: text);
+          final res = await op.apply(
+            active.document,
+            OperationContext(timestamp: DateTime.now(), source: "chat"),
+          );
+          if (res.success) {
+            history.recordOperation(active.document.id, op);
+          }
+          notifyListeners();
+          return res;
         },
       ),
     );
