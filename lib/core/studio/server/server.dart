@@ -22,6 +22,12 @@ import '../services/workspace_service.dart';
 import '../controllers/code_intelligence_controller.dart';
 import '../services/code_intelligence_service.dart';
 import '../websocket/websocket_server.dart';
+import '../controllers/ai_controller.dart';
+import '../../providers/ai_provider.dart';
+import '../../providers/ai_provider_registry.dart';
+import '../../providers/mock_ai_provider.dart';
+import '../../conversation/conversation_manager.dart';
+import '../../context/context_engine.dart';
 
 class StudioServer {
   final PlatformSDK sdk;
@@ -44,6 +50,11 @@ class StudioServer {
   late final CodeIntelligenceService codeIntelService;
   late final CodeIntelligenceController codeIntelController;
 
+  late final AIProviderRegistry aiProviderRegistry;
+  late final ConversationManager conversationManager;
+  late final ContextEngine contextEngine;
+  late final AIController aiController;
+
   late final WebsocketServer websocketServer;
 
   HttpServer? _server;
@@ -56,6 +67,36 @@ class StudioServer {
     architectureService = ArchitectureService(sdk);
     inspectorService = InspectorService(sdk);
     codeIntelService = CodeIntelligenceService(sdk);
+
+    aiProviderRegistry = AIProviderRegistry();
+    conversationManager = ConversationManager(MemoryConversationStore());
+    contextEngine = ContextEngine();
+    aiController = AIController(
+      registry: aiProviderRegistry,
+      conversationManager: conversationManager,
+      contextEngine: contextEngine,
+    );
+
+    // Register and initialize MockAIProvider
+    final mockProvider = MockAIProvider();
+    aiProviderRegistry.registerProvider(mockProvider);
+    mockProvider.initialize(const AIProviderConfiguration(
+      endpoint: 'http://localhost/mock',
+      apiKey: 'mock-key',
+      timeout: Duration(seconds: 30),
+      enabled: true,
+      defaultModel: AIModel(
+        id: 'mock-pro',
+        name: 'Mock Pro',
+        provider: 'mock-ai',
+        contextWindow: 1000000,
+        supportsVision: true,
+        supportsTools: true,
+        supportsReasoning: true,
+        supportsJsonMode: true,
+        supportsStreaming: true,
+      ),
+    ));
 
     workspaceController = WorkspaceController(workspaceService);
     searchController = SearchController(searchService);
@@ -302,6 +343,18 @@ class StudioServer {
         await codeIntelController.handleGetSignatureHelp(request, requestId);
       } else if (path == '/api/v1/code/codeActions') {
         codeIntelController.handleGetCodeActions(request);
+      } else if (path == '/api/v1/ai/chat') {
+        await aiController.handleChat(request, requestId);
+      } else if (path == '/api/v1/ai/providers') {
+        await aiController.handleGetProviders(request, requestId);
+      } else if (path == '/api/v1/ai/health') {
+        await aiController.handleGetHealth(request, requestId);
+      } else if (path == '/api/v1/ai/models') {
+        await aiController.handleGetModels(request, requestId);
+      } else if (path == '/api/v1/ai/cancel') {
+        await aiController.handleCancel(request, requestId);
+      } else if (path == '/api/v1/ai/tools') {
+        await aiController.handleTools(request, requestId);
       } else {
         final response = ApiResponse(
           success: false,

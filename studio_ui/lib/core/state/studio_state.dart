@@ -34,6 +34,7 @@ import '../../features/editor/controllers/code_action_controller.dart';
 import '../services/default_completion_provider.dart';
 import '../services/default_signature_help_provider.dart';
 import '../services/default_code_action_provider.dart';
+import '../services/ai_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:async';
@@ -99,6 +100,7 @@ class StudioState extends ChangeNotifier {
   late final LanguageIntelligenceService languageIntel =
       LanguageIntelligenceService(languageRegistry);
   LanguageIntelligenceService get intelligence => languageIntel;
+  late final AIService aiService;
   late final CompletionController completionController;
   late final SignatureHelpController signatureHelpController;
   late final CodeActionController codeActionController;
@@ -166,6 +168,7 @@ class StudioState extends ChangeNotifier {
   }
 
   StudioState() {
+    aiService = AIService(serverUrl: 'http://localhost:$_serverPort');
     completionController = CompletionController(state: this);
     signatureHelpController = SignatureHelpController(state: this);
     codeActionController = CodeActionController(state: this);
