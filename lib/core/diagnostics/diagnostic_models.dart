@@ -36,6 +36,7 @@ class DocumentSnapshot {
   final String path;
   final String content;
   final int revision;
+  List<String>? _cachedLines;
 
   DocumentSnapshot({
     required this.path,
@@ -43,7 +44,7 @@ class DocumentSnapshot {
     required this.revision,
   });
 
-  List<String> get lines => content.split('\n');
+  List<String> get lines => _cachedLines ??= content.split('\n');
 }
 
 enum DiagnosticSeverity {
