@@ -4,7 +4,8 @@ import 'package:indiverse_developer_platform/core/diagnostics/diagnostic_models.
 import 'package:indiverse_developer_platform/core/code_actions/code_action_provider.dart';
 
 void main() async {
-  print("=== Sprint 20 Language Intelligence Performance Stress Benchmarks ===");
+  print(
+      "=== Sprint 20 Language Intelligence Performance Stress Benchmarks ===");
 
   // 1. Generate large file documents in-memory
   final Map<String, String> files = {
@@ -64,7 +65,7 @@ void main() async {
 
     // Measure Code Actions resolution
     final actionStopwatch = Stopwatch()..start();
-    final selection = Range(
+    final selection = const Range(
       start: Position(line: 5, column: 1),
       end: Position(line: 5, column: 10),
     );
@@ -91,6 +92,5 @@ void main() async {
     "timestamp": DateTime.now().toIso8601String(),
     "benchmarks": reports,
   }));
-  print(
-      "Saved benchmark report to: benchmark/reports/performance_report.json");
+  print("Saved benchmark report to: benchmark/reports/performance_report.json");
 }

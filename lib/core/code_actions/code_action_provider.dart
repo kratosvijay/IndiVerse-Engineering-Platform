@@ -174,10 +174,10 @@ class CodeActionProvider {
         diagnostics: [diag],
         edit: WorkspaceEdit(changes: {
           doc.path: [
-            TextEdit(
+            const TextEdit(
               range: Range(
-                start: const Position(line: 1, column: 1),
-                end: const Position(line: 1, column: 1),
+                start: Position(line: 1, column: 1),
+                end: Position(line: 1, column: 1),
               ),
               newText: "import 'package:flutter/material.dart';\n",
             ),

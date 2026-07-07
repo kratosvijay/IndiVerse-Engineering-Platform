@@ -20,9 +20,9 @@ void main() {
 
       final actions = provider.getCodeActions(
         doc,
-        Range(
-          start: const Position(line: 1, column: 1),
-          end: const Position(line: 1, column: 1),
+        const Range(
+          start: Position(line: 1, column: 1),
+          end: Position(line: 1, column: 1),
         ),
         [],
       );
@@ -47,11 +47,11 @@ void main() {
         revision: 1,
       );
 
-      final diag = Diagnostic(
+      final diag = const Diagnostic(
         id: 'unused-x',
         range: Range(
-          start: const Position(line: 2, column: 7),
-          end: const Position(line: 2, column: 8),
+          start: Position(line: 2, column: 7),
+          end: Position(line: 2, column: 8),
         ),
         severity: DiagnosticSeverity.warning,
         message: "The variable 'x' isn't used.",
@@ -61,9 +61,9 @@ void main() {
 
       final actions = provider.getCodeActions(
         doc,
-        Range(
-          start: const Position(line: 2, column: 7),
-          end: const Position(line: 2, column: 8),
+        const Range(
+          start: Position(line: 2, column: 7),
+          end: Position(line: 2, column: 8),
         ),
         [diag],
       );
@@ -83,11 +83,11 @@ void main() {
         revision: 1,
       );
 
-      final diag = Diagnostic(
+      final diag = const Diagnostic(
         id: 'deprecated-opac',
         range: Range(
-          start: const Position(line: 1, column: 15),
-          end: const Position(line: 1, column: 26),
+          start: Position(line: 1, column: 15),
+          end: Position(line: 1, column: 26),
         ),
         severity: DiagnosticSeverity.warning,
         message: "'withOpacity' is deprecated. Use 'withValues' instead.",
@@ -97,9 +97,9 @@ void main() {
 
       final actions = provider.getCodeActions(
         doc,
-        Range(
-          start: const Position(line: 1, column: 16),
-          end: const Position(line: 1, column: 16),
+        const Range(
+          start: Position(line: 1, column: 16),
+          end: Position(line: 1, column: 16),
         ),
         [diag],
       );
@@ -118,11 +118,11 @@ void main() {
         revision: 1,
       );
 
-      final diagX = Diagnostic(
+      final diagX = const Diagnostic(
         id: 'unused-x',
         range: Range(
-          start: const Position(line: 2, column: 7),
-          end: const Position(line: 2, column: 8),
+          start: Position(line: 2, column: 7),
+          end: Position(line: 2, column: 8),
         ),
         severity: DiagnosticSeverity.warning,
         message: "The variable 'x' isn't used.",
@@ -130,11 +130,11 @@ void main() {
         source: 'test',
       );
 
-      final diagY = Diagnostic(
+      final diagY = const Diagnostic(
         id: 'unused-y',
         range: Range(
-          start: const Position(line: 3, column: 7),
-          end: const Position(line: 3, column: 8),
+          start: Position(line: 3, column: 7),
+          end: Position(line: 3, column: 8),
         ),
         severity: DiagnosticSeverity.warning,
         message: "The variable 'y' isn't used.",
@@ -144,9 +144,9 @@ void main() {
 
       final actions = provider.getCodeActions(
         doc,
-        Range(
-          start: const Position(line: 2, column: 1),
-          end: const Position(line: 3, column: 10),
+        const Range(
+          start: Position(line: 2, column: 1),
+          end: Position(line: 3, column: 10),
         ),
         [diagX, diagY],
       );

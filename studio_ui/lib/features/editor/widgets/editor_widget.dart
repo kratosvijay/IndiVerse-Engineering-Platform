@@ -9,7 +9,7 @@ import '../../../models/ids.dart';
 import '../../../models/editor_document.dart';
 import '../../../models/workspace_events.dart';
 import '../../../models/language_intelligence_models.dart';
-import '../../../../models/language_intelligence_models.dart';
+import '../../../models/edit_operation.dart';
 import '../../../../models/completion_session.dart';
 import 'completion_overlay_widget.dart';
 import '../../editor/controllers/signature_help_controller.dart';

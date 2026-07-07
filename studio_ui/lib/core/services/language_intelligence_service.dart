@@ -435,8 +435,9 @@ class LanguageIntelligenceService {
       int openParen = -1;
       int depth = 0;
       for (int i = col - 1; i >= 0; i--) {
-        if (lineContent[i] == ')') depth++;
-        else if (lineContent[i] == '(') {
+        if (lineContent[i] == ')') {
+          depth++;
+        } else if (lineContent[i] == '(') {
           depth--;
           if (depth < 0) {
             openParen = i;
@@ -450,7 +451,8 @@ class LanguageIntelligenceService {
           idx--;
         }
         int end = idx + 1;
-        while (idx >= 0 && RegExp(r'[a-zA-Z0-9_.]').hasMatch(lineContent[idx])) {
+        while (idx >= 0 &&
+            RegExp(r'[a-zA-Z0-9_.]').hasMatch(lineContent[idx])) {
           idx--;
         }
         symbol = lineContent.substring(idx + 1, end).trim();

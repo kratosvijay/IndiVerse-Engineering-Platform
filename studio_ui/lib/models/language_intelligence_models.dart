@@ -650,11 +650,9 @@ class CodeAction {
         : null;
 
     final diagList = json['diagnostics'] as List?;
-    final diagnostics = diagList != null
-        ? diagList
-              .map((d) => Diagnostic.fromJson(d as Map<String, dynamic>))
-              .toList()
-        : null;
+    final diagnostics = diagList
+        ?.map((d) => Diagnostic.fromJson(d as Map<String, dynamic>))
+        .toList();
 
     return CodeAction(
       id: json['id'] as String? ?? '',

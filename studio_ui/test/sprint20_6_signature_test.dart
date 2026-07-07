@@ -7,7 +7,6 @@ import 'package:studio_ui/core/services/language_intelligence_providers.dart';
 import 'package:studio_ui/core/services/workbench_providers.dart';
 import 'package:studio_ui/core/services/signature_help_cache.dart';
 import 'package:studio_ui/features/editor/widgets/signature_help_overlay_widget.dart';
-import 'package:studio_ui/features/editor/controllers/signature_help_controller.dart';
 import 'package:studio_ui/models/ids.dart';
 
 class TestSignatureHelpProvider implements SignatureHelpProvider {

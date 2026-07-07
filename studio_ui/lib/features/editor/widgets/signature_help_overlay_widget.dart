@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../models/language_intelligence_models.dart';
 import '../controllers/signature_help_controller.dart';
 
 class SignatureHelpOverlayWidget extends StatelessWidget {
@@ -19,7 +18,6 @@ class SignatureHelpOverlayWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final screenHeight = media.size.height;
     final screenWidth = media.size.width;
 
     final double overlayWidth = 350.0;
