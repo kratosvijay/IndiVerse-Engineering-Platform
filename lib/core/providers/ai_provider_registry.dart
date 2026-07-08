@@ -38,4 +38,19 @@ class AIProviderRegistry {
   void clear() {
     _providers.clear();
   }
+
+  bool supportsTools(String providerId) {
+    final provider = getProvider(providerId);
+    return provider?.capabilities.tools ?? false;
+  }
+
+  bool supportsVision(String providerId) {
+    final provider = getProvider(providerId);
+    return provider?.capabilities.vision ?? false;
+  }
+
+  bool supportsReasoning(String providerId) {
+    final provider = getProvider(providerId);
+    return provider?.capabilities.reasoning ?? false;
+  }
 }

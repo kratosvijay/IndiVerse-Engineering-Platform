@@ -23,23 +23,30 @@ class PromptTemplate {
 class PromptPackage {
   final String systemPrompt;
   final String userPrompt;
-  final List<ContextFragment> fragments;
+  final List<ContextFragment> used;
+  final List<ContextFragment> discarded;
   final int estimatedTokens;
+  final Map<String, int> tokenUsageByProvider;
 
   const PromptPackage({
     required this.systemPrompt,
     required this.userPrompt,
-    required this.fragments,
+    required this.used,
+    required this.discarded,
     required this.estimatedTokens,
+    required this.tokenUsageByProvider,
   });
 
   Map<String, dynamic> toJson() => {
         'systemPrompt': systemPrompt,
         'userPrompt': userPrompt,
-        'fragments': fragments.map((f) => f.toJson()).toList(),
+        'used': used.map((f) => f.toJson()).toList(),
+        'discarded': discarded.map((f) => f.toJson()).toList(),
         'estimatedTokens': estimatedTokens,
+        'tokenUsageByProvider': tokenUsageByProvider,
       };
 }
+
 
 class AIRequest {
   final ConversationSession session;
@@ -61,25 +68,44 @@ class TokenEstimator {
   }
 }
 
+class PromptOptimizerResult {
+  final List<ContextFragment> used;
+  final List<ContextFragment> discarded;
+  final int totalUsedTokens;
+
+  const PromptOptimizerResult({
+    required this.used,
+    required this.discarded,
+    required this.totalUsedTokens,
+  });
+}
+
 class PromptOptimizer {
-  static List<ContextFragment> optimize(
+  static PromptOptimizerResult optimize(
     List<ContextFragment> fragments,
     int maxBudget,
   ) {
     final sorted = List<ContextFragment>.from(fragments)
-      ..sort((a, b) => b.priority.compareTo(a.priority));
+      ..sort((a, b) => a.priority.index.compareTo(b.priority.index));
 
-    final result = <ContextFragment>[];
+    final used = <ContextFragment>[];
+    final discarded = <ContextFragment>[];
     int currentTokens = 0;
 
     for (final frag in sorted) {
       if (currentTokens + frag.estimatedTokens <= maxBudget) {
-        result.add(frag);
+        used.add(frag);
         currentTokens += frag.estimatedTokens;
+      } else {
+        discarded.add(frag);
       }
     }
 
-    return result;
+    return PromptOptimizerResult(
+      used: used,
+      discarded: discarded,
+      totalUsedTokens: currentTokens,
+    );
   }
 }
 
@@ -98,12 +124,12 @@ class PromptBuilder {
       userPrompt = userPrompt.replaceAll('{{$key}}', val);
     });
 
-    final optimizedFragments = PromptOptimizer.optimize(
+    final optimization = PromptOptimizer.optimize(
       context.fragments,
       maxContextTokens,
     );
 
-    final contextBlock = optimizedFragments
+    final contextBlock = optimization.used
         .map((f) => 'Source: ${f.source}\nContent:\n${f.content}')
         .join('\n\n');
 
@@ -114,11 +140,20 @@ class PromptBuilder {
     final totalText = systemPrompt + userPrompt;
     final estimatedTokens = TokenEstimator.estimate(totalText);
 
+    final tokenUsageByProvider = <String, int>{};
+    for (final frag in optimization.used) {
+      tokenUsageByProvider[frag.source] =
+          (tokenUsageByProvider[frag.source] ?? 0) + frag.estimatedTokens;
+    }
+
     return PromptPackage(
       systemPrompt: systemPrompt,
       userPrompt: userPrompt,
-      fragments: optimizedFragments,
+      used: optimization.used,
+      discarded: optimization.discarded,
       estimatedTokens: estimatedTokens,
+      tokenUsageByProvider: tokenUsageByProvider,
     );
   }
 }
+

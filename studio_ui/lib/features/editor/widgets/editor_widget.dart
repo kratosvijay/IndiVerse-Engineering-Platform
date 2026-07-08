@@ -8,6 +8,7 @@ import '../../../core/services/workbench_commands.dart';
 import '../../../models/ids.dart';
 import '../../../models/editor_document.dart';
 import '../../../models/workspace_events.dart';
+import '../../../core/services/overlay_manager.dart';
 import '../../../models/language_intelligence_models.dart';
 import '../../../models/edit_operation.dart';
 import '../../../../models/completion_session.dart';
@@ -33,6 +34,9 @@ import 'references_panel.dart';
 import 'find_overlay_widget.dart';
 import '../../problems/widgets/problems_panel.dart';
 import '../controllers/editor_view_controller.dart';
+import '../../../models/inline_ai_models.dart';
+import '../../editor/controllers/inline_ai_controller.dart';
+import 'inline_ai_overlay_widget.dart';
 import 'editor_renderer.dart';
 import 'minimap_widget.dart';
 
@@ -629,7 +633,9 @@ class _EditorWidgetState extends State<EditorWidget>
     _focusNode.dispose();
     widget.state.removeListener(_onStateChanged);
     widget.state.completionController.closeSession();
+    widget.state.inlineAIController.closeSession();
     _hideCompletionOverlay();
+    _hideInlineAIOverlay();
     super.dispose();
   }
 
@@ -1408,7 +1414,10 @@ class _EditorWidgetState extends State<EditorWidget>
         LineNumberGutterProvider(),
         DiagnosticsGutterProvider(widget.state),
       ],
-      decorations: [DiagnosticsDecorationProvider(widget.state)],
+      decorations: [
+        DiagnosticsDecorationProvider(widget.state),
+        InlineAIDecorationProvider(widget.state),
+      ],
       controller: _controller!,
       bracketMatches: bracketMatches,
     );
@@ -1668,6 +1677,13 @@ class _EditorWidgetState extends State<EditorWidget>
       _hideCodeActionLightbulb();
       _hideCodeActionsOverlay();
     }
+
+    final inlineController = widget.state.inlineAIController;
+    if (inlineController.activeSession != null) {
+      _showInlineAIOverlay(inlineController.activeSession!);
+    } else {
+      _hideInlineAIOverlay();
+    }
   }
 
   void _showCompletionOverlay(CompletionSession session) {
@@ -1717,6 +1733,60 @@ class _EditorWidgetState extends State<EditorWidget>
 
   void _hideCompletionOverlay() {
     widget.state.completionController.hideOverlay();
+  }
+
+  void _showInlineAIOverlay(InlineAISession session) {
+    _hideInlineAIOverlay();
+
+    final activeTab = widget.state.editor.activeTab;
+    if (activeTab == null) return;
+    final doc = activeTab.document;
+    final cursor = doc.cursor;
+
+    final double gutterWidth = 52.0;
+    final double textPadding = 12.0;
+    final double charWidth = 7.2;
+    final double lineHeight = 20.0;
+
+    final visualLineIdx =
+        _controller?.actualToVisualLine(cursor.line) ?? (cursor.line - 1);
+    final caretY = visualLineIdx * lineHeight - _scrollController.offset;
+    final caretX =
+        gutterWidth +
+        textPadding +
+        (cursor.column * charWidth) -
+        (_controller?.viewport.horizontalOffset ?? 0.0);
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final globalOffset = renderBox.localToGlobal(Offset.zero);
+
+    final globalCursorX = globalOffset.dx + caretX;
+    final globalCursorY = globalOffset.dy + caretY + lineHeight;
+
+    final entry = OverlayEntry(
+      builder: (context) {
+        return InlineAIOverlayWidget(
+          session: session,
+          controller: widget.state.inlineAIController,
+          globalX: globalCursorX,
+          globalY: globalCursorY,
+        );
+      },
+    );
+
+    widget.state.overlayManager.register(
+      OverlayDescriptor(
+        id: 'inline-ai',
+        type: OverlayType.inlineAI,
+        entry: entry,
+      ),
+    );
+    widget.state.overlayManager.show(context, 'inline-ai');
+  }
+
+  void _hideInlineAIOverlay() {
+    widget.state.overlayManager.hide('inline-ai');
   }
 
   void _showSignatureOverlay(SignatureSession session) {

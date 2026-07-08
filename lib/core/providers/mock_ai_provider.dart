@@ -108,9 +108,62 @@ class MockAIProvider implements AIChatProvider {
           await Future<void>.delayed(const Duration(milliseconds: 100));
         }
 
-        // 3. Stream Response text
-        final responseText =
-            'Hello! I am your Mock AI assistant. I received your user prompt: "${request.promptPackage.userPrompt}".';
+        // 3. Stream Response text or Tool Call
+        final userPrompt = request.promptPackage.userPrompt;
+        final hasToolTrigger = userPrompt.contains('trigger_search') ||
+            userPrompt.contains('trigger_replace') ||
+            userPrompt.contains('trigger_git') ||
+            userPrompt.contains('trigger_diagnostics');
+
+        final lastMessageIsTool = request.session.messages.isNotEmpty &&
+            request.session.messages.last.role == ChatRole.tool;
+
+        if (hasToolTrigger && !lastMessageIsTool) {
+          String toolName = 'workspace.search';
+          Map<String, dynamic> arguments = {'query': 'main'};
+
+          if (userPrompt.contains('trigger_replace')) {
+            toolName = 'editor.replace';
+            arguments = {
+              'path': 'lib/main.dart',
+              'startLine': 1,
+              'startColumn': 1,
+              'endLine': 1,
+              'endColumn': 10,
+              'newText': '// modified text',
+            };
+          } else if (userPrompt.contains('trigger_git')) {
+            toolName = 'git.status';
+            arguments = {};
+          } else if (userPrompt.contains('trigger_diagnostics')) {
+            toolName = 'diagnostics.list';
+            arguments = {'path': 'lib/main.dart'};
+          }
+
+          controller.add(ToolCallEvent(
+            requestId: requestId,
+            timestamp: DateTime.now(),
+            toolId: 'call-mock-123',
+            name: toolName,
+            arguments: arguments,
+          ));
+
+          controller.add(CompletedEvent(
+            requestId: requestId,
+            timestamp: DateTime.now(),
+            fullText: '',
+            finishReason: FinishReason.toolCall,
+          ));
+
+          metrics.successCount++;
+          _lastSuccess = DateTime.now();
+          stopwatch.stop();
+          return;
+        }
+
+        final responseText = lastMessageIsTool
+            ? 'I executed the tool. Here is the response description: ${request.session.messages.last.content}'
+            : 'Hello! I am your Mock AI assistant. I received your user prompt: "${request.promptPackage.userPrompt}".';
         final words = responseText.split(' ');
         String currentFullText = '';
 
@@ -147,6 +200,7 @@ class MockAIProvider implements AIChatProvider {
           requestId: requestId,
           timestamp: DateTime.now(),
           fullText: currentFullText.trim(),
+          finishReason: FinishReason.stop,
         ));
 
         metrics.successCount++;

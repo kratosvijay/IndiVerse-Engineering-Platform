@@ -33,6 +33,7 @@ abstract final class EditorCommands {
   static const quickFix = "editor.quickFix";
   static const organizeImports = "editor.organizeImports";
   static const fixAll = "editor.fixAll";
+  static const inlineAI = "editor.inlineAI";
 }
 
 abstract final class WorkbenchCommands {

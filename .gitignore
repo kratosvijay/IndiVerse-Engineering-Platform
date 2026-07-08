@@ -19,3 +19,6 @@ build/
 
 # Local Scripts Temp
 scratch/
+
+# IndiVerse Local Logs/Snapshots
+.indiverse/

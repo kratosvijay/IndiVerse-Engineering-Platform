@@ -1,3 +1,25 @@
+import 'package:indiverse_developer_platform/core/models/tool_call_models.dart';
+import 'message_metadata.dart';
+
+enum RequestStage {
+  preparing,
+  gatheringContext,
+  optimizingPrompt,
+  waitingProvider,
+  streaming,
+  completed,
+  cancelled,
+  failed,
+}
+
+enum FinishReason {
+  stop,
+  length,
+  cancelled,
+  toolCall,
+  error,
+}
+
 class AIModel {
   final String id;
   final String name;
@@ -178,12 +200,16 @@ class ChatMessage {
   final String content;
   final String? name;
   final DateTime timestamp;
+  final MessageMetadata? metadata;
+  final String? reasoning;
 
   const ChatMessage({
     required this.role,
     required this.content,
     this.name,
     required this.timestamp,
+    this.metadata,
+    this.reasoning,
   });
 
   Map<String, dynamic> toJson() => {
@@ -191,6 +217,8 @@ class ChatMessage {
     'content': content,
     if (name != null) 'name': name,
     'timestamp': timestamp.toIso8601String(),
+    if (metadata != null) 'metadata': metadata!.toJson(),
+    if (reasoning != null) 'reasoning': reasoning,
   };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
@@ -198,6 +226,10 @@ class ChatMessage {
     content: json['content'] as String,
     name: json['name'] as String?,
     timestamp: DateTime.parse(json['timestamp'] as String),
+    metadata: json['metadata'] != null
+        ? MessageMetadata.fromJson(json['metadata'] as Map<String, dynamic>)
+        : null,
+    reasoning: json['reasoning'] as String?,
   );
 }
 
@@ -285,6 +317,15 @@ abstract class AIStreamEvent {
     );
 
     switch (type) {
+      case 'stage':
+        return StageEvent(
+          requestId: reqId,
+          timestamp: ts,
+          stage: RequestStage.values.firstWhere(
+            (e) => e.name == json['stage'],
+            orElse: () => RequestStage.preparing,
+          ),
+        );
       case 'token':
         return TokenChunkEvent(
           requestId: reqId,
@@ -324,6 +365,48 @@ abstract class AIStreamEvent {
           requestId: reqId,
           timestamp: ts,
           fullText: json['fullText'] as String? ?? '',
+          finishReason: FinishReason.values.firstWhere(
+            (e) => e.name == json['finishReason'],
+            orElse: () => FinishReason.stop,
+          ),
+        );
+      case 'tool_permission_requested':
+        return ToolPermissionRequestedEvent(
+          requestId: reqId,
+          timestamp: ts,
+          toolCallId: json['toolCallId'] as String? ?? '',
+          toolName: json['toolName'] as String? ?? '',
+          arguments: Map<String, dynamic>.from(json['arguments'] as Map? ?? {}),
+        );
+      case 'tool_call_started':
+        return ToolCallStartedEvent(
+          requestId: reqId,
+          timestamp: ts,
+          toolCallId: json['toolCallId'] as String? ?? '',
+          toolName: json['toolName'] as String? ?? '',
+          arguments: Map<String, dynamic>.from(json['arguments'] as Map? ?? {}),
+        );
+      case 'tool_call_progress':
+        return ToolCallProgressEvent(
+          requestId: reqId,
+          timestamp: ts,
+          toolCallId: json['toolCallId'] as String? ?? '',
+          message: json['message'] as String? ?? '',
+        );
+      case 'tool_call_completed':
+        return ToolCallCompletedEvent(
+          requestId: reqId,
+          timestamp: ts,
+          toolCallId: json['toolCallId'] as String? ?? '',
+          result: ToolCallResult.fromJson(json['result'] as Map<String, dynamic>? ?? {}),
+        );
+      case 'tool_call_failed':
+        return ToolCallFailedEvent(
+          requestId: reqId,
+          timestamp: ts,
+          toolCallId: json['toolCallId'] as String? ?? '',
+          code: json['code'] as String? ?? '',
+          message: json['message'] as String? ?? '',
         );
       case 'error':
       default:
@@ -335,6 +418,15 @@ abstract class AIStreamEvent {
         );
     }
   }
+}
+
+class StageEvent extends AIStreamEvent {
+  final RequestStage stage;
+  const StageEvent({
+    required super.requestId,
+    required super.timestamp,
+    required this.stage,
+  });
 }
 
 class TokenChunkEvent extends AIStreamEvent {
@@ -392,10 +484,12 @@ class UsageEvent extends AIStreamEvent {
 
 class CompletedEvent extends AIStreamEvent {
   final String fullText;
+  final FinishReason finishReason;
   const CompletedEvent({
     required super.requestId,
     required super.timestamp,
     required this.fullText,
+    this.finishReason = FinishReason.stop,
   });
 }
 
@@ -405,6 +499,72 @@ class ErrorEvent extends AIStreamEvent {
   const ErrorEvent({
     required super.requestId,
     required super.timestamp,
+    required this.code,
+    required this.message,
+  });
+}
+
+class ToolPermissionRequestedEvent extends AIStreamEvent {
+  final String toolCallId;
+  final String toolName;
+  final Map<String, dynamic> arguments;
+
+  const ToolPermissionRequestedEvent({
+    required super.requestId,
+    required super.timestamp,
+    required this.toolCallId,
+    required this.toolName,
+    required this.arguments,
+  });
+}
+
+class ToolCallStartedEvent extends AIStreamEvent {
+  final String toolCallId;
+  final String toolName;
+  final Map<String, dynamic> arguments;
+
+  const ToolCallStartedEvent({
+    required super.requestId,
+    required super.timestamp,
+    required this.toolCallId,
+    required this.toolName,
+    required this.arguments,
+  });
+}
+
+class ToolCallProgressEvent extends AIStreamEvent {
+  final String toolCallId;
+  final String message;
+
+  const ToolCallProgressEvent({
+    required super.requestId,
+    required super.timestamp,
+    required this.toolCallId,
+    required this.message,
+  });
+}
+
+class ToolCallCompletedEvent extends AIStreamEvent {
+  final String toolCallId;
+  final ToolCallResult result;
+
+  const ToolCallCompletedEvent({
+    required super.requestId,
+    required super.timestamp,
+    required this.toolCallId,
+    required this.result,
+  });
+}
+
+class ToolCallFailedEvent extends AIStreamEvent {
+  final String toolCallId;
+  final String code;
+  final String message;
+
+  const ToolCallFailedEvent({
+    required super.requestId,
+    required super.timestamp,
+    required this.toolCallId,
     required this.code,
     required this.message,
   });

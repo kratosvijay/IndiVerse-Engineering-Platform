@@ -1,13 +1,24 @@
 import 'dart:async';
 
+enum ContextPriority {
+  selection,
+  workspace,
+  diagnostics,
+  editor,
+  git,
+  history,
+}
+
 class ContextRequest {
   final String workspace;
   final String? activeFilePath;
+  final String? selectedCode;
   final int maxTokens;
 
   const ContextRequest({
     required this.workspace,
     this.activeFilePath,
+    this.selectedCode,
     required this.maxTokens,
   });
 }
@@ -16,20 +27,32 @@ class ContextFragment {
   final String source;
   final String content;
   final int estimatedTokens;
-  final int priority;
+  final ContextPriority priority;
+  final String providerId;
+  final String? sourcePath;
+  final String? version;
+  final bool cacheable;
 
   const ContextFragment({
     required this.source,
     required this.content,
     required this.estimatedTokens,
     required this.priority,
+    required this.providerId,
+    this.sourcePath,
+    this.version,
+    this.cacheable = false,
   });
 
   Map<String, dynamic> toJson() => {
         'source': source,
         'content': content,
         'estimatedTokens': estimatedTokens,
-        'priority': priority,
+        'priority': priority.name,
+        'providerId': providerId,
+        'sourcePath': sourcePath,
+        'version': version,
+        'cacheable': cacheable,
       };
 }
 
@@ -56,6 +79,27 @@ abstract class ContextProvider {
   Future<ContextFragment> resolve(ContextRequest request);
 }
 
+class SelectionContextProvider implements ContextProvider {
+  @override
+  final String id = 'selection';
+
+  @override
+  Future<ContextFragment> resolve(ContextRequest request) async {
+    final code = request.selectedCode ?? '';
+    final content = code.isNotEmpty ? 'Selected code:\n$code' : '';
+    return ContextFragment(
+      source: id,
+      content: content,
+      estimatedTokens: (content.length / 4.0).ceil(),
+      priority: ContextPriority.selection,
+      providerId: 'context.selection',
+      sourcePath: request.activeFilePath,
+      version: '1.0.0',
+      cacheable: false,
+    );
+  }
+}
+
 class WorkspaceContextProvider implements ContextProvider {
   @override
   final String id = 'workspace';
@@ -68,7 +112,10 @@ class WorkspaceContextProvider implements ContextProvider {
       source: id,
       content: text,
       estimatedTokens: (text.length / 4.0).ceil(),
-      priority: 1,
+      priority: ContextPriority.workspace,
+      providerId: 'context.workspace',
+      version: '1.0.0',
+      cacheable: true,
     );
   }
 }
@@ -85,7 +132,10 @@ class GitContextProvider implements ContextProvider {
       source: id,
       content: text,
       estimatedTokens: (text.length / 4.0).ceil(),
-      priority: 2,
+      priority: ContextPriority.git,
+      providerId: 'context.git',
+      version: '1.0.0',
+      cacheable: false,
     );
   }
 }
@@ -101,7 +151,10 @@ class DiagnosticsContextProvider implements ContextProvider {
       source: id,
       content: text,
       estimatedTokens: (text.length / 4.0).ceil(),
-      priority: 3,
+      priority: ContextPriority.diagnostics,
+      providerId: 'context.diagnostics',
+      version: '1.0.0',
+      cacheable: false,
     );
   }
 }
@@ -118,7 +171,11 @@ class EditorContextProvider implements ContextProvider {
       source: id,
       content: text,
       estimatedTokens: (text.length / 4.0).ceil(),
-      priority: 4,
+      priority: ContextPriority.editor,
+      providerId: 'context.editor',
+      sourcePath: filePath,
+      version: '1.0.0',
+      cacheable: false,
     );
   }
 }
@@ -127,6 +184,7 @@ class ContextEngine {
   final Map<String, ContextProvider> _providers = {};
 
   ContextEngine() {
+    registerProvider(SelectionContextProvider());
     registerProvider(WorkspaceContextProvider());
     registerProvider(GitContextProvider());
     registerProvider(DiagnosticsContextProvider());
@@ -155,3 +213,4 @@ class ContextEngine {
     );
   }
 }
+

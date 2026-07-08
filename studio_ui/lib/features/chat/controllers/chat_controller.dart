@@ -2,7 +2,42 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../models/ai_models.dart';
+import 'package:indiverse_developer_platform/core/models/tool_call_models.dart';
+import '../../../models/request_metrics.dart';
+import '../../../models/message_metadata.dart';
 import 'chat_session_state.dart';
+
+String generateAutoTitle(String text) {
+  var cleaned = text
+      .replaceAll(RegExp(r'[*_#`~\[\]\(\)]'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
+  // Strip leading punctuation/markdown
+  cleaned = cleaned.replaceFirst(RegExp(r'^[^a-zA-Z0-9]+'), '').trim();
+
+  // Also remove colon if it was after the first word (like Question:)
+  cleaned = cleaned.replaceAll(RegExp(r':\s*'), ' ');
+
+  // Strip trailing punctuation
+  cleaned = cleaned.replaceFirst(RegExp(r'[^a-zA-Z0-9]+$'), '').trim();
+
+  if (cleaned.length <= 50) {
+    return cleaned;
+  }
+
+  // Find the last space before the 50-character limit
+  var truncated = cleaned.substring(0, 50);
+  final lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > 0) {
+    truncated = truncated.substring(0, lastSpace);
+  }
+
+  // Strip trailing punctuation from truncated
+  truncated = truncated.replaceFirst(RegExp(r'[^a-zA-Z0-9]+$'), '').trim();
+
+  return truncated;
+}
 
 class ChatController extends ChangeNotifier {
   final AIService aiService;
@@ -21,11 +56,26 @@ class ChatController extends ChangeNotifier {
   StreamSubscription<AIStreamEvent>? _streamSubscription;
   String? _currentRequestId;
 
+  final Map<String, RequestMetrics> _requestMetricsMap = {};
+  Map<String, RequestMetrics> get requestMetricsMap => _requestMetricsMap;
+
+  final Map<String, String> _drafts = {};
+
   ChatController({required this.aiService, required this.workspace});
 
   Future<void> initialize() async {
     await fetchProvidersAndModels();
     await createNewSession("New Conversation");
+  }
+
+  void updateDraft(String text) {
+    if (_state.session != null) {
+      _drafts[_state.session!.id] = text;
+    }
+  }
+
+  String getDraft(String sessionId) {
+    return _drafts[sessionId] ?? '';
   }
 
   Future<void> fetchProvidersAndModels() async {
@@ -70,6 +120,7 @@ class ChatController extends ChangeNotifier {
       session: newSession,
       messages: const [],
       streamState: ChatStreamState.idle,
+      requestStage: null,
       clearError: true,
     );
     activeStreamedMessage.value = null;
@@ -81,6 +132,7 @@ class ChatController extends ChangeNotifier {
       session: target,
       messages: target.messages,
       streamState: ChatStreamState.idle,
+      requestStage: null,
       activeProviderId: target.providerId,
       activeModelId: target.modelId,
       clearError: true,
@@ -125,7 +177,7 @@ class ChatController extends ChangeNotifier {
       ..add(userMsg);
     currentSession = currentSession.copyWith(
       messages: updatedMessages,
-      title: currentSession.messages.isEmpty ? trimmed : currentSession.title,
+      title: currentSession.messages.isEmpty ? generateAutoTitle(trimmed) : currentSession.title,
       updatedAt: DateTime.now(),
     );
 
@@ -134,16 +186,33 @@ class ChatController extends ChangeNotifier {
       session: currentSession,
       messages: updatedMessages,
       streamState: ChatStreamState.preparing,
+      requestStage: RequestStage.preparing,
       clearError: true,
+      toolCalls: const [],
     );
     activeStreamedMessage.value = null;
     notifyListeners();
+
+    // Yield control to the microtask queue so the UI has a chance to render the preparing state
+    await Future.microtask(() {});
+
+    // Ensure session hasn't been changed/cancelled during yield
+    if (_state.session?.id != currentSession.id) return;
 
     // 2. Start Stream
     final reqId = 'req-${DateTime.now().millisecondsSinceEpoch}';
     _currentRequestId = reqId;
 
-    _state = _state.copyWith(streamState: ChatStreamState.waitingFirstToken);
+    _requestMetricsMap[reqId] = RequestMetrics(
+      requestId: reqId,
+      started: DateTime.now(),
+    );
+
+    _state = _state.copyWith(
+      streamState: ChatStreamState.waitingFirstToken,
+      requestStage: RequestStage.waitingProvider,
+      toolCalls: const [],
+    );
     notifyListeners();
 
     final stream = aiService.chatStream(
@@ -152,6 +221,10 @@ class ChatController extends ChangeNotifier {
     );
 
     String accumulatedText = '';
+    String accumulatedReasoning = '';
+    int? finalPromptTokens;
+    int? finalCompletionTokens;
+
     activeStreamedMessage.value = ChatMessage(
       role: ChatRole.assistant,
       content: '',
@@ -160,51 +233,191 @@ class ChatController extends ChangeNotifier {
 
     _streamSubscription = stream.listen(
       (event) {
-        if (_state.streamState == ChatStreamState.waitingFirstToken) {
-          _state = _state.copyWith(streamState: ChatStreamState.streaming);
+        if (event is StageEvent) {
+          _state = _state.copyWith(
+            requestStage: event.stage,
+          );
+          if (event.stage == RequestStage.streaming) {
+            _state = _state.copyWith(streamState: ChatStreamState.streaming);
+          }
           notifyListeners();
         }
 
         if (event is TokenChunkEvent) {
+          final currentMetrics = _requestMetricsMap[reqId];
+          if (currentMetrics != null && currentMetrics.firstToken == null) {
+            _requestMetricsMap[reqId] = currentMetrics.copyWith(
+              firstToken: DateTime.now(),
+            );
+          }
+
           accumulatedText += event.chunk;
           activeStreamedMessage.value = ChatMessage(
             role: ChatRole.assistant,
             content: accumulatedText,
+            reasoning: accumulatedReasoning.isNotEmpty ? accumulatedReasoning : null,
             timestamp: DateTime.now(),
           );
         } else if (event is ReasoningChunkEvent) {
-          // Display reasoning Trace or prepend it in a collapsed format
-          accumulatedText += '${event.reasoning}\n';
+          final currentMetrics = _requestMetricsMap[reqId];
+          if (currentMetrics != null && currentMetrics.firstToken == null) {
+            _requestMetricsMap[reqId] = currentMetrics.copyWith(
+              firstToken: DateTime.now(),
+            );
+          }
+
+          accumulatedReasoning += event.reasoning;
           activeStreamedMessage.value = ChatMessage(
             role: ChatRole.assistant,
             content: accumulatedText,
+            reasoning: accumulatedReasoning,
             timestamp: DateTime.now(),
           );
+        } else if (event is ToolPermissionRequestedEvent) {
+          final newCall = ToolCallState(
+            toolCallId: event.toolCallId,
+            toolName: event.toolName,
+            arguments: event.arguments,
+            status: ToolCallStatus.pendingPermission,
+          );
+          final updated = List<ToolCallState>.from(_state.toolCalls)..add(newCall);
+          _state = _state.copyWith(toolCalls: updated);
+          notifyListeners();
+        } else if (event is ToolCallStartedEvent) {
+          final updated = _state.toolCalls.map((t) {
+            if (t.toolCallId == event.toolCallId) {
+              return t.copyWith(status: ToolCallStatus.running);
+            }
+            return t;
+          }).toList();
+          if (!updated.any((t) => t.toolCallId == event.toolCallId)) {
+            updated.add(ToolCallState(
+              toolCallId: event.toolCallId,
+              toolName: event.toolName,
+              arguments: event.arguments,
+              status: ToolCallStatus.running,
+            ));
+          }
+          _state = _state.copyWith(toolCalls: updated);
+          notifyListeners();
+        } else if (event is ToolCallProgressEvent) {
+          final updated = _state.toolCalls.map((t) {
+            if (t.toolCallId == event.toolCallId) {
+              return t.copyWith(progressMessage: event.message);
+            }
+            return t;
+          }).toList();
+          _state = _state.copyWith(toolCalls: updated);
+          notifyListeners();
+        } else if (event is ToolCallCompletedEvent) {
+          final updated = _state.toolCalls.map((t) {
+            if (t.toolCallId == event.toolCallId) {
+              return t.copyWith(
+                status: ToolCallStatus.completed,
+                result: event.result,
+              );
+            }
+            return t;
+          }).toList();
+          _state = _state.copyWith(toolCalls: updated);
+          notifyListeners();
+        } else if (event is ToolCallFailedEvent) {
+          final updated = _state.toolCalls.map((t) {
+            if (t.toolCallId == event.toolCallId) {
+              return t.copyWith(
+                status: ToolCallStatus.failed,
+                errorMessage: '${event.code}: ${event.message}',
+              );
+            }
+            return t;
+          }).toList();
+          _state = _state.copyWith(toolCalls: updated);
+          notifyListeners();
+        } else if (event is UsageEvent) {
+          finalPromptTokens = event.promptTokens;
+          finalCompletionTokens = event.completionTokens;
+        } else if (event is CompletedEvent) {
+          accumulatedText = event.fullText;
+          _state = _state.copyWith(
+            requestStage: RequestStage.completed,
+          );
         } else if (event is ErrorEvent) {
+          final errorMetrics = _requestMetricsMap[reqId]?.copyWith(
+            completed: DateTime.now(),
+          );
+          if (errorMetrics != null) {
+            _requestMetricsMap[reqId] = errorMetrics;
+          }
           _state = _state.copyWith(
             streamState: ChatStreamState.failed,
+            requestStage: RequestStage.failed,
             error: '${event.code}: ${event.message}',
           );
+          activeStreamedMessage.value = null;
           notifyListeners();
+
+          Future.microtask(() {
+            _state = _state.copyWith(streamState: ChatStreamState.idle);
+            notifyListeners();
+          });
         }
       },
       onError: (err) {
+        final errorMetrics = _requestMetricsMap[reqId]?.copyWith(
+          completed: DateTime.now(),
+        );
+        if (errorMetrics != null) {
+          _requestMetricsMap[reqId] = errorMetrics;
+        }
         _state = _state.copyWith(
           streamState: ChatStreamState.failed,
+          requestStage: RequestStage.failed,
           error: err.toString(),
         );
+        activeStreamedMessage.value = null;
         notifyListeners();
+
+        Future.microtask(() {
+          _state = _state.copyWith(streamState: ChatStreamState.idle);
+          notifyListeners();
+        });
       },
       onDone: () {
+        final currentMetrics = _requestMetricsMap[reqId];
+        final completedMetrics = currentMetrics?.copyWith(
+          completed: DateTime.now(),
+        );
+        if (completedMetrics != null) {
+          _requestMetricsMap[reqId] = completedMetrics;
+        }
+
         if (_state.streamState == ChatStreamState.streaming ||
-            _state.streamState == ChatStreamState.waitingFirstToken) {
-          _state = _state.copyWith(streamState: ChatStreamState.finishing);
+            _state.streamState == ChatStreamState.waitingFirstToken ||
+            _state.streamState == ChatStreamState.preparing ||
+            _state.streamState == ChatStreamState.finishing) {
+          _state = _state.copyWith(
+            streamState: ChatStreamState.finishing,
+            requestStage: RequestStage.completed,
+          );
           notifyListeners();
+
+          final metadata = MessageMetadata(
+            providerId: _state.activeProviderId,
+            modelId: _state.activeModelId,
+            promptTokens: finalPromptTokens,
+            completionTokens: finalCompletionTokens,
+            latencyMs: completedMetrics?.latencyMs,
+            ttftMs: completedMetrics?.ttftMs,
+            streamDurationMs: completedMetrics?.streamDurationMs,
+            generatedAt: DateTime.now(),
+          );
 
           final finalMsg = ChatMessage(
             role: ChatRole.assistant,
             content: accumulatedText.trim(),
+            reasoning: accumulatedReasoning.isNotEmpty ? accumulatedReasoning.trim() : null,
             timestamp: DateTime.now(),
+            metadata: metadata,
           );
 
           final finishedMessages = List<ChatMessage>.from(_state.messages)
@@ -225,8 +438,10 @@ class ChatController extends ChangeNotifier {
         }
 
         // Return to idle state after completion
-        _state = _state.copyWith(streamState: ChatStreamState.idle);
-        notifyListeners();
+        Future.microtask(() {
+          _state = _state.copyWith(streamState: ChatStreamState.idle);
+          notifyListeners();
+        });
         _currentRequestId = null;
       },
     );
@@ -235,21 +450,42 @@ class ChatController extends ChangeNotifier {
   Future<void> stopGeneration() async {
     if (_state.streamState == ChatStreamState.idle) return;
 
-    _state = _state.copyWith(streamState: ChatStreamState.stopping);
+    _state = _state.copyWith(
+      streamState: ChatStreamState.stopping,
+      requestStage: RequestStage.cancelled,
+    );
     notifyListeners();
 
     await _streamSubscription?.cancel();
     _streamSubscription = null;
 
-    if (_currentRequestId != null) {
-      await aiService.cancelRequest(_currentRequestId!);
+    final reqId = _currentRequestId;
+    if (reqId != null) {
+      await aiService.cancelRequest(reqId);
+      final cancelMetrics = _requestMetricsMap[reqId]?.copyWith(
+        completed: DateTime.now(),
+        cancelled: true,
+      );
+      if (cancelMetrics != null) {
+        _requestMetricsMap[reqId] = cancelMetrics;
+      }
     }
 
     final partialText = activeStreamedMessage.value?.content ?? '';
+    final partialReasoning = activeStreamedMessage.value?.reasoning ?? '';
+    
     final cancelledMsg = ChatMessage(
       role: ChatRole.assistant,
       content: '$partialText [Generation Cancelled]',
+      reasoning: partialReasoning.isNotEmpty ? partialReasoning : null,
       timestamp: DateTime.now(),
+      metadata: MessageMetadata(
+        providerId: _state.activeProviderId,
+        modelId: _state.activeModelId,
+        latencyMs: reqId != null ? _requestMetricsMap[reqId]?.latencyMs : null,
+        ttftMs: reqId != null ? _requestMetricsMap[reqId]?.ttftMs : null,
+        generatedAt: DateTime.now(),
+      ),
     );
 
     final updatedMsgs = List<ChatMessage>.from(_state.messages)
@@ -264,13 +500,17 @@ class ChatController extends ChangeNotifier {
       session: updatedSession,
       messages: updatedMsgs,
       streamState: ChatStreamState.cancelled,
+      requestStage: RequestStage.cancelled,
     );
     activeStreamedMessage.value = null;
     _currentRequestId = null;
-
-    // Reset to idle
-    _state = _state.copyWith(streamState: ChatStreamState.idle);
     notifyListeners();
+
+    // Reset to idle on microtask boundary
+    Future.microtask(() {
+      _state = _state.copyWith(streamState: ChatStreamState.idle);
+      notifyListeners();
+    });
   }
 
   Future<void> retryLastPrompt() async {
@@ -301,6 +541,27 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
 
     await sendPrompt(promptText);
+  }
+
+  Future<void> submitPermissionDecision(String toolCallId, PermissionDecision decision) async {
+    final updated = _state.toolCalls.map((t) {
+      if (t.toolCallId == toolCallId) {
+        if (decision == PermissionDecision.allowOnce || decision == PermissionDecision.allowAlways) {
+          return t.copyWith(status: ToolCallStatus.running);
+        } else {
+          return t.copyWith(status: ToolCallStatus.failed, errorMessage: 'Permission Denied');
+        }
+      }
+      return t;
+    }).toList();
+
+    _state = _state.copyWith(toolCalls: updated);
+    notifyListeners();
+
+    await aiService.sendPermissionResponse(
+      toolCallId: toolCallId,
+      decision: decision.name,
+    );
   }
 
   void _updateHistorySession(ConversationSession updated) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/editor_document.dart';
 import '../controllers/editor_view_controller.dart';
+import '../../../../core/state/studio_state.dart';
+import '../../../../models/inline_ai_models.dart';
 
 class EditorTheme {
   final Color backgroundColor;
@@ -364,5 +366,43 @@ class EditorRenderer extends CustomPainter {
         oldDelegate.context.viewport != context.viewport ||
         oldDelegate.context.controller.document.cursor !=
             context.controller.document.cursor;
+  }
+}
+
+class InlineAIDecorationProvider implements DecorationProvider {
+  final StudioState state;
+
+  InlineAIDecorationProvider(this.state);
+
+  @override
+  void paint(PaintContext context, Canvas canvas, Rect bounds) {
+    final session = state.inlineAIController.activeSession;
+    if (session == null || session.documentId != context.controller.document.id) return;
+
+    final double lineHeight = 20.0;
+    double gutterWidth = 0.0;
+    for (final gutter in context.gutters) {
+      gutterWidth += gutter.getWidth(context);
+    }
+
+    final double verticalOffset = context.viewport.verticalOffset;
+
+    final sLine = session.selectionRange.start.line;
+    final eLine = session.selectionRange.end.line;
+
+    final paint = Paint()..color = const Color(0x228B5CF6); // Subtle transparent purple
+
+    for (int line = sLine; line <= eLine; line++) {
+      final visualIdx = context.controller.actualToVisualLine(line);
+      final isLineVisible =
+          context.controller.visualToActualLine(visualIdx) == line;
+      if (isLineVisible) {
+        final double y = visualIdx * lineHeight - verticalOffset;
+        canvas.drawRect(
+          Rect.fromLTWH(gutterWidth, y, bounds.width - gutterWidth, lineHeight),
+          paint,
+        );
+      }
+    }
   }
 }

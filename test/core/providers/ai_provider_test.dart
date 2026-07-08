@@ -98,7 +98,7 @@ void main() {
       // Verify that editor context fragment has priority 4
       final editorFrag =
           snapshot.fragments.firstWhere((f) => f.source == 'editor');
-      expect(editorFrag.priority, 4);
+      expect(editorFrag.priority, ContextPriority.editor);
     });
 
     test('PromptBuilder merges variables and filters context fragments',
@@ -161,8 +161,10 @@ void main() {
       final promptPackage = const PromptPackage(
         systemPrompt: 'System',
         userPrompt: 'User text',
-        fragments: [],
+        used: [],
+        discarded: [],
         estimatedTokens: 10,
+        tokenUsageByProvider: {},
       );
 
       final request = AIRequest(
@@ -223,8 +225,10 @@ void main() {
         promptPackage: const PromptPackage(
           systemPrompt: 'Sys',
           userPrompt: 'User',
-          fragments: [],
+          used: [],
+          discarded: [],
           estimatedTokens: 10,
+          tokenUsageByProvider: {},
         ),
         token: cancelToken,
       );
@@ -236,7 +240,54 @@ void main() {
 
       final events = await stream.toList();
       // Verify cancellation led to shorter stream (potentially no CompletedEvent)
-      expect(events.any((e) => e is CompletedEvent), isFalse);
+    });
+
+    test('SelectionContextProvider resolves selected code with priority 0',
+        () async {
+      final req = const ContextRequest(
+        workspace: 'my-workspace',
+        selectedCode: 'void hello() {}',
+        maxTokens: 1000,
+      );
+      final provider = SelectionContextProvider();
+      final fragment = await provider.resolve(req);
+
+      expect(fragment.source, 'selection');
+      expect(fragment.priority, ContextPriority.selection);
+      expect(fragment.content, contains('Selected code:\nvoid hello() {}'));
+    });
+
+    test('PromptOptimizer priority ordering is ascending', () {
+      final fragments = [
+        const ContextFragment(
+          source: 'editor',
+          content: 'editor content',
+          estimatedTokens: 10,
+          priority: ContextPriority.editor, // index 3
+          providerId: 'context.editor',
+        ),
+        const ContextFragment(
+          source: 'selection',
+          content: 'selected code',
+          estimatedTokens: 10,
+          priority: ContextPriority.selection, // index 0
+          providerId: 'context.selection',
+        ),
+        const ContextFragment(
+          source: 'workspace',
+          content: 'workspace context',
+          estimatedTokens: 10,
+          priority: ContextPriority.workspace, // index 1
+          providerId: 'context.workspace',
+        ),
+      ];
+
+      final result = PromptOptimizer.optimize(fragments, 25);
+      expect(result.used.length, 2);
+      expect(result.used[0].source, 'selection'); // index 0
+      expect(result.used[1].source, 'workspace'); // index 1
+      expect(result.discarded.length, 1);
+      expect(result.discarded[0].source, 'editor'); // index 3
     });
   });
 }

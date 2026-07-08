@@ -5,6 +5,10 @@ import '../controllers/chat_session_state.dart';
 import '../../../models/ai_models.dart';
 import 'chat_renderer.dart';
 import 'conversation_history_sidebar.dart';
+import 'message_metadata_bar.dart';
+import 'reasoning_block_widget.dart';
+import 'token_counter_widget.dart';
+import 'tool_call_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -20,10 +24,16 @@ class _ChatPanelState extends State<ChatPanel> {
   final ChatInputController _inputController = ChatInputController();
   final ScrollController _scrollController = ScrollController();
   bool _showHistory = false;
+  ConversationSession? _currentSession;
 
   @override
   void initState() {
     super.initState();
+    _currentSession = widget.controller.state.session;
+    if (_currentSession != null) {
+      _inputController.text = widget.controller.getDraft(_currentSession!.id);
+    }
+    _inputController.textController.addListener(_onTextChanged);
     widget.controller.addListener(_onControllerChanged);
     widget.controller.activeStreamedMessage.addListener(
       _onActiveMessageChanged,
@@ -32,6 +42,7 @@ class _ChatPanelState extends State<ChatPanel> {
 
   @override
   void dispose() {
+    _inputController.textController.removeListener(_onTextChanged);
     widget.controller.removeListener(_onControllerChanged);
     widget.controller.activeStreamedMessage.removeListener(
       _onActiveMessageChanged,
@@ -41,8 +52,23 @@ class _ChatPanelState extends State<ChatPanel> {
     super.dispose();
   }
 
+  void _onTextChanged() {
+    widget.controller.updateDraft(_inputController.text);
+  }
+
   void _onControllerChanged() {
     if (mounted) {
+      final newSession = widget.controller.state.session;
+      if (newSession != _currentSession) {
+        _inputController.textController.removeListener(_onTextChanged);
+        _currentSession = newSession;
+        if (newSession != null) {
+          _inputController.text = widget.controller.getDraft(newSession.id);
+        } else {
+          _inputController.text = '';
+        }
+        _inputController.textController.addListener(_onTextChanged);
+      }
       setState(() {});
       _scrollToBottomIfNeeded();
     }
@@ -56,7 +82,6 @@ class _ChatPanelState extends State<ChatPanel> {
 
   void _scrollToBottomIfNeeded() {
     if (!_scrollController.hasClients) return;
-    // Auto scroll to bottom only if user is close to the bottom
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
     final delta = maxScroll - currentScroll;
@@ -83,17 +108,13 @@ class _ChatPanelState extends State<ChatPanel> {
       color: const Color(0xFF1E1E1E),
       child: Row(
         children: [
-          // Optional conversation history sidebar
           if (_showHistory)
             ConversationHistorySidebar(controller: widget.controller),
-          // Main Chat body
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top control bar
                 _buildHeaderBar(state),
-                // Messages List Viewport
                 Expanded(
                   child:
                       state.messages.isEmpty &&
@@ -101,19 +122,73 @@ class _ChatPanelState extends State<ChatPanel> {
                       ? _buildEmptyState()
                       : _buildMessagesList(state, renderer),
                 ),
-                // Streaming progress indicator if preparing/waiting
-                if (state.streamState == ChatStreamState.preparing ||
-                    state.streamState == ChatStreamState.waitingFirstToken)
-                  const LinearProgressIndicator(
-                    minHeight: 2.0,
-                    backgroundColor: Color(0xFF1E1E1E),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF007ACC),
-                    ),
-                  ),
-                // Bottom Input Prompt & controls
+                _buildProgressIndicator(state),
                 _buildInputArea(state),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator(ChatSessionState state) {
+    if (state.requestStage == null || state.streamState == ChatStreamState.idle) {
+      return const SizedBox.shrink();
+    }
+
+    String statusText = '';
+    switch (state.requestStage!) {
+      case RequestStage.preparing:
+        statusText = 'Preparing request...';
+        break;
+      case RequestStage.gatheringContext:
+        statusText = 'Gathering context...';
+        break;
+      case RequestStage.optimizingPrompt:
+        statusText = 'Optimizing prompt...';
+        break;
+      case RequestStage.waitingProvider:
+        statusText = 'Waiting for response...';
+        break;
+      case RequestStage.streaming:
+        statusText = 'Generating response...';
+        break;
+      case RequestStage.completed:
+        statusText = 'Completed';
+        break;
+      case RequestStage.cancelled:
+        statusText = 'Cancelled';
+        break;
+      case RequestStage.failed:
+        statusText = 'Failed';
+        break;
+    }
+
+    if (state.requestStage == RequestStage.completed ||
+        state.requestStage == RequestStage.cancelled ||
+        state.requestStage == RequestStage.failed) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 12.0,
+            height: 12.0,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF007ACC)),
+            ),
+          ),
+          const SizedBox(width: 8.0),
+          Text(
+            statusText,
+            style: const TextStyle(
+              color: Color(0xFFCCCCCC),
+              fontSize: 11.0,
             ),
           ),
         ],
@@ -155,10 +230,8 @@ class _ChatPanelState extends State<ChatPanel> {
               ),
             ],
           ),
-          // Selectors
           Row(
             children: [
-              // Provider Selector
               _buildSelectorDropdown(
                 value: state.activeProviderId,
                 items: ['mock-ai'],
@@ -167,7 +240,6 @@ class _ChatPanelState extends State<ChatPanel> {
                 },
               ),
               const SizedBox(width: 8.0),
-              // Model Selector
               _buildSelectorDropdown(
                 value: state.activeModelId,
                 items: ['mock-pro', 'mock-flash'],
@@ -240,14 +312,36 @@ class _ChatPanelState extends State<ChatPanel> {
           final message = state.messages[index];
           return _buildMessageBubble(message, renderer);
         } else {
-          // Last bubble: ValueListenableBuilder updating ONLY when streaming
           return ValueListenableBuilder<ChatMessage?>(
             valueListenable: widget.controller.activeStreamedMessage,
             builder: (context, streamedMsg, _) {
-              if (streamedMsg == null || streamedMsg.content.isEmpty) {
+              final toolCalls = state.toolCalls;
+              
+              if ((streamedMsg == null || (streamedMsg.content.isEmpty && (streamedMsg.reasoning == null || streamedMsg.reasoning!.isEmpty))) && toolCalls.isEmpty) {
                 return const SizedBox.shrink();
               }
-              return _buildMessageBubble(streamedMsg, renderer);
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (streamedMsg != null && (streamedMsg.content.isNotEmpty || (streamedMsg.reasoning != null && streamedMsg.reasoning!.isNotEmpty)))
+                    _buildMessageBubble(streamedMsg, renderer),
+                  if (toolCalls.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 32.0, right: 12.0, bottom: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: toolCalls
+                            .map((t) => ToolCallWidget(
+                                  toolCall: t,
+                                  controller: widget.controller,
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                ],
+              );
             },
           );
         }
@@ -278,18 +372,28 @@ class _ChatPanelState extends State<ChatPanel> {
             const SizedBox(width: 8.0),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 8.0,
-              ),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? const Color(0xFF005A9E)
-                    : const Color(0xFF2D2D2D),
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-              child: renderer.render(message),
+            child: Column(
+              crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isUser && message.reasoning != null && message.reasoning!.isNotEmpty)
+                  ReasoningBlockWidget(reasoning: message.reasoning!),
+                if (message.content.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0,
+                      vertical: 8.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isUser
+                          ? const Color(0xFF005A9E)
+                          : const Color(0xFF2D2D2D),
+                      borderRadius: BorderRadius.circular(6.0),
+                    ),
+                    child: renderer.render(message),
+                  ),
+                if (!isUser && message.metadata != null)
+                  MessageMetadataBar(metadata: message.metadata!),
+              ],
             ),
           ),
           if (isUser) ...[
@@ -319,7 +423,6 @@ class _ChatPanelState extends State<ChatPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Stream error banner
           if (state.error != null)
             Container(
               padding: const EdgeInsets.all(8.0),
@@ -337,7 +440,6 @@ class _ChatPanelState extends State<ChatPanel> {
                 ),
               ),
             ),
-          // Action Buttons: Stop, Retry
           if (isStreaming)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -379,42 +481,46 @@ class _ChatPanelState extends State<ChatPanel> {
               ],
             ),
           const SizedBox(height: 6.0),
-          // Prompt entry text field
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2D2D2D),
-                    border: Border.all(color: const Color(0xFF3C3C3C)),
-                    borderRadius: BorderRadius.circular(4.0),
-                  ),
-                  child: TextField(
-                    controller: _inputController.textController,
-                    focusNode: _inputController.focusNode,
-                    style: const TextStyle(color: Colors.white, fontSize: 12.0),
-                    maxLines: 4,
-                    minLines: 1,
-                    decoration: const InputDecoration(
-                      hintText: 'Type prompt here...',
-                      hintStyle: TextStyle(color: Color(0xFF6E6E6E)),
-                      border: InputBorder.none,
-                      isDense: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D2D2D),
+                        border: Border.all(color: const Color(0xFF3C3C3C)),
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      child: TextField(
+                        controller: _inputController.textController,
+                        focusNode: _inputController.focusNode,
+                        style: const TextStyle(color: Colors.white, fontSize: 12.0),
+                        maxLines: 4,
+                        minLines: 1,
+                        decoration: const InputDecoration(
+                          hintText: 'Type prompt here...',
+                          hintStyle: TextStyle(color: Color(0xFF6E6E6E)),
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                        onSubmitted: (_) {
+                          if (!isStreaming) {
+                            _inputController.submitPrompt(
+                              widget.controller.sendPrompt,
+                            );
+                          }
+                        },
+                      ),
                     ),
-                    onSubmitted: (_) {
-                      if (!isStreaming) {
-                        _inputController.submitPrompt(
-                          widget.controller.sendPrompt,
-                        );
-                      }
-                    },
-                  ),
+                    TokenCounterWidget(controller: _inputController.textController),
+                  ],
                 ),
               ),
               const SizedBox(width: 8.0),
-              // Send prompt button
               IconButton(
                 style: IconButton.styleFrom(
                   backgroundColor: isStreaming

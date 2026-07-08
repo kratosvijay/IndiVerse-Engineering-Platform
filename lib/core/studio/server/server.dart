@@ -1,4 +1,4 @@
-import 'dart:async';
+importrt 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -28,6 +28,10 @@ import '../../providers/ai_provider_registry.dart';
 import '../../providers/mock_ai_provider.dart';
 import '../../conversation/conversation_manager.dart';
 import '../../context/context_engine.dart';
+import '../services/tool_registry.dart';
+import '../services/permission_store.dart';
+import '../services/tool_execution_service.dart';
+import '../services/tools/built_in_tools.dart';
 
 class StudioServer {
   final PlatformSDK sdk;
@@ -53,6 +57,7 @@ class StudioServer {
   late final AIProviderRegistry aiProviderRegistry;
   late final ConversationManager conversationManager;
   late final ContextEngine contextEngine;
+  late final ToolExecutionService toolExecutionService;
   late final AIController aiController;
 
   late final WebsocketServer websocketServer;
@@ -71,10 +76,20 @@ class StudioServer {
     aiProviderRegistry = AIProviderRegistry();
     conversationManager = ConversationManager(MemoryConversationStore());
     contextEngine = ContextEngine();
+    final toolRegistry = ToolRegistry();
+    final permissionStore = ToolPermissionStore();
+    toolExecutionService = ToolExecutionService(
+      registry: toolRegistry,
+      permissionStore: permissionStore,
+    );
+    registerBuiltInTools(toolRegistry);
+
     aiController = AIController(
       registry: aiProviderRegistry,
       conversationManager: conversationManager,
       contextEngine: contextEngine,
+      toolExecutionService: toolExecutionService,
+      sdk: sdk,
     );
 
     // Register and initialize MockAIProvider
@@ -355,6 +370,8 @@ class StudioServer {
         await aiController.handleCancel(request, requestId);
       } else if (path == '/api/v1/ai/tools') {
         await aiController.handleTools(request, requestId);
+      } else if (path == '/api/v1/ai/permission_response') {
+        await aiController.handlePermissionResponse(request, requestId);
       } else {
         final response = ApiResponse(
           success: false,

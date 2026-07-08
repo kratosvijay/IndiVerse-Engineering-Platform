@@ -31,6 +31,7 @@ import '../services/default_diagnostics_provider.dart';
 import '../../features/editor/controllers/completion_controller.dart';
 import '../../features/editor/controllers/signature_help_controller.dart';
 import '../../features/editor/controllers/code_action_controller.dart';
+import '../../features/editor/controllers/inline_ai_controller.dart';
 import '../services/default_completion_provider.dart';
 import '../services/default_signature_help_provider.dart';
 import '../services/default_code_action_provider.dart';
@@ -101,11 +102,12 @@ class StudioState extends ChangeNotifier {
   late final LanguageIntelligenceService languageIntel =
       LanguageIntelligenceService(languageRegistry);
   LanguageIntelligenceService get intelligence => languageIntel;
-  late final AIService aiService;
+  late AIService aiService;
   final OverlayManager overlayManager = OverlayManager();
   late final CompletionController completionController;
   late final SignatureHelpController signatureHelpController;
   late final CodeActionController codeActionController;
+  late final InlineAIController inlineAIController;
   final DiagnosticCollection diagnostics = DiagnosticCollection();
   final Map<String, Timer> _diagTimers = {};
   WebSocketChannel? _wsChannel;
@@ -174,6 +176,8 @@ class StudioState extends ChangeNotifier {
     completionController = CompletionController(state: this);
     signatureHelpController = SignatureHelpController(state: this);
     codeActionController = CodeActionController(state: this);
+    inlineAIController = InlineAIController(state: this);
+    inlineAIController.addListener(refreshUI);
     navigation = NavigationService(this);
     workbench = WorkbenchApi(this);
     history = DocumentHistoryService();
@@ -271,6 +275,19 @@ class StudioState extends ChangeNotifier {
         description: "Apply quick fix at cursor",
         execute: (ctx) async {
           codeActionController.triggerCodeActions(isManual: true);
+          return const OperationResult.ok(null);
+        },
+      ),
+    );
+    commandRegistry.register(
+      Command(
+        id: EditorCommands.inlineAI,
+        title: "Inline AI Edit",
+        category: "Editor",
+        description: "Trigger inline AI prompt panel at selection or cursor",
+        shortcut: const SingleActivator(LogicalKeyboardKey.keyI, meta: true),
+        execute: (ctx) async {
+          inlineAIController.triggerInlineAI();
           return const OperationResult.ok(null);
         },
       ),
