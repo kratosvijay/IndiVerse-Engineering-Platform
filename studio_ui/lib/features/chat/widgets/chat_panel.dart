@@ -9,6 +9,7 @@ import 'message_metadata_bar.dart';
 import 'reasoning_block_widget.dart';
 import 'token_counter_widget.dart';
 import 'tool_call_widget.dart';
+import 'task_execution_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -116,11 +117,26 @@ class _ChatPanelState extends State<ChatPanel> {
               children: [
                 _buildHeaderBar(state),
                 Expanded(
-                  child:
-                      state.messages.isEmpty &&
-                          widget.controller.activeStreamedMessage.value == null
-                      ? _buildEmptyState()
-                      : _buildMessagesList(state, renderer),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child:
+                            state.messages.isEmpty &&
+                                widget.controller.activeStreamedMessage.value ==
+                                    null
+                            ? _buildEmptyState()
+                            : _buildMessagesList(state, renderer),
+                      ),
+                      ListenableBuilder(
+                        listenable: widget.controller,
+                        builder: (context, _) {
+                          return TaskExecutionWidget(
+                            controller: widget.controller,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 _buildProgressIndicator(state),
                 _buildInputArea(state),
@@ -539,6 +555,32 @@ class _ChatPanelState extends State<ChatPanel> {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: 8.0),
+              IconButton(
+                style: IconButton.styleFrom(
+                  backgroundColor: isStreaming
+                      ? const Color(0xFF333333)
+                      : Colors.blueGrey[700],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.playlist_add_check,
+                  size: 16.0,
+                  color: Colors.white,
+                ),
+                tooltip: 'Create plan from prompt',
+                onPressed: isStreaming
+                    ? null
+                    : () {
+                        final text = _inputController.textController.text;
+                        if (text.trim().isNotEmpty) {
+                          widget.controller.requestPlan(text);
+                          _inputController.textController.clear();
+                        }
+                      },
               ),
               const SizedBox(width: 8.0),
               IconButton(

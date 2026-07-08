@@ -61,6 +61,10 @@ class ChatController extends ChangeNotifier {
 
   final Map<String, String> _drafts = {};
 
+  ExecutionSession? activePlanSession;
+  TaskGraph? activePlanGraph;
+  Timer? _planPollTimer;
+
   ChatController({required this.aiService, required this.workspace});
 
   Future<void> initialize() async {
@@ -576,6 +580,111 @@ class ChatController extends ChangeNotifier {
     );
   }
 
+  Future<void> requestPlan(String goal) async {
+    if (_state.session == null) return;
+    activePlanSession = null;
+    activePlanGraph = null;
+    notifyListeners();
+
+    final contextJson = {
+      'goal': goal,
+      'workspacePath': workspace,
+      'conversationId': _state.session!.id,
+      'diagnostics': const [],
+    };
+
+    final planJson = await aiService.createPlan(contextJson);
+    if (planJson != null) {
+      activePlanGraph = TaskGraph.fromJson(planJson);
+      notifyListeners();
+    }
+  }
+
+  Future<void> executeActivePlan() async {
+    if (activePlanGraph == null || _state.session == null) return;
+
+    final sessionJson = await aiService.executePlan(
+      activePlanGraph!.toJson(),
+      workspace,
+      _state.session!.id,
+    );
+
+    if (sessionJson != null) {
+      activePlanSession = ExecutionSession.fromJson(sessionJson);
+      notifyListeners();
+      _startPlanPolling();
+    }
+  }
+
+  Future<void> pauseActivePlan() async {
+    final sessionJson = await aiService.pausePlan();
+    if (sessionJson != null) {
+      activePlanSession = ExecutionSession.fromJson(sessionJson);
+      notifyListeners();
+    }
+  }
+
+  Future<void> resumeActivePlan() async {
+    if (_state.session == null) return;
+
+    final sessionJson = await aiService.resumePlan(
+      workspace,
+      _state.session!.id,
+    );
+
+    if (sessionJson != null) {
+      activePlanSession = ExecutionSession.fromJson(sessionJson);
+      notifyListeners();
+      _startPlanPolling();
+    }
+  }
+
+  Future<void> retryActivePlan() async {
+    if (_state.session == null) return;
+
+    final sessionJson = await aiService.retryPlan(
+      workspace,
+      _state.session!.id,
+    );
+
+    if (sessionJson != null) {
+      activePlanSession = ExecutionSession.fromJson(sessionJson);
+      notifyListeners();
+      _startPlanPolling();
+    }
+  }
+
+  Future<void> cancelActivePlan() async {
+    final sessionJson = await aiService.cancelPlan();
+    if (sessionJson != null) {
+      activePlanSession = ExecutionSession.fromJson(sessionJson);
+      notifyListeners();
+    }
+  }
+
+  void _startPlanPolling() {
+    _planPollTimer?.cancel();
+    _planPollTimer = Timer.periodic(const Duration(milliseconds: 500), (
+      timer,
+    ) async {
+      final sessionJson = await aiService.getPlanStatus();
+      if (sessionJson != null) {
+        final session = ExecutionSession.fromJson(sessionJson);
+        activePlanSession = session;
+        notifyListeners();
+
+        if (session.status == PlanStatus.completed ||
+            session.status == PlanStatus.failed ||
+            session.status == PlanStatus.cancelled ||
+            session.status == PlanStatus.waitingPermission) {
+          timer.cancel();
+        }
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
   void _updateHistorySession(ConversationSession updated) {
     final idx = _historyList.indexWhere((s) => s.id == updated.id);
     if (idx != -1) {
@@ -585,6 +694,7 @@ class ChatController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _planPollTimer?.cancel();
     _streamSubscription?.cancel();
     activeStreamedMessage.dispose();
     super.dispose();

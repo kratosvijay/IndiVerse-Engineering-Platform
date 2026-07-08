@@ -67,7 +67,6 @@ class StudioServer {
   StudioServer(this.sdk) {
     workspaceService = WorkspaceService(sdk);
     searchService = SearchService(sdk);
-    agentService = AgentService(sdk, eventBus);
     metricsService = MetricsService(sdk);
     architectureService = ArchitectureService(sdk);
     inspectorService = InspectorService(sdk);
@@ -83,6 +82,8 @@ class StudioServer {
       permissionStore: permissionStore,
     );
     registerBuiltInTools(toolRegistry);
+
+    agentService = AgentService(sdk, eventBus, toolExecutionService);
 
     aiController = AIController(
       registry: aiProviderRegistry,
@@ -331,6 +332,16 @@ class StudioServer {
         await inspectorController.handleInspect(request, requestId);
       } else if (path == '/api/v1/agent/run') {
         await agentController.handleRun(request, requestId);
+      } else if (path == '/api/v1/agent/plan') {
+        await agentController.handlePlan(request, requestId);
+      } else if (path == '/api/v1/agent/execute') {
+        await agentController.handleExecute(request, requestId);
+      } else if (path == '/api/v1/agent/pause') {
+        await agentController.handlePause(request, requestId);
+      } else if (path == '/api/v1/agent/resume') {
+        await agentController.handleResume(request, requestId);
+      } else if (path == '/api/v1/agent/retry') {
+        await agentController.handleRetry(request, requestId);
       } else if (path == '/api/v1/agent/cancel') {
         await agentController.handleCancel(request, requestId);
       } else if (path == '/api/v1/agent/status') {

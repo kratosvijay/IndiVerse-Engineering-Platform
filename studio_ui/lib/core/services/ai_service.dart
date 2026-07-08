@@ -143,4 +143,125 @@ class AIService {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> createPlan(
+    Map<String, dynamic> contextJson,
+  ) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$serverUrl/api/v1/agent/plan'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(contextJson),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> executePlan(
+    Map<String, dynamic> graphJson,
+    String workspaceId,
+    String conversationId,
+  ) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$serverUrl/api/v1/agent/execute'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'graph': graphJson,
+          'workspaceId': workspaceId,
+          'conversationId': conversationId,
+        }),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> pausePlan() async {
+    try {
+      final res = await http.post(
+        Uri.parse('$serverUrl/api/v1/agent/pause'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> resumePlan(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$serverUrl/api/v1/agent/resume'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'workspaceId': workspaceId,
+          'conversationId': conversationId,
+        }),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> retryPlan(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$serverUrl/api/v1/agent/retry'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'workspaceId': workspaceId,
+          'conversationId': conversationId,
+        }),
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> cancelPlan() async {
+    try {
+      final res = await http.post(
+        Uri.parse('$serverUrl/api/v1/agent/cancel'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getPlanStatus() async {
+    try {
+      final res = await http.get(Uri.parse('$serverUrl/api/v1/agent/status'));
+      final envelope = jsonDecode(res.body);
+      if (envelope['success'] == true) {
+        return Map<String, dynamic>.from(envelope['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
 }
