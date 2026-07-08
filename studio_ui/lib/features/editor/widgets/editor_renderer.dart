@@ -376,8 +376,10 @@ class InlineAIDecorationProvider implements DecorationProvider {
   @override
   void paint(PaintContext context, Canvas canvas, Rect bounds) {
     final session = state.inlineAIController.activeSession;
-    if (session == null || session.documentId != context.controller.document.id)
+    if (session == null ||
+        session.documentId != context.controller.document.id) {
       return;
+    }
 
     final double lineHeight = 20.0;
     double gutterWidth = 0.0;
