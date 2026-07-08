@@ -98,11 +98,14 @@ void main() {
     });
 
     test('Verify editor replacement permission gate & mock behavior', () async {
+      final file = File('temp_editor_replace_test.txt');
+      await file.writeAsString("impo 'dart:async';");
+
       final request = const ToolCallRequest(
         toolCallId: 'test-call-2',
         toolName: 'editor.replace',
         arguments: {
-          'path': 'lib/core/studio/server/server.dart',
+          'path': 'temp_editor_replace_test.txt',
           'startLine': 1,
           'startColumn': 1,
           'endLine': 1,
@@ -128,14 +131,25 @@ void main() {
 
       final result = await executionService.execute(request, context);
       expect(result.success, isTrue);
+
+      // Verify file content was updated
+      expect(await file.readAsString(), equals("import 'dart:async';"));
+
+      // Clean up
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
     });
 
     test('Verify denial decision correctly aborts execution', () async {
+      final file = File('temp_editor_replace_test.txt');
+      await file.writeAsString("impo 'dart:async';");
+
       final request = const ToolCallRequest(
         toolCallId: 'test-call-3',
         toolName: 'editor.replace',
         arguments: {
-          'path': 'lib/core/studio/server/server.dart',
+          'path': 'temp_editor_replace_test.txt',
           'startLine': 1,
           'startColumn': 1,
           'endLine': 1,
@@ -160,6 +174,11 @@ void main() {
       final result = await executionService.execute(request, context);
       expect(result.success, isFalse);
       expect(result.errorCode, equals('PERMISSION_DENIED'));
+
+      // Clean up
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
     });
 
     test('Verify snapshotting capture, deduplication, and restore lifecycle',
