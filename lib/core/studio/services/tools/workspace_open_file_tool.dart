@@ -7,7 +7,8 @@ class WorkspaceOpenFileTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'workspace.openFile',
     name: 'Open File',
-    description: 'Retrieve stats, symbols, and metadata for a file in the workspace.',
+    description:
+        'Retrieve stats, symbols, and metadata for a file in the workspace.',
     category: ToolCategory.workspace,
     requiresPermission: false,
     readOnly: true,
@@ -17,9 +18,12 @@ class WorkspaceOpenFileTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final path = request.arguments['path'] as String? ?? request.arguments['filePath'] as String? ?? '';
+    final path = request.arguments['path'] as String? ??
+        request.arguments['filePath'] as String? ??
+        '';
 
     if (path.isEmpty) {
       return ToolCallResult(

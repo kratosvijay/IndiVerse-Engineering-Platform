@@ -17,9 +17,12 @@ class WorkspaceSearchTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final query = request.arguments['query'] as String? ?? request.arguments['q'] as String? ?? '';
+    final query = request.arguments['query'] as String? ??
+        request.arguments['q'] as String? ??
+        '';
     final mode = request.arguments['mode'] as String? ?? 'symbol';
     final page = request.arguments['page'] as int? ?? 1;
     final pageSize = request.arguments['pageSize'] as int? ?? 20;

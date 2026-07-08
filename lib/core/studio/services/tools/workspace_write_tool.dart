@@ -8,7 +8,8 @@ class WorkspaceWriteTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'workspace.writeFile',
     name: 'Write File',
-    description: 'Write content to a file in the workspace, creating it if it does not exist.',
+    description:
+        'Write content to a file in the workspace, creating it if it does not exist.',
     category: ToolCategory.filesystem,
     requiresPermission: true,
     readOnly: false,
@@ -18,9 +19,12 @@ class WorkspaceWriteTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final path = request.arguments['path'] as String? ?? request.arguments['filePath'] as String? ?? '';
+    final path = request.arguments['path'] as String? ??
+        request.arguments['filePath'] as String? ??
+        '';
     final content = request.arguments['content'] as String? ?? '';
 
     if (path.isEmpty) {

@@ -7,7 +7,8 @@ class DiagnosticsListTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'diagnostics.list',
     name: 'List Diagnostics',
-    description: 'Get active warnings and errors (diagnostics) for files in the workspace.',
+    description:
+        'Get active warnings and errors (diagnostics) for files in the workspace.',
     category: ToolCategory.diagnostics,
     requiresPermission: false,
     readOnly: true,
@@ -17,9 +18,12 @@ class DiagnosticsListTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final path = request.arguments['path'] as String? ?? request.arguments['filePath'] as String? ?? '';
+    final path = request.arguments['path'] as String? ??
+        request.arguments['filePath'] as String? ??
+        '';
 
     try {
       final service = CodeIntelligenceService(context.sdk);

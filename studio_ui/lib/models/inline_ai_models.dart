@@ -17,22 +17,9 @@ enum InlineAIState {
   failed,
 }
 
-enum InlineAction {
-  edit,
-  explain,
-  refactor,
-  fix,
-  optimize,
-  document,
-  test,
-}
+enum InlineAction { edit, explain, refactor, fix, optimize, document, test }
 
-enum DiffType {
-  unchanged,
-  inserted,
-  deleted,
-  modified,
-}
+enum DiffType { unchanged, inserted, deleted, modified }
 
 class DiffBlock {
   final DiffType type;

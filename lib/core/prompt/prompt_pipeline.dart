@@ -47,7 +47,6 @@ class PromptPackage {
       };
 }
 
-
 class AIRequest {
   final ConversationSession session;
   final ContextSnapshot context;
@@ -156,4 +155,3 @@ class PromptBuilder {
     );
   }
 }
-

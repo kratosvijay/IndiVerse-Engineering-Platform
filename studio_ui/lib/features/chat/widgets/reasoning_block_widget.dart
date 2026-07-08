@@ -48,7 +48,10 @@ class _ReasoningBlockWidgetState extends State<ReasoningBlockWidget> {
             },
             borderRadius: BorderRadius.circular(4.0),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+                vertical: 8.0,
+              ),
               child: Row(
                 children: [
                   Icon(
@@ -77,15 +80,17 @@ class _ReasoningBlockWidgetState extends State<ReasoningBlockWidget> {
           ),
           if (_isExpanded)
             Padding(
-              padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 10.0, top: 4.0),
+              padding: const EdgeInsets.only(
+                left: 12.0,
+                right: 12.0,
+                bottom: 10.0,
+                top: 4.0,
+              ),
               child: Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: const BoxDecoration(
                   border: Border(
-                    left: BorderSide(
-                      color: Color(0xFF007ACC),
-                      width: 2.0,
-                    ),
+                    left: BorderSide(color: Color(0xFF007ACC), width: 2.0),
                   ),
                 ),
                 child: Text(

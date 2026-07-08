@@ -32,10 +32,6 @@ class InlineAIController extends ChangeNotifier {
       );
     }
 
-    final startOffset = doc.positionToOffset(range.start);
-    final endOffset = doc.positionToOffset(range.end);
-    final originalText = doc.content.substring(startOffset, endOffset);
-
     final reqId = 'inline-req-${DateTime.now().millisecondsSinceEpoch}';
     final request = InlineAIRequest(
       requestId: reqId,
@@ -87,7 +83,7 @@ class InlineAIController extends ChangeNotifier {
         'source': doc.path,
         'content': originalText,
         'priority': 0,
-      }
+      },
     ];
 
     final inlineContext = InlineAIContext(
@@ -115,19 +111,23 @@ class InlineAIController extends ChangeNotifier {
       id: 'inline-sess-${DateTime.now().millisecondsSinceEpoch}',
       title: 'Inline AI Edit',
       workspace: state.activeProject,
-      providerId: state.activeTab == 'Workspace' ? 'mock-ai' : (state.editor.activeTab?.document.language ?? 'mock-ai'),
+      providerId: state.activeTab == 'Workspace'
+          ? 'mock-ai'
+          : (state.editor.activeTab?.document.language ?? 'mock-ai'),
       modelId: 'inline-model',
       messages: [
         ChatMessage(
           role: ChatRole.system,
-          content: 'You are an inline code editing assistant. The user wants to apply changes to the selection. Return ONLY the replacement code, with no explanation, markdown code fences, or surrounding text.',
+          content:
+              'You are an inline code editing assistant. The user wants to apply changes to the selection. Return ONLY the replacement code, with no explanation, markdown code fences, or surrounding text.',
           timestamp: DateTime.now(),
         ),
         ChatMessage(
           role: ChatRole.user,
-          content: 'Here is the code to edit:\n```\n$originalText\n```\n\nPrompt: $promptText',
+          content:
+              'Here is the code to edit:\n```\n$originalText\n```\n\nPrompt: $promptText',
           timestamp: DateTime.now(),
-        )
+        ),
       ],
       estimatedTokens: 0,
       createdAt: DateTime.now(),
@@ -150,11 +150,21 @@ class InlineAIController extends ChangeNotifier {
           accumulatedText += event.chunk;
           activeSession = activeSession!.copyWith(
             result: InlineAIResult(
-              workspaceEdit: WorkspaceEdit(changes: {
-                doc.path: [TextEdit(range: session.selectionRange, newText: accumulatedText)]
-              }),
+              workspaceEdit: WorkspaceEdit(
+                changes: {
+                  doc.path: [
+                    TextEdit(
+                      range: session.selectionRange,
+                      newText: accumulatedText,
+                    ),
+                  ],
+                },
+              ),
               previewText: accumulatedText,
-              diff: DiffEngine.computeDiff(originalText.split('\n'), accumulatedText.split('\n')),
+              diff: DiffEngine.computeDiff(
+                originalText.split('\n'),
+                accumulatedText.split('\n'),
+              ),
             ),
           );
           notifyListeners();
@@ -187,15 +197,24 @@ class InlineAIController extends ChangeNotifier {
           if (trimmed.startsWith('```') && trimmed.endsWith('```')) {
             final firstNewline = cleanText.indexOf('\n');
             final lastNewline = cleanText.lastIndexOf('\n');
-            if (firstNewline != -1 && lastNewline != -1 && lastNewline > firstNewline) {
+            if (firstNewline != -1 &&
+                lastNewline != -1 &&
+                lastNewline > firstNewline) {
               cleanText = cleanText.substring(firstNewline + 1, lastNewline);
             }
           }
 
-          final diff = DiffEngine.computeDiff(originalText.split('\n'), cleanText.split('\n'));
-          final edit = WorkspaceEdit(changes: {
-            doc.path: [TextEdit(range: session.selectionRange, newText: cleanText)]
-          });
+          final diff = DiffEngine.computeDiff(
+            originalText.split('\n'),
+            cleanText.split('\n'),
+          );
+          final edit = WorkspaceEdit(
+            changes: {
+              doc.path: [
+                TextEdit(range: session.selectionRange, newText: cleanText),
+              ],
+            },
+          );
 
           activeSession = activeSession!.copyWith(
             state: InlineAIState.reviewing,

@@ -306,4 +306,3 @@ class ToolCallFailedEvent extends AIStreamEvent {
         'message': message,
       };
 }
-

@@ -21,6 +21,8 @@ class ToolRegistry {
   }
 
   List<ToolHandler> filterByCategory(ToolCategory category) {
-    return _tools.values.where((t) => t.descriptor.category == category).toList();
+    return _tools.values
+        .where((t) => t.descriptor.category == category)
+        .toList();
   }
 }

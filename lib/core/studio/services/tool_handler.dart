@@ -27,5 +27,6 @@ class ToolExecutionContext {
 
 abstract class ToolHandler {
   ToolDescriptor get descriptor;
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context);
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context);
 }

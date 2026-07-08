@@ -99,7 +99,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: const BoxDecoration(
                   color: Color(0xFF161622),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -120,7 +123,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
                         value: _selectedAction,
                         dropdownColor: const Color(0xFF1E1E2E),
                         underline: const SizedBox(),
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
                         isDense: true,
                         items: InlineAction.values.map((action) {
                           return DropdownMenuItem<InlineAction>(
@@ -141,10 +147,7 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
               ),
 
               // Content Area
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: _buildBody(),
-              ),
+              Padding(padding: const EdgeInsets.all(12.0), child: _buildBody()),
 
               // Footer Action Bar
               _buildFooter(),
@@ -233,7 +236,11 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
         children: [
           const Text(
             'Error details:',
-            style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -352,7 +359,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
       return [
         TextButton(
           onPressed: () => widget.controller.reject(),
-          child: const Text('Cancel', style: TextStyle(color: Colors.white54, fontSize: 11)),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: Colors.white54, fontSize: 11),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
@@ -367,7 +377,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             minimumSize: Size.zero,
           ),
-          child: const Text('Generate', style: TextStyle(color: Colors.white, fontSize: 11)),
+          child: const Text(
+            'Generate',
+            style: TextStyle(color: Colors.white, fontSize: 11),
+          ),
         ),
       ];
     }
@@ -381,7 +394,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             minimumSize: Size.zero,
           ),
-          child: const Text('Stop', style: TextStyle(color: Colors.white, fontSize: 11)),
+          child: const Text(
+            'Stop',
+            style: TextStyle(color: Colors.white, fontSize: 11),
+          ),
         ),
       ];
     }
@@ -395,7 +411,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             minimumSize: Size.zero,
           ),
-          child: const Text('Reject', style: TextStyle(color: Colors.redAccent, fontSize: 11)),
+          child: const Text(
+            'Reject',
+            style: TextStyle(color: Colors.redAccent, fontSize: 11),
+          ),
         ),
         const SizedBox(width: 8),
         OutlinedButton(
@@ -405,7 +424,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             minimumSize: Size.zero,
           ),
-          child: const Text('Retry', style: TextStyle(color: Colors.white70, fontSize: 11)),
+          child: const Text(
+            'Retry',
+            style: TextStyle(color: Colors.white70, fontSize: 11),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
@@ -415,7 +437,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             minimumSize: Size.zero,
           ),
-          child: const Text('Accept', style: TextStyle(color: Colors.white, fontSize: 11)),
+          child: const Text(
+            'Accept',
+            style: TextStyle(color: Colors.white, fontSize: 11),
+          ),
         ),
       ];
     }
@@ -424,7 +449,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
       return [
         TextButton(
           onPressed: () => widget.controller.reject(),
-          child: const Text('Dismiss', style: TextStyle(color: Colors.white54, fontSize: 11)),
+          child: const Text(
+            'Dismiss',
+            style: TextStyle(color: Colors.white54, fontSize: 11),
+          ),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
@@ -434,7 +462,10 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             minimumSize: Size.zero,
           ),
-          child: const Text('Retry', style: TextStyle(color: Colors.white, fontSize: 11)),
+          child: const Text(
+            'Retry',
+            style: TextStyle(color: Colors.white, fontSize: 11),
+          ),
         ),
       ];
     }
@@ -443,7 +474,7 @@ class _InlineAIOverlayWidgetState extends State<InlineAIOverlayWidget> {
       Text(
         state.name.toUpperCase(),
         style: const TextStyle(color: Colors.white24, fontSize: 10),
-      )
+      ),
     ];
   }
 }

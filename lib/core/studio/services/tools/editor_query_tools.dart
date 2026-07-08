@@ -16,7 +16,8 @@ class EditorCurrentFileTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
     final path = context.metadata['activeFilePath'] as String? ?? '';
 
@@ -24,7 +25,9 @@ class EditorCurrentFileTool implements ToolHandler {
       success: true,
       output: ToolOutput(
         data: {'path': path},
-        displayText: path.isEmpty ? 'No active file in the editor.' : 'Active file: "$path".',
+        displayText: path.isEmpty
+            ? 'No active file in the editor.'
+            : 'Active file: "$path".',
         mimeType: 'application/json',
       ),
       duration: stopwatch.elapsed,
@@ -47,11 +50,14 @@ class EditorSelectionTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
     final selectedCode = context.metadata['selectedCode'] as String? ?? '';
-    final selectionStartLine = context.metadata['selectionStartLine'] as int? ?? 0;
-    final selectionStartCol = context.metadata['selectionStartColumn'] as int? ?? 0;
+    final selectionStartLine =
+        context.metadata['selectionStartLine'] as int? ?? 0;
+    final selectionStartCol =
+        context.metadata['selectionStartColumn'] as int? ?? 0;
     final selectionEndLine = context.metadata['selectionEndLine'] as int? ?? 0;
     final selectionEndCol = context.metadata['selectionEndColumn'] as int? ?? 0;
 
@@ -65,7 +71,9 @@ class EditorSelectionTool implements ToolHandler {
           'endLine': selectionEndLine,
           'endColumn': selectionEndCol,
         },
-        displayText: selectedCode.isEmpty ? 'No active text selection.' : 'Selected text:\n$selectedCode',
+        displayText: selectedCode.isEmpty
+            ? 'No active text selection.'
+            : 'Selected text:\n$selectedCode',
         mimeType: 'application/json',
       ),
       duration: stopwatch.elapsed,

@@ -1,4 +1,3 @@
-import '../../../../platform_sdk/platform_sdk.dart';
 import '../tool_registry.dart';
 import 'workspace_search_tool.dart';
 import 'workspace_read_tool.dart';

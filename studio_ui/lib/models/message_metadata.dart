@@ -1,5 +1,3 @@
-import 'request_metrics.dart';
-
 class MessageMetadata {
   final String? providerId;
   final String? modelId;
@@ -46,15 +44,15 @@ class MessageMetadata {
   }
 
   Map<String, dynamic> toJson() => {
-        'providerId': providerId,
-        'modelId': modelId,
-        'promptTokens': promptTokens,
-        'completionTokens': completionTokens,
-        'latencyMs': latencyMs,
-        'ttftMs': ttftMs,
-        'streamDurationMs': streamDurationMs,
-        'generatedAt': generatedAt?.toIso8601String(),
-      };
+    'providerId': providerId,
+    'modelId': modelId,
+    'promptTokens': promptTokens,
+    'completionTokens': completionTokens,
+    'latencyMs': latencyMs,
+    'ttftMs': ttftMs,
+    'streamDurationMs': streamDurationMs,
+    'generatedAt': generatedAt?.toIso8601String(),
+  };
 
   factory MessageMetadata.fromJson(Map<String, dynamic> json) =>
       MessageMetadata(

@@ -170,9 +170,11 @@ class AIController {
             // Intercept permission if required
             final tool = toolExecutionService.registry.getTool(toolName);
             if (tool != null && tool.descriptor.requiresPermission) {
-              final decision = toolExecutionService.permissionStore.getDecision(tool.descriptor.id);
+              final decision = toolExecutionService.permissionStore
+                  .getDecision(tool.descriptor.id);
               if (decision == null) {
-                request.response.write('data: ${jsonEncode(ToolPermissionRequestedEvent(
+                request.response
+                    .write('data: ${jsonEncode(ToolPermissionRequestedEvent(
                   requestId: requestId,
                   timestamp: DateTime.now(),
                   toolCallId: toolCallId,
@@ -226,7 +228,9 @@ class AIController {
               template: template,
               variables: {
                 'workspace': session.workspace,
-                'message': session.messages.isNotEmpty ? session.messages.last.content : '',
+                'message': session.messages.isNotEmpty
+                    ? session.messages.last.content
+                    : '',
                 ...variables,
               },
               context: contextSnapshot,
@@ -267,7 +271,6 @@ class AIController {
       } catch (_) {}
     }
   }
-
 
   Future<void> handleGetProviders(HttpRequest request, String requestId) async {
     try {
@@ -398,7 +401,8 @@ class AIController {
     }
   }
 
-  Future<void> handlePermissionResponse(HttpRequest request, String requestId) async {
+  Future<void> handlePermissionResponse(
+      HttpRequest request, String requestId) async {
     try {
       final bodyStr = await utf8.decoder.bind(request).join();
       final bodyJson = jsonDecode(bodyStr) as Map<String, dynamic>;

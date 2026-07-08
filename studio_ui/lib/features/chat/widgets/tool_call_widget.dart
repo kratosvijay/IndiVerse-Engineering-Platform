@@ -38,7 +38,10 @@ class _ToolCallWidgetState extends State<ToolCallWidget> {
             backgroundColor: Colors.amber[700],
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           child: const Text('Authorize'),
         );
@@ -65,7 +68,9 @@ class _ToolCallWidgetState extends State<ToolCallWidget> {
         break;
     }
 
-    final argumentsJson = const JsonEncoder.withIndent('  ').convert(widget.toolCall.arguments);
+    final argumentsJson = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(widget.toolCall.arguments);
     final outputText = widget.toolCall.result?.output.displayText ?? '';
 
     return Container(
@@ -74,7 +79,7 @@ class _ToolCallWidgetState extends State<ToolCallWidget> {
         color: const Color(0xFF252526),
         border: Border.all(
           color: status == ToolCallStatus.pendingPermission
-              ? Colors.amber.withOpacity(0.5)
+              ? Colors.amber.withValues(alpha: 0.5)
               : const Color(0xFF333333),
         ),
         borderRadius: BorderRadius.circular(4.0),
@@ -90,7 +95,10 @@ class _ToolCallWidgetState extends State<ToolCallWidget> {
             },
             borderRadius: BorderRadius.circular(4.0),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+                vertical: 8.0,
+              ),
               child: Row(
                 children: [
                   Icon(

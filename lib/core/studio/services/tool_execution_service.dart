@@ -1,6 +1,6 @@
 import 'dart:async';
 import '../../models/tool_call_models.dart';
-import '../../prompt/prompt_pipeline.dart'; // for CancellationToken
+
 import 'tool_registry.dart';
 import 'tool_handler.dart';
 import 'permission_store.dart';
@@ -12,7 +12,7 @@ class ToolExecutionService {
   final ToolPermissionStore permissionStore;
   final WorkspaceSnapshotService snapshotService = WorkspaceSnapshotService();
   final ToolAuditService auditService = ToolAuditService();
-  
+
   final Map<String, Completer<PermissionDecision>> _pendingPermissions = {};
   final Map<String, ToolExecutionMetrics> _metrics = {};
   final Map<String, int> _requestDepths = {};
@@ -35,7 +35,8 @@ class ToolExecutionService {
     }
   }
 
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
     final tool = registry.getTool(request.toolName);
 
@@ -60,11 +61,13 @@ class ToolExecutionService {
     if (tool == null) {
       final result = ToolCallResult(
         success: false,
-        output: ToolOutput(displayText: 'Tool "${request.toolName}" not registered.'),
+        output: ToolOutput(
+            displayText: 'Tool "${request.toolName}" not registered.'),
         duration: stopwatch.elapsed,
         errorCode: 'TOOL_NOT_FOUND',
       );
-      await _audit(requestWithDepth, context, result, 'none', stopwatch.elapsedMilliseconds);
+      await _audit(requestWithDepth, context, result, 'none',
+          stopwatch.elapsedMilliseconds);
       return result;
     }
 
@@ -93,7 +96,8 @@ class ToolExecutionService {
         permissionUsed = decision.name;
       }
 
-      if (decision == PermissionDecision.deny || decision == PermissionDecision.denyAlways) {
+      if (decision == PermissionDecision.deny ||
+          decision == PermissionDecision.denyAlways) {
         if (decision == PermissionDecision.denyAlways) {
           permissionStore.saveDecision(toolId, PermissionDecision.denyAlways);
         }
@@ -104,7 +108,8 @@ class ToolExecutionService {
           duration: stopwatch.elapsed,
           errorCode: 'PERMISSION_DENIED',
         );
-        await _audit(requestWithDepth, context, result, permissionUsed, stopwatch.elapsedMilliseconds);
+        await _audit(requestWithDepth, context, result, permissionUsed,
+            stopwatch.elapsedMilliseconds);
         return result;
       } else if (decision == PermissionDecision.allowAlways) {
         permissionStore.saveDecision(toolId, PermissionDecision.allowAlways);
@@ -112,9 +117,11 @@ class ToolExecutionService {
     }
 
     // 2. Capture Snapshot if the tool modifies the workspace
-    final String? pathParam = request.arguments['path'] as String? ?? request.arguments['filePath'] as String?;
+    final String? pathParam = request.arguments['path'] as String? ??
+        request.arguments['filePath'] as String?;
     if (pathParam != null && tool.descriptor.modifiesWorkspace) {
-      final snapshot = await snapshotService.captureSnapshot(pathParam, context.requestId);
+      final snapshot =
+          await snapshotService.captureSnapshot(pathParam, context.requestId);
       if (snapshot != null) {
         _metrics[toolId]?.snapshotCount++;
       }
@@ -129,14 +136,15 @@ class ToolExecutionService {
         duration: stopwatch.elapsed,
         errorCode: 'CANCELLED',
       );
-      await _audit(requestWithDepth, context, result, permissionUsed, stopwatch.elapsedMilliseconds);
+      await _audit(requestWithDepth, context, result, permissionUsed,
+          stopwatch.elapsedMilliseconds);
       return result;
     }
 
     // 4. Execution with Timeout & Retries
-    ToolCallResult result = ToolCallResult(
+    ToolCallResult result = const ToolCallResult(
       success: false,
-      output: const ToolOutput(displayText: 'Execution timed out.'),
+      output: ToolOutput(displayText: 'Execution timed out.'),
       duration: Duration.zero,
       errorCode: 'TIMEOUT',
     );
@@ -153,7 +161,8 @@ class ToolExecutionService {
           duration: stopwatch.elapsed,
           errorCode: 'CANCELLED',
         );
-        await _audit(requestWithDepth, context, cancelResult, permissionUsed, stopwatch.elapsedMilliseconds);
+        await _audit(requestWithDepth, context, cancelResult, permissionUsed,
+            stopwatch.elapsedMilliseconds);
         return cancelResult;
       }
 
@@ -173,7 +182,8 @@ class ToolExecutionService {
     }
 
     final durationMs = stopwatch.elapsedMilliseconds;
-    _recordMetrics(toolId, success: result.success, cancellation: false, durationMs: durationMs);
+    _recordMetrics(toolId,
+        success: result.success, cancellation: false, durationMs: durationMs);
     await _audit(requestWithDepth, context, result, permissionUsed, durationMs);
 
     return result;
@@ -213,7 +223,8 @@ class ToolExecutionService {
     _metrics.putIfAbsent(toolId, () => ToolExecutionMetrics());
   }
 
-  void _recordMetrics(String toolId, {required bool success, required bool cancellation, int durationMs = 0}) {
+  void _recordMetrics(String toolId,
+      {required bool success, required bool cancellation, int durationMs = 0}) {
     final m = _metrics[toolId]!;
     m.executions++;
     m.totalDurationMs += durationMs;
@@ -235,7 +246,8 @@ class ToolExecutionMetrics {
   int snapshotCount = 0;
   int auditEntries = 0;
 
-  double get averageLatency => executions == 0 ? 0.0 : totalDurationMs / executions;
+  double get averageLatency =>
+      executions == 0 ? 0.0 : totalDurationMs / executions;
 
   Map<String, dynamic> toJson() => {
         'executions': executions,

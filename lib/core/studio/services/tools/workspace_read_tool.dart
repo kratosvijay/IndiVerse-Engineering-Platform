@@ -17,9 +17,12 @@ class WorkspaceReadTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final path = request.arguments['path'] as String? ?? request.arguments['filePath'] as String? ?? '';
+    final path = request.arguments['path'] as String? ??
+        request.arguments['filePath'] as String? ??
+        '';
 
     if (path.isEmpty) {
       return ToolCallResult(

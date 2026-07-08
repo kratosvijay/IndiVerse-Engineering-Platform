@@ -16,7 +16,9 @@ class MessageMetadataBar extends StatelessWidget {
 
     if (metadata.promptTokens != null || metadata.completionTokens != null) {
       final total = metadata.totalTokens;
-      parts.add('$total tokens (in:${metadata.promptTokens ?? 0}/out:${metadata.completionTokens ?? 0})');
+      parts.add(
+        '$total tokens (in:${metadata.promptTokens ?? 0}/out:${metadata.completionTokens ?? 0})',
+      );
     }
 
     if (metadata.latencyMs != null) {

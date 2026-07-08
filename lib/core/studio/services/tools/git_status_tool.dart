@@ -17,7 +17,8 @@ class GitStatusTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -28,7 +29,9 @@ class GitStatusTool implements ToolHandler {
           success: true,
           output: ToolOutput(
             data: output,
-            displayText: output.trim().isEmpty ? 'Workspace is clean (git status clean).' : output,
+            displayText: output.trim().isEmpty
+                ? 'Workspace is clean (git status clean).'
+                : output,
             mimeType: 'text/plain',
           ),
           duration: stopwatch.elapsed,
@@ -37,7 +40,8 @@ class GitStatusTool implements ToolHandler {
         return ToolCallResult(
           success: false,
           output: ToolOutput(
-            displayText: 'git status returned exit code ${result.exitCode}: ${result.stderr}',
+            displayText:
+                'git status returned exit code ${result.exitCode}: ${result.stderr}',
             mimeType: 'text/plain',
           ),
           duration: stopwatch.elapsed,
@@ -50,7 +54,8 @@ class GitStatusTool implements ToolHandler {
         success: true,
         output: const ToolOutput(
           data: 'MOCK_GIT_CLEAN',
-          displayText: 'No git repository detected or git binary not available (mock fallback clean).',
+          displayText:
+              'No git repository detected or git binary not available (mock fallback clean).',
           mimeType: 'text/plain',
         ),
         duration: stopwatch.elapsed,

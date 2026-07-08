@@ -35,7 +35,6 @@ import 'find_overlay_widget.dart';
 import '../../problems/widgets/problems_panel.dart';
 import '../controllers/editor_view_controller.dart';
 import '../../../models/inline_ai_models.dart';
-import '../../editor/controllers/inline_ai_controller.dart';
 import 'inline_ai_overlay_widget.dart';
 import 'editor_renderer.dart';
 import 'minimap_widget.dart';

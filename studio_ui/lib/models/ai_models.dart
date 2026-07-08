@@ -12,13 +12,7 @@ enum RequestStage {
   failed,
 }
 
-enum FinishReason {
-  stop,
-  length,
-  cancelled,
-  toolCall,
-  error,
-}
+enum FinishReason { stop, length, cancelled, toolCall, error }
 
 class AIModel {
   final String id;
@@ -398,7 +392,9 @@ abstract class AIStreamEvent {
           requestId: reqId,
           timestamp: ts,
           toolCallId: json['toolCallId'] as String? ?? '',
-          result: ToolCallResult.fromJson(json['result'] as Map<String, dynamic>? ?? {}),
+          result: ToolCallResult.fromJson(
+            json['result'] as Map<String, dynamic>? ?? {},
+          ),
         );
       case 'tool_call_failed':
         return ToolCallFailedEvent(

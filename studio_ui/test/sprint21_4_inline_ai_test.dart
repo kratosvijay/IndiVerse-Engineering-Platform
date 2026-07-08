@@ -5,7 +5,6 @@ import 'package:studio_ui/features/editor/controllers/inline_ai_controller.dart'
 import 'package:studio_ui/models/inline_ai_models.dart';
 import 'package:studio_ui/core/services/diff_engine.dart';
 import 'package:studio_ui/models/editor_document.dart';
-import 'package:studio_ui/models/language_intelligence_models.dart';
 import 'package:studio_ui/models/ai_models.dart';
 import 'package:studio_ui/core/services/ai_service.dart';
 import 'package:studio_ui/models/ids.dart';
@@ -87,10 +86,12 @@ void main() {
       state.editor.open(doc);
       state.documentService.cacheDocument(DocumentId('file.dart'), doc);
 
-      doc.updateSelection(SelectionRange(
-        start: const Position(line: 2, column: 1),
-        end: const Position(line: 2, column: 18),
-      ));
+      doc.updateSelection(
+        SelectionRange(
+          start: const Position(line: 2, column: 1),
+          end: const Position(line: 2, column: 18),
+        ),
+      );
 
       controller.triggerInlineAI();
 
@@ -101,52 +102,70 @@ void main() {
       expect(session.selectionRange.start.line, 2);
     });
 
-    test('submitPrompt runs stream and computes diff upon completion', () async {
-      final doc = EditorDocument(
-        id: 'file.dart',
-        path: 'file.dart',
-        name: 'file.dart',
-        content: 'void main() {\n  print("hello");\n}',
-        language: 'dart',
-        encoding: 'utf8',
-        lastModified: '',
-        readOnly: false,
-      );
-      state.editor.open(doc);
-      state.documentService.cacheDocument(DocumentId('file.dart'), doc);
+    test(
+      'submitPrompt runs stream and computes diff upon completion',
+      () async {
+        final doc = EditorDocument(
+          id: 'file.dart',
+          path: 'file.dart',
+          name: 'file.dart',
+          content: 'void main() {\n  print("hello");\n}',
+          language: 'dart',
+          encoding: 'utf8',
+          lastModified: '',
+          readOnly: false,
+        );
+        state.editor.open(doc);
+        state.documentService.cacheDocument(DocumentId('file.dart'), doc);
 
-      doc.updateSelection(SelectionRange(
-        start: const Position(line: 2, column: 1),
-        end: const Position(line: 2, column: 18),
-      ));
+        doc.updateSelection(
+          SelectionRange(
+            start: const Position(line: 2, column: 1),
+            end: const Position(line: 2, column: 18),
+          ),
+        );
 
-      controller.triggerInlineAI();
+        controller.triggerInlineAI();
 
-      final future = controller.submitPrompt('make it print world', InlineAction.edit);
+        final future = controller.submitPrompt(
+          'make it print world',
+          InlineAction.edit,
+        );
 
-      expect(controller.activeSession!.state, isNot(equals(InlineAIState.prompting)));
+        expect(
+          controller.activeSession!.state,
+          isNot(equals(InlineAIState.prompting)),
+        );
 
-      streamController.add(TokenChunkEvent(
-        requestId: 'req-1',
-        timestamp: DateTime.now(),
-        chunk: '  print("world");',
-      ));
-      await Future.delayed(Duration.zero);
+        streamController.add(
+          TokenChunkEvent(
+            requestId: 'req-1',
+            timestamp: DateTime.now(),
+            chunk: '  print("world");',
+          ),
+        );
+        await Future.delayed(Duration.zero);
 
-      expect(controller.activeSession!.result, isNotNull);
-      expect(controller.activeSession!.result!.previewText, '  print("world");');
+        expect(controller.activeSession!.result, isNotNull);
+        expect(
+          controller.activeSession!.result!.previewText,
+          '  print("world");',
+        );
 
-      streamController.add(CompletedEvent(
-        requestId: 'req-1',
-        timestamp: DateTime.now(),
-        fullText: '  print("world");',
-      ));
-      await streamController.close();
-      await future;
+        streamController.add(
+          CompletedEvent(
+            requestId: 'req-1',
+            timestamp: DateTime.now(),
+            fullText: '  print("world");',
+          ),
+        );
+        await streamController.close();
+        await future;
 
-      expect(controller.activeSession!.state, InlineAIState.reviewing);
-      expect(controller.activeSession!.result!.diff.length, 2);
-    });
+        expect(controller.activeSession!.state, InlineAIState.reviewing);
+        expect(controller.activeSession!.result!.diff.length, 2);
+      },
+    );
 
     test('accept applies workspace edits via WorkspaceEditExecutor', () async {
       final doc = EditorDocument(
@@ -162,20 +181,27 @@ void main() {
       state.editor.open(doc);
       state.documentService.cacheDocument(DocumentId('file.dart'), doc);
 
-      doc.updateSelection(SelectionRange(
-        start: const Position(line: 2, column: 1),
-        end: const Position(line: 2, column: 18),
-      ));
+      doc.updateSelection(
+        SelectionRange(
+          start: const Position(line: 2, column: 1),
+          end: const Position(line: 2, column: 18),
+        ),
+      );
 
       controller.triggerInlineAI();
 
-      final future = controller.submitPrompt('make it print world', InlineAction.edit);
+      final future = controller.submitPrompt(
+        'make it print world',
+        InlineAction.edit,
+      );
 
-      streamController.add(CompletedEvent(
-        requestId: 'req-1',
-        timestamp: DateTime.now(),
-        fullText: '  print("world");',
-      ));
+      streamController.add(
+        CompletedEvent(
+          requestId: 'req-1',
+          timestamp: DateTime.now(),
+          fullText: '  print("world");',
+        ),
+      );
       await streamController.close();
       await future;
 
@@ -201,20 +227,27 @@ void main() {
       state.editor.open(doc);
       state.documentService.cacheDocument(DocumentId('file.dart'), doc);
 
-      doc.updateSelection(SelectionRange(
-        start: const Position(line: 2, column: 1),
-        end: const Position(line: 2, column: 18),
-      ));
+      doc.updateSelection(
+        SelectionRange(
+          start: const Position(line: 2, column: 1),
+          end: const Position(line: 2, column: 18),
+        ),
+      );
 
       controller.triggerInlineAI();
 
-      final future = controller.submitPrompt('make it print world', InlineAction.edit);
+      final future = controller.submitPrompt(
+        'make it print world',
+        InlineAction.edit,
+      );
 
-      streamController.add(CompletedEvent(
-        requestId: 'req-1',
-        timestamp: DateTime.now(),
-        fullText: '  print("world");',
-      ));
+      streamController.add(
+        CompletedEvent(
+          requestId: 'req-1',
+          timestamp: DateTime.now(),
+          fullText: '  print("world");',
+        ),
+      );
       await streamController.close();
       await future;
 

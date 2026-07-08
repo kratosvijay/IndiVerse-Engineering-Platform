@@ -17,9 +17,12 @@ class EditorReplaceTool implements ToolHandler {
   );
 
   @override
-  Future<ToolCallResult> execute(ToolCallRequest request, ToolExecutionContext context) async {
+  Future<ToolCallResult> execute(
+      ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final path = request.arguments['path'] as String? ?? request.arguments['filePath'] as String? ?? '';
+    final path = request.arguments['path'] as String? ??
+        request.arguments['filePath'] as String? ??
+        '';
     final startLine = request.arguments['startLine'] as int? ?? 1;
     final startColumn = request.arguments['startColumn'] as int? ?? 1;
     final endLine = request.arguments['endLine'] as int? ?? startLine;
@@ -53,7 +56,7 @@ class EditorReplaceTool implements ToolHandler {
       }
 
       final content = file.readAsStringSync();
-      
+
       int positionToOffset(String text, int line, int column) {
         final lines = text.split('\n');
         int offset = 0;
@@ -73,7 +76,8 @@ class EditorReplaceTool implements ToolHandler {
         return ToolCallResult(
           success: false,
           output: const ToolOutput(
-            displayText: 'Invalid text range: startOffset is greater than endOffset.',
+            displayText:
+                'Invalid text range: startOffset is greater than endOffset.',
             mimeType: 'text/plain',
           ),
           duration: stopwatch.elapsed,
@@ -90,7 +94,8 @@ class EditorReplaceTool implements ToolHandler {
       return ToolCallResult(
         success: true,
         output: ToolOutput(
-          displayText: 'Successfully replaced text in "$path" at lines $startLine-$endLine.',
+          displayText:
+              'Successfully replaced text in "$path" at lines $startLine-$endLine.',
           mimeType: 'text/plain',
         ),
         duration: stopwatch.elapsed,

@@ -104,7 +104,8 @@ class ToolDescriptor {
         id: json['id'] as String,
         name: json['name'] as String,
         description: json['description'] as String,
-        category: ToolCategory.values.firstWhere((e) => e.name == json['category']),
+        category:
+            ToolCategory.values.firstWhere((e) => e.name == json['category']),
         requiresPermission: json['requiresPermission'] as bool? ?? false,
         readOnly: json['readOnly'] as bool? ?? false,
         destructive: json['destructive'] as bool? ?? false,
@@ -137,7 +138,8 @@ class ToolCallRequest {
         'depth': depth,
       };
 
-  factory ToolCallRequest.fromJson(Map<String, dynamic> json) => ToolCallRequest(
+  factory ToolCallRequest.fromJson(Map<String, dynamic> json) =>
+      ToolCallRequest(
         toolCallId: json['toolCallId'] as String,
         toolName: json['toolName'] as String,
         arguments: Map<String, dynamic>.from(json['arguments'] as Map? ?? {}),
@@ -195,7 +197,8 @@ class ToolCallResult {
 
   factory ToolCallResult.fromJson(Map<String, dynamic> json) => ToolCallResult(
         success: json['success'] as bool,
-        output: ToolOutput.fromJson(json['output'] as Map<String, dynamic>? ?? {}),
+        output:
+            ToolOutput.fromJson(json['output'] as Map<String, dynamic>? ?? {}),
         duration: Duration(milliseconds: json['durationMs'] as int? ?? 0),
         cacheable: json['cacheable'] as bool? ?? false,
         errorCode: json['errorCode'] as String?,

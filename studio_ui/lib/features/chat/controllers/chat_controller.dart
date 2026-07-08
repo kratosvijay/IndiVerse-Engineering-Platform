@@ -177,7 +177,9 @@ class ChatController extends ChangeNotifier {
       ..add(userMsg);
     currentSession = currentSession.copyWith(
       messages: updatedMessages,
-      title: currentSession.messages.isEmpty ? generateAutoTitle(trimmed) : currentSession.title,
+      title: currentSession.messages.isEmpty
+          ? generateAutoTitle(trimmed)
+          : currentSession.title,
       updatedAt: DateTime.now(),
     );
 
@@ -234,9 +236,7 @@ class ChatController extends ChangeNotifier {
     _streamSubscription = stream.listen(
       (event) {
         if (event is StageEvent) {
-          _state = _state.copyWith(
-            requestStage: event.stage,
-          );
+          _state = _state.copyWith(requestStage: event.stage);
           if (event.stage == RequestStage.streaming) {
             _state = _state.copyWith(streamState: ChatStreamState.streaming);
           }
@@ -255,7 +255,9 @@ class ChatController extends ChangeNotifier {
           activeStreamedMessage.value = ChatMessage(
             role: ChatRole.assistant,
             content: accumulatedText,
-            reasoning: accumulatedReasoning.isNotEmpty ? accumulatedReasoning : null,
+            reasoning: accumulatedReasoning.isNotEmpty
+                ? accumulatedReasoning
+                : null,
             timestamp: DateTime.now(),
           );
         } else if (event is ReasoningChunkEvent) {
@@ -280,7 +282,8 @@ class ChatController extends ChangeNotifier {
             arguments: event.arguments,
             status: ToolCallStatus.pendingPermission,
           );
-          final updated = List<ToolCallState>.from(_state.toolCalls)..add(newCall);
+          final updated = List<ToolCallState>.from(_state.toolCalls)
+            ..add(newCall);
           _state = _state.copyWith(toolCalls: updated);
           notifyListeners();
         } else if (event is ToolCallStartedEvent) {
@@ -291,12 +294,14 @@ class ChatController extends ChangeNotifier {
             return t;
           }).toList();
           if (!updated.any((t) => t.toolCallId == event.toolCallId)) {
-            updated.add(ToolCallState(
-              toolCallId: event.toolCallId,
-              toolName: event.toolName,
-              arguments: event.arguments,
-              status: ToolCallStatus.running,
-            ));
+            updated.add(
+              ToolCallState(
+                toolCallId: event.toolCallId,
+                toolName: event.toolName,
+                arguments: event.arguments,
+                status: ToolCallStatus.running,
+              ),
+            );
           }
           _state = _state.copyWith(toolCalls: updated);
           notifyListeners();
@@ -338,9 +343,7 @@ class ChatController extends ChangeNotifier {
           finalCompletionTokens = event.completionTokens;
         } else if (event is CompletedEvent) {
           accumulatedText = event.fullText;
-          _state = _state.copyWith(
-            requestStage: RequestStage.completed,
-          );
+          _state = _state.copyWith(requestStage: RequestStage.completed);
         } else if (event is ErrorEvent) {
           final errorMetrics = _requestMetricsMap[reqId]?.copyWith(
             completed: DateTime.now(),
@@ -415,7 +418,9 @@ class ChatController extends ChangeNotifier {
           final finalMsg = ChatMessage(
             role: ChatRole.assistant,
             content: accumulatedText.trim(),
-            reasoning: accumulatedReasoning.isNotEmpty ? accumulatedReasoning.trim() : null,
+            reasoning: accumulatedReasoning.isNotEmpty
+                ? accumulatedReasoning.trim()
+                : null,
             timestamp: DateTime.now(),
             metadata: metadata,
           );
@@ -473,7 +478,7 @@ class ChatController extends ChangeNotifier {
 
     final partialText = activeStreamedMessage.value?.content ?? '';
     final partialReasoning = activeStreamedMessage.value?.reasoning ?? '';
-    
+
     final cancelledMsg = ChatMessage(
       role: ChatRole.assistant,
       content: '$partialText [Generation Cancelled]',
@@ -543,13 +548,20 @@ class ChatController extends ChangeNotifier {
     await sendPrompt(promptText);
   }
 
-  Future<void> submitPermissionDecision(String toolCallId, PermissionDecision decision) async {
+  Future<void> submitPermissionDecision(
+    String toolCallId,
+    PermissionDecision decision,
+  ) async {
     final updated = _state.toolCalls.map((t) {
       if (t.toolCallId == toolCallId) {
-        if (decision == PermissionDecision.allowOnce || decision == PermissionDecision.allowAlways) {
+        if (decision == PermissionDecision.allowOnce ||
+            decision == PermissionDecision.allowAlways) {
           return t.copyWith(status: ToolCallStatus.running);
         } else {
-          return t.copyWith(status: ToolCallStatus.failed, errorMessage: 'Permission Denied');
+          return t.copyWith(
+            status: ToolCallStatus.failed,
+            errorMessage: 'Permission Denied',
+          );
         }
       }
       return t;

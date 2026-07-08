@@ -17,10 +17,9 @@ class RequestMetrics {
 
   int? get latencyMs => completed?.difference(started).inMilliseconds;
   int? get ttftMs => firstToken?.difference(started).inMilliseconds;
-  int? get streamDurationMs =>
-      (completed != null && firstToken != null)
-          ? completed!.difference(firstToken!).inMilliseconds
-          : null;
+  int? get streamDurationMs => (completed != null && firstToken != null)
+      ? completed!.difference(firstToken!).inMilliseconds
+      : null;
 
   RequestMetrics copyWith({
     DateTime? firstToken,

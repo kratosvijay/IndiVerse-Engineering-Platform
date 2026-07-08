@@ -133,7 +133,8 @@ class _ChatPanelState extends State<ChatPanel> {
   }
 
   Widget _buildProgressIndicator(ChatSessionState state) {
-    if (state.requestStage == null || state.streamState == ChatStreamState.idle) {
+    if (state.requestStage == null ||
+        state.streamState == ChatStreamState.idle) {
       return const SizedBox.shrink();
     }
 
@@ -186,10 +187,7 @@ class _ChatPanelState extends State<ChatPanel> {
           const SizedBox(width: 8.0),
           Text(
             statusText,
-            style: const TextStyle(
-              color: Color(0xFFCCCCCC),
-              fontSize: 11.0,
-            ),
+            style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 11.0),
           ),
         ],
       ),
@@ -316,27 +314,40 @@ class _ChatPanelState extends State<ChatPanel> {
             valueListenable: widget.controller.activeStreamedMessage,
             builder: (context, streamedMsg, _) {
               final toolCalls = state.toolCalls;
-              
-              if ((streamedMsg == null || (streamedMsg.content.isEmpty && (streamedMsg.reasoning == null || streamedMsg.reasoning!.isEmpty))) && toolCalls.isEmpty) {
+
+              if ((streamedMsg == null ||
+                      (streamedMsg.content.isEmpty &&
+                          (streamedMsg.reasoning == null ||
+                              streamedMsg.reasoning!.isEmpty))) &&
+                  toolCalls.isEmpty) {
                 return const SizedBox.shrink();
               }
-              
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (streamedMsg != null && (streamedMsg.content.isNotEmpty || (streamedMsg.reasoning != null && streamedMsg.reasoning!.isNotEmpty)))
+                  if (streamedMsg != null &&
+                      (streamedMsg.content.isNotEmpty ||
+                          (streamedMsg.reasoning != null &&
+                              streamedMsg.reasoning!.isNotEmpty)))
                     _buildMessageBubble(streamedMsg, renderer),
                   if (toolCalls.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(left: 32.0, right: 12.0, bottom: 8.0),
+                      padding: const EdgeInsets.only(
+                        left: 32.0,
+                        right: 12.0,
+                        bottom: 8.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: toolCalls
-                            .map((t) => ToolCallWidget(
-                                  toolCall: t,
-                                  controller: widget.controller,
-                                ))
+                            .map(
+                              (t) => ToolCallWidget(
+                                toolCall: t,
+                                controller: widget.controller,
+                              ),
+                            )
                             .toList(),
                       ),
                     ),
@@ -373,9 +384,13 @@ class _ChatPanelState extends State<ChatPanel> {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
-                if (!isUser && message.reasoning != null && message.reasoning!.isNotEmpty)
+                if (!isUser &&
+                    message.reasoning != null &&
+                    message.reasoning!.isNotEmpty)
                   ReasoningBlockWidget(reasoning: message.reasoning!),
                 if (message.content.isNotEmpty)
                   Container(
@@ -498,7 +513,10 @@ class _ChatPanelState extends State<ChatPanel> {
                       child: TextField(
                         controller: _inputController.textController,
                         focusNode: _inputController.focusNode,
-                        style: const TextStyle(color: Colors.white, fontSize: 12.0),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.0,
+                        ),
                         maxLines: 4,
                         minLines: 1,
                         decoration: const InputDecoration(
@@ -516,7 +534,9 @@ class _ChatPanelState extends State<ChatPanel> {
                         },
                       ),
                     ),
-                    TokenCounterWidget(controller: _inputController.textController),
+                    TokenCounterWidget(
+                      controller: _inputController.textController,
+                    ),
                   ],
                 ),
               ),

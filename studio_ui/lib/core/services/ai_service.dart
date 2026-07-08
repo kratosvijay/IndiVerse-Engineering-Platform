@@ -136,10 +136,7 @@ class AIService {
       final res = await http.post(
         Uri.parse('$serverUrl/api/v1/ai/permission_response'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'toolCallId': toolCallId,
-          'decision': decision,
-        }),
+        body: jsonEncode({'toolCallId': toolCallId, 'decision': decision}),
       );
       return res.statusCode == 200;
     } catch (_) {

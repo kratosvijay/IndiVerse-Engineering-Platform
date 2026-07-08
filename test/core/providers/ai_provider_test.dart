@@ -239,6 +239,7 @@ void main() {
       cancelToken.cancel();
 
       final events = await stream.toList();
+      expect(events, isNotNull);
       // Verify cancellation led to shorter stream (potentially no CompletedEvent)
     });
 

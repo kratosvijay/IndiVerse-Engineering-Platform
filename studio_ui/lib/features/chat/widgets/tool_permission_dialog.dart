@@ -5,14 +5,13 @@ import 'package:indiverse_developer_platform/core/models/tool_call_models.dart';
 class ToolPermissionDialog extends StatelessWidget {
   final ToolCallState toolCall;
 
-  const ToolPermissionDialog({
-    super.key,
-    required this.toolCall,
-  });
+  const ToolPermissionDialog({super.key, required this.toolCall});
 
   @override
   Widget build(BuildContext context) {
-    final argumentsJson = const JsonEncoder.withIndent('  ').convert(toolCall.arguments);
+    final argumentsJson = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(toolCall.arguments);
 
     return Dialog(
       backgroundColor: const Color(0xFF1E1E1E),
@@ -29,19 +28,15 @@ class ToolPermissionDialog extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.security,
-                  color: Colors.amber,
-                  size: 24,
-                ),
+                const Icon(Icons.security, color: Colors.amber, size: 24),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'AI Tool Permission Requested',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -61,7 +56,11 @@ class ToolPermissionDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.build_circle, color: Colors.blueAccent, size: 16),
+                  const Icon(
+                    Icons.build_circle,
+                    color: Colors.blueAccent,
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     toolCall.toolName,
@@ -108,31 +107,43 @@ class ToolPermissionDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 OutlinedButton(
-                  onPressed: () => Navigator.pop(context, PermissionDecision.deny),
+                  onPressed: () =>
+                      Navigator.pop(context, PermissionDecision.deny),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.redAccent,
                     side: const BorderSide(color: Colors.redAccent),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   child: const Text('Deny'),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context, PermissionDecision.allowOnce),
+                  onPressed: () =>
+                      Navigator.pop(context, PermissionDecision.allowOnce),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0E639C),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   child: const Text('Allow Once'),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context, PermissionDecision.allowAlways),
+                  onPressed: () =>
+                      Navigator.pop(context, PermissionDecision.allowAlways),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green[700],
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   child: const Text('Allow Always'),
                 ),

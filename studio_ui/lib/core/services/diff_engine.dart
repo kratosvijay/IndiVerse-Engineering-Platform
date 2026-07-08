@@ -1,12 +1,18 @@
 import '../../models/inline_ai_models.dart';
 
 class DiffEngine {
-  static List<DiffBlock> computeDiff(List<String> originalLines, List<String> newLines) {
+  static List<DiffBlock> computeDiff(
+    List<String> originalLines,
+    List<String> newLines,
+  ) {
     final int m = originalLines.length;
     final int n = newLines.length;
 
     // DP table for LCS
-    final List<List<int>> dp = List.generate(m + 1, (_) => List.filled(n + 1, 0));
+    final List<List<int>> dp = List.generate(
+      m + 1,
+      (_) => List.filled(n + 1, 0),
+    );
 
     for (int i = 1; i <= m; i++) {
       for (int j = 1; j <= n; j++) {

@@ -4,7 +4,8 @@ class ToolPermissionStore {
   final Map<String, PermissionDecision> _store = {};
 
   void saveDecision(String toolId, PermissionDecision decision) {
-    if (decision == PermissionDecision.allowAlways || decision == PermissionDecision.denyAlways) {
+    if (decision == PermissionDecision.allowAlways ||
+        decision == PermissionDecision.denyAlways) {
       _store[toolId] = decision;
     }
   }

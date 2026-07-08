@@ -63,12 +63,14 @@ void main() {
       expect(tools.length, equals(10));
       expect(registry.getTool('workspace.search'), isA<WorkspaceSearchTool>());
       expect(registry.getTool('workspace.readFile'), isA<WorkspaceReadTool>());
-      expect(registry.getTool('workspace.writeFile'), isA<WorkspaceWriteTool>());
+      expect(
+          registry.getTool('workspace.writeFile'), isA<WorkspaceWriteTool>());
       expect(registry.getTool('git.status'), isA<GitStatusTool>());
       expect(registry.getTool('git.diff'), isA<GitDiffTool>());
       expect(registry.getTool('editor.replace'), isA<EditorReplaceTool>());
       expect(registry.getTool('diagnostics.list'), isA<DiagnosticsListTool>());
-      expect(registry.getTool('editor.currentFile'), isA<EditorCurrentFileTool>());
+      expect(
+          registry.getTool('editor.currentFile'), isA<EditorCurrentFileTool>());
       expect(registry.getTool('editor.selection'), isA<EditorSelectionTool>());
     });
 
@@ -121,7 +123,8 @@ void main() {
 
       // Permission not yet granted, it will wait for permission.
       // Let's pre-resolve it in the permissionStore to allowAlways
-      permissionStore.saveDecision('editor.replace', PermissionDecision.allowAlways);
+      permissionStore.saveDecision(
+          'editor.replace', PermissionDecision.allowAlways);
 
       final result = await executionService.execute(request, context);
       expect(result.success, isTrue);
@@ -151,14 +154,16 @@ void main() {
         sdk: sdk,
       );
 
-      permissionStore.saveDecision('editor.replace', PermissionDecision.denyAlways);
+      permissionStore.saveDecision(
+          'editor.replace', PermissionDecision.denyAlways);
 
       final result = await executionService.execute(request, context);
       expect(result.success, isFalse);
       expect(result.errorCode, equals('PERMISSION_DENIED'));
     });
 
-    test('Verify snapshotting capture, deduplication, and restore lifecycle', () async {
+    test('Verify snapshotting capture, deduplication, and restore lifecycle',
+        () async {
       // 1. Create a dummy file
       final file = File('scratch_test_file.txt');
       await file.writeAsString('initial content');
@@ -183,7 +188,8 @@ void main() {
         sdk: sdk,
       );
 
-      permissionStore.saveDecision('workspace.writeFile', PermissionDecision.allowAlways);
+      permissionStore.saveDecision(
+          'workspace.writeFile', PermissionDecision.allowAlways);
 
       // Execute: first time should capture a snapshot
       final result = await executionService.execute(request, context);
@@ -196,7 +202,8 @@ void main() {
       expect(backupFiles.isNotEmpty, isTrue);
 
       // Test deduplication: run same file write again with same requestId
-      final snapshot2 = await executionService.snapshotService.captureSnapshot('scratch_test_file.txt', 'test-req-dedupe');
+      final snapshot2 = await executionService.snapshotService
+          .captureSnapshot('scratch_test_file.txt', 'test-req-dedupe');
       expect(snapshot2, isNotNull);
 
       // Clean up backup file
@@ -205,7 +212,9 @@ void main() {
       }
     });
 
-    test('Verify structured auditing records are written upon execution success/failure', () async {
+    test(
+        'Verify structured auditing records are written upon execution success/failure',
+        () async {
       final request = const ToolCallRequest(
         toolCallId: 'audit-call-1',
         toolName: 'git.status',
@@ -222,7 +231,8 @@ void main() {
         sdk: sdk,
       );
 
-      permissionStore.saveDecision('git.status', PermissionDecision.allowAlways);
+      permissionStore.saveDecision(
+          'git.status', PermissionDecision.allowAlways);
 
       final result = await executionService.execute(request, context);
       expect(result.success, isTrue);
@@ -240,7 +250,8 @@ void main() {
       expect(record.success, isTrue);
     });
 
-    test('Verify parent/child tool calling relationships and depth mapping', () async {
+    test('Verify parent/child tool calling relationships and depth mapping',
+        () async {
       final requestParent = const ToolCallRequest(
         toolCallId: 'parent-1',
         toolName: 'git.status',
@@ -270,7 +281,8 @@ void main() {
       await executionService.execute(requestChild, context);
 
       // Parent depth should be 0
-      final parentRecord = executionService.auditService.inMemoryLogs.firstWhere(
+      final parentRecord =
+          executionService.auditService.inMemoryLogs.firstWhere(
         (r) => r.toolCallId == 'parent-1',
       );
       expect(parentRecord.parentToolCallId, isNull);

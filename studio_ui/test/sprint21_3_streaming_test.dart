@@ -15,7 +15,7 @@ class FakeStreamingAIService extends AIService {
   @override
   Future<List<Map<String, dynamic>>> getProviders() async {
     return [
-      {'id': 'mock-ai', 'name': 'Mock AI'}
+      {'id': 'mock-ai', 'name': 'Mock AI'},
     ];
   }
 
@@ -57,7 +57,8 @@ void main() {
     });
 
     test('generateAutoTitle truncates at word boundaries up to 50 chars', () {
-      final input = 'This is a very long prompt with many words that will exceed the fifty character limit';
+      final input =
+          'This is a very long prompt with many words that will exceed the fifty character limit';
       final title = generateAutoTitle(input);
       expect(title.length, lessThanOrEqualTo(50));
       expect(title, 'This is a very long prompt with many words that');
@@ -118,7 +119,10 @@ void main() {
     test('Tracks RequestStage and RequestMetrics during stream', () async {
       final streamController = StreamController<AIStreamEvent>();
       final fakeService = FakeStreamingAIService(streamController);
-      final controller = ChatController(aiService: fakeService, workspace: 'test');
+      final controller = ChatController(
+        aiService: fakeService,
+        workspace: 'test',
+      );
 
       await controller.initialize();
       expect(controller.state.streamState, ChatStreamState.idle);
@@ -145,59 +149,71 @@ void main() {
       expect(controller.requestMetricsMap[reqId], isNotNull);
 
       // Emit stage event (gatheringContext)
-      streamController.add(StageEvent(
-        requestId: reqId,
-        timestamp: DateTime.now(),
-        stage: RequestStage.gatheringContext,
-      ));
+      streamController.add(
+        StageEvent(
+          requestId: reqId,
+          timestamp: DateTime.now(),
+          stage: RequestStage.gatheringContext,
+        ),
+      );
       await Future.delayed(Duration.zero);
       expect(controller.state.requestStage, RequestStage.gatheringContext);
 
       // Emit stage event (streaming)
-      streamController.add(StageEvent(
-        requestId: reqId,
-        timestamp: DateTime.now(),
-        stage: RequestStage.streaming,
-      ));
+      streamController.add(
+        StageEvent(
+          requestId: reqId,
+          timestamp: DateTime.now(),
+          stage: RequestStage.streaming,
+        ),
+      );
       await Future.delayed(Duration.zero);
       expect(controller.state.requestStage, RequestStage.streaming);
       expect(controller.state.streamState, ChatStreamState.streaming);
 
       // Emit token chunk
-      streamController.add(TokenChunkEvent(
-        requestId: reqId,
-        timestamp: DateTime.now(),
-        chunk: 'Hello',
-      ));
+      streamController.add(
+        TokenChunkEvent(
+          requestId: reqId,
+          timestamp: DateTime.now(),
+          chunk: 'Hello',
+        ),
+      );
       await Future.delayed(Duration.zero);
       expect(controller.activeStreamedMessage.value?.content, 'Hello');
       expect(controller.requestMetricsMap[reqId]?.firstToken, isNotNull);
 
       // Emit reasoning chunk
-      streamController.add(ReasoningChunkEvent(
-        requestId: reqId,
-        timestamp: DateTime.now(),
-        reasoning: 'Thinking...',
-      ));
+      streamController.add(
+        ReasoningChunkEvent(
+          requestId: reqId,
+          timestamp: DateTime.now(),
+          reasoning: 'Thinking...',
+        ),
+      );
       await Future.delayed(Duration.zero);
       expect(controller.activeStreamedMessage.value?.reasoning, 'Thinking...');
 
       // Emit usage
-      streamController.add(UsageEvent(
-        requestId: reqId,
-        timestamp: DateTime.now(),
-        promptTokens: 15,
-        completionTokens: 25,
-      ));
+      streamController.add(
+        UsageEvent(
+          requestId: reqId,
+          timestamp: DateTime.now(),
+          promptTokens: 15,
+          completionTokens: 25,
+        ),
+      );
 
       // Emit completed
-      streamController.add(CompletedEvent(
-        requestId: reqId,
-        timestamp: DateTime.now(),
-        fullText: 'Hello from AI',
-        finishReason: FinishReason.stop,
-      ));
-      
+      streamController.add(
+        CompletedEvent(
+          requestId: reqId,
+          timestamp: DateTime.now(),
+          fullText: 'Hello from AI',
+          finishReason: FinishReason.stop,
+        ),
+      );
+
       // Close stream
       await streamController.close();
       await sendFuture;
@@ -222,7 +238,10 @@ void main() {
     test('Draft text is persisted across session switches', () async {
       final streamController = StreamController<AIStreamEvent>();
       final fakeService = FakeStreamingAIService(streamController);
-      final controller = ChatController(aiService: fakeService, workspace: 'test');
+      final controller = ChatController(
+        aiService: fakeService,
+        workspace: 'test',
+      );
 
       await controller.initialize();
       final session1 = controller.state.session!;

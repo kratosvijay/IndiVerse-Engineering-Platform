@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 class WorkspaceSnapshot {
@@ -21,7 +20,8 @@ class WorkspaceSnapshot {
         'checksum': checksum,
       };
 
-  factory WorkspaceSnapshot.fromJson(Map<String, dynamic> json) => WorkspaceSnapshot(
+  factory WorkspaceSnapshot.fromJson(Map<String, dynamic> json) =>
+      WorkspaceSnapshot(
         id: json['id'] as String,
         path: json['path'] as String,
         createdAt: DateTime.parse(json['createdAt'] as String),
@@ -36,7 +36,8 @@ class WorkspaceSnapshotService {
 
   WorkspaceSnapshotService({this.baseDir = '.indiverse'});
 
-  Future<WorkspaceSnapshot?> captureSnapshot(String filePath, String requestId) async {
+  Future<WorkspaceSnapshot?> captureSnapshot(
+      String filePath, String requestId) async {
     final file = File(filePath);
     if (!await file.exists()) {
       return null;
