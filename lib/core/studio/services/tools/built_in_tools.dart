@@ -12,6 +12,7 @@ import 'workspace_intelligence_tools.dart';
 import 'knowledge_tools.dart';
 import 'planner_tools.dart';
 import 'generation_tools.dart';
+import 'verification_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -68,4 +69,13 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(GeneratorDiffTool());
   registry.register(GeneratorFilesTool());
   registry.register(GeneratorCheckpointTool());
+
+  // Verifier Tools
+  registry.register(VerifyAnalyzeTool());
+  registry.register(VerifyCompileTool());
+  registry.register(VerifyTestTool());
+  registry.register(VerifyFormatTool());
+  registry.register(VerifyFixTool());
+  registry.register(VerifyReportTool());
+  registry.register(VerifySummaryTool());
 }

@@ -11,6 +11,7 @@ import 'token_counter_widget.dart';
 import 'tool_call_widget.dart';
 import 'task_execution_widget.dart';
 import 'generation_progress_widget.dart';
+import 'verification_progress_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -140,7 +141,7 @@ class _ChatPanelState extends State<ChatPanel> {
                               TaskExecutionWidget(
                                 controller: widget.controller,
                               ),
-                              if (hasActiveSession)
+                              if (hasActiveSession) ...[
                                 const Padding(
                                   padding: EdgeInsets.all(8.0),
                                   child: GenerationProgressWidget(
@@ -152,6 +153,22 @@ class _ChatPanelState extends State<ChatPanel> {
                                     progress: 0.8,
                                   ),
                                 ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  child: VerificationProgressWidget(
+                                    activeStage: 'Self-Healing Run',
+                                    statusText: 'Running test pipeline self-healing...',
+                                    retryAttempt: 2,
+                                    maxRetries: 5,
+                                    historyLog: [
+                                      '✔ Step 1: Analyze Passed (140ms)',
+                                      '✔ Step 2: Compile Passed (210ms)',
+                                      '✖ Step 3: Test Failed: Uncaught error in tests (350ms)',
+                                      '⟳ Step 4: Self-Healing Repair Triggered (Scope: lines)',
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           );
                         },
