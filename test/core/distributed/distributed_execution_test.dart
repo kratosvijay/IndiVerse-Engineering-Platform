@@ -20,6 +20,7 @@ import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -59,7 +60,8 @@ void main() {
       expect(cluster.registry.getWorkers().first.id, equals('worker-1'));
 
       // Test stale eviction
-      cluster.heartbeatManager.heartbeats['worker-1'] = DateTime.now().subtract(const Duration(seconds: 15));
+      cluster.heartbeatManager.heartbeats['worker-1'] =
+          DateTime.now().subtract(const Duration(seconds: 15));
       cluster.evictStaleWorkers();
       expect(cluster.registry.getWorkers(), isEmpty);
     });
@@ -136,7 +138,8 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      final selectedPlan = scheduler.selectWorker([planner, generator], jobPlan);
+      final selectedPlan =
+          scheduler.selectWorker([planner, generator], jobPlan);
       expect(selectedPlan?.id, equals('w-planner'));
 
       final selectedGen = scheduler.selectWorker([planner, generator], jobGen);
@@ -168,7 +171,8 @@ void main() {
       );
 
       // Renew lease
-      final renewed = manager.renewLease(lease!.leaseId, const Duration(seconds: 10));
+      final renewed =
+          manager.renewLease(lease!.leaseId, const Duration(seconds: 10));
       expect(renewed?.renewCount, equals(1));
       expect(renewed?.leaseVersion, equals(2));
     });
@@ -195,7 +199,8 @@ void main() {
       expect(stats['image'], equals('indiverse-agent-worker:latest'));
     });
 
-    test('Cluster Tools execute via ToolExecutionService successfully', () async {
+    test('Cluster Tools execute via ToolExecutionService successfully',
+        () async {
       final registry = TestToolRegistry();
       registry.register(ClusterStatusTool());
       registry.register(ClusterWorkersTool());

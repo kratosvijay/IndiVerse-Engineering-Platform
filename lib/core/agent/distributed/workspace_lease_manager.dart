@@ -14,7 +14,8 @@ class WorkspaceLeaseManager {
 
     if (active != null && now.isBefore(active.expiresAt)) {
       if (active.ownerAgentId != ownerAgentId) {
-        throw Exception('Lease Conflict: resource $resourcePath is locked by agent ${active.ownerAgentId}.');
+        throw Exception(
+            'Lease Conflict: resource $resourcePath is locked by agent ${active.ownerAgentId}.');
       }
       // Re-acquired/renewed by same owner
       return renewLease(active.leaseId, duration);

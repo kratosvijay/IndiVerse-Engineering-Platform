@@ -19,6 +19,7 @@ import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -36,7 +37,11 @@ void main() {
         pipelineId: 'pipe-1',
         commitHash: 'sha-1',
         stages: const [
-          PipelineStage(id: 's-1', name: 'Lint', status: PipelineStageStatus.passed, duration: Duration(seconds: 1)),
+          PipelineStage(
+              id: 's-1',
+              name: 'Lint',
+              status: PipelineStageStatus.passed,
+              duration: Duration(seconds: 1)),
         ],
         createdAt: DateTime.now(),
         status: PipelineStageStatus.passed,
@@ -47,15 +52,21 @@ void main() {
       expect(run.status, equals(PipelineStageStatus.passed));
     });
 
-    test('DeploymentPolicy prevents production deployment without user approval', () {
+    test(
+        'DeploymentPolicy prevents production deployment without user approval',
+        () {
       const policy = ProductionApprovalPolicy();
 
-      expect(policy.evaluate(DeploymentTarget.staging, userApproved: false), isTrue);
-      expect(policy.evaluate(DeploymentTarget.production, userApproved: false), isFalse);
-      expect(policy.evaluate(DeploymentTarget.production, userApproved: true), isTrue);
+      expect(policy.evaluate(DeploymentTarget.staging, userApproved: false),
+          isTrue);
+      expect(policy.evaluate(DeploymentTarget.production, userApproved: false),
+          isFalse);
+      expect(policy.evaluate(DeploymentTarget.production, userApproved: true),
+          isTrue);
     });
 
-    test('DeploymentHealthMonitor records metrics and derives health score', () {
+    test('DeploymentHealthMonitor records metrics and derives health score',
+        () {
       const monitor = DeploymentHealthMonitor();
 
       final healthy = monitor.recordMetrics(
@@ -77,9 +88,12 @@ void main() {
       expect(unhealthy.healthScore, lessThan(7.0));
     });
 
-    test('RollbackManager creates rollback plans and completes restoration steps', () {
+    test(
+        'RollbackManager creates rollback plans and completes restoration steps',
+        () {
       final manager = RollbackManager();
-      final plan = manager.createPlan(deploymentId: 'dep-1', targetRevision: 'sha-stable');
+      final plan = manager.createPlan(
+          deploymentId: 'dep-1', targetRevision: 'sha-stable');
 
       expect(plan.deploymentId, equals('dep-1'));
       expect(plan.steps.first.completed, isFalse);
@@ -88,7 +102,8 @@ void main() {
       expect(executed.steps.first.completed, isTrue);
     });
 
-    test('PipelineOrchestrator coordinates providers and registers events', () async {
+    test('PipelineOrchestrator coordinates providers and registers events',
+        () async {
       final orch = PipelineOrchestrator();
       final run = await orch.triggerPipeline('sha-latest');
 
@@ -96,12 +111,14 @@ void main() {
       expect(orch.events.length, equals(1));
       expect(orch.events.first, isA<PipelineStarted>());
 
-      final depRes = orch.runDeployment('dep-1', DeploymentTarget.production, userApproved: false);
+      final depRes = orch.runDeployment('dep-1', DeploymentTarget.production,
+          userApproved: false);
       expect(depRes.status, equals(DeploymentStatus.pendingApproval));
       expect(orch.events.any((e) => e is ApprovalRequested), isTrue);
     });
 
-    test('Pipeline Tools execute via ToolExecutionService successfully', () async {
+    test('Pipeline Tools execute via ToolExecutionService successfully',
+        () async {
       final registry = TestToolRegistry();
       registry.register(PipelineTriggerTool());
       registry.register(PipelineStatusTool());

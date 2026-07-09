@@ -19,7 +19,9 @@ class ArchitectureDiffCalculator {
       removedServices: removed,
       addedRoutes: addedR,
       dependencyChanges: const [],
-      breakingChanges: removed.isNotEmpty ? const ['Removal of active service classes.'] : const [],
+      breakingChanges: removed.isNotEmpty
+          ? const ['Removal of active service classes.']
+          : const [],
     );
   }
 }

@@ -47,7 +47,8 @@ class PipelineOrchestrator {
       ),
     );
 
-    final res = deploymentEngine.deploy(deploymentId, target, userApproved: userApproved);
+    final res = deploymentEngine.deploy(deploymentId, target,
+        userApproved: userApproved);
 
     if (res.status == DeploymentStatus.pendingApproval) {
       events.add(
@@ -95,14 +96,17 @@ class PipelineOrchestrator {
 class PipelineOrchestratorRegistry {
   static PipelineOrchestrator? _active;
   static PipelineOrchestrator? get active => _active;
-  static set active(PipelineOrchestrator? orchestrator) => _active = orchestrator;
+  static set active(PipelineOrchestrator? orchestrator) =>
+      _active = orchestrator;
 
   static final Map<String, PipelineOrchestrator> _registry = {};
   static void register(String workspaceId, PipelineOrchestrator orchestrator) {
     _registry[workspaceId] = orchestrator;
     _active ??= orchestrator;
   }
-  static PipelineOrchestrator? get(String workspaceId) => _registry[workspaceId];
+
+  static PipelineOrchestrator? get(String workspaceId) =>
+      _registry[workspaceId];
   static void clear() {
     _registry.clear();
     _active = null;

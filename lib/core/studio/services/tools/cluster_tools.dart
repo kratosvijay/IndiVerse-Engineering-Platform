@@ -84,7 +84,9 @@ class ClusterWorkersTool implements ToolHandler {
     return ToolCallResult(
       success: true,
       output: ToolOutput(
-        data: {'workers': [worker.toJson()]},
+        data: {
+          'workers': [worker.toJson()]
+        },
         displayText: '1 worker registered in cluster.',
         mimeType: 'application/json',
       ),
@@ -189,7 +191,11 @@ class ClusterLogsTool implements ToolHandler {
     return ToolCallResult(
       success: true,
       output: const ToolOutput(
-        data: {'logs': ['[Cluster] [2026-07-09T22:35:00] Worker worker-1 registered.']},
+        data: {
+          'logs': [
+            '[Cluster] [2026-07-09T22:35:00] Worker worker-1 registered.'
+          ]
+        },
         displayText: 'Logs loaded.',
         mimeType: 'application/json',
       ),

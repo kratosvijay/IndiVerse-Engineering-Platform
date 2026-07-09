@@ -197,7 +197,8 @@ class PipelineDeployTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'pipeline.deploy',
     name: 'Deploy Release package',
-    description: 'Triggers target environment deployments (Production requires approval).',
+    description:
+        'Triggers target environment deployments (Production requires approval).',
     category: ToolCategory.workspace,
     requiresPermission: false,
     readOnly: false,
@@ -210,7 +211,8 @@ class PipelineDeployTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final deploymentId = request.arguments['deploymentId'] as String? ?? 'dep-latest';
+    final deploymentId =
+        request.arguments['deploymentId'] as String? ?? 'dep-latest';
     final targetStr = request.arguments['target'] as String? ?? 'staging';
     final approved = request.arguments['userApproved'] as bool? ?? false;
 
@@ -223,7 +225,8 @@ class PipelineDeployTool implements ToolHandler {
         PipelineOrchestratorRegistry.get(context.workspaceId) ??
         PipelineOrchestrator();
 
-    final result = orch.runDeployment(deploymentId, target, userApproved: approved);
+    final result =
+        orch.runDeployment(deploymentId, target, userApproved: approved);
 
     return ToolCallResult(
       success: true,
@@ -255,8 +258,10 @@ class PipelineRollbackTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final deploymentId = request.arguments['deploymentId'] as String? ?? 'dep-latest';
-    final revision = request.arguments['targetRevision'] as String? ?? 'sha-stable';
+    final deploymentId =
+        request.arguments['deploymentId'] as String? ?? 'dep-latest';
+    final revision =
+        request.arguments['targetRevision'] as String? ?? 'sha-stable';
 
     final orch = PipelineOrchestratorRegistry.active ??
         PipelineOrchestratorRegistry.get(context.workspaceId) ??

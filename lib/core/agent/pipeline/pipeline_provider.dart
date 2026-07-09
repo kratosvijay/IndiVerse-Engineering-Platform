@@ -19,9 +19,21 @@ class LocalPipelineProvider implements PipelineProvider {
       pipelineId: 'pipe-main',
       commitHash: commitHash,
       stages: const [
-        PipelineStage(id: 'stage-1', name: 'Lint', status: PipelineStageStatus.passed, duration: Duration(seconds: 2)),
-        PipelineStage(id: 'stage-2', name: 'Analyze', status: PipelineStageStatus.passed, duration: Duration(seconds: 3)),
-        PipelineStage(id: 'stage-3', name: 'Test', status: PipelineStageStatus.passed, duration: Duration(seconds: 5)),
+        PipelineStage(
+            id: 'stage-1',
+            name: 'Lint',
+            status: PipelineStageStatus.passed,
+            duration: Duration(seconds: 2)),
+        PipelineStage(
+            id: 'stage-2',
+            name: 'Analyze',
+            status: PipelineStageStatus.passed,
+            duration: Duration(seconds: 3)),
+        PipelineStage(
+            id: 'stage-3',
+            name: 'Test',
+            status: PipelineStageStatus.passed,
+            duration: Duration(seconds: 5)),
       ],
       createdAt: DateTime.now(),
       status: PipelineStageStatus.passed,
@@ -53,7 +65,13 @@ class LocalPipelineProvider implements PipelineProvider {
         id: run.id,
         pipelineId: run.pipelineId,
         commitHash: run.commitHash,
-        stages: run.stages.map((s) => PipelineStage(id: s.id, name: s.name, status: PipelineStageStatus.cancelled, duration: s.duration)).toList(),
+        stages: run.stages
+            .map((s) => PipelineStage(
+                id: s.id,
+                name: s.name,
+                status: PipelineStageStatus.cancelled,
+                duration: s.duration))
+            .toList(),
         createdAt: run.createdAt,
         status: PipelineStageStatus.cancelled,
       );
@@ -67,7 +85,8 @@ class LocalPipelineProvider implements PipelineProvider {
         id: 'art-1',
         name: 'platform_report.json',
         sizeInBytes: 1024,
-        downloadUrl: 'https://storage.googleapis.com/indiverse/artifacts/report.json',
+        downloadUrl:
+            'https://storage.googleapis.com/indiverse/artifacts/report.json',
       )
     ];
   }

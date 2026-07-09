@@ -11,7 +11,8 @@ class ProjectConventionEngine {
   List<ProjectConvention> scan(String sourceCode) {
     final list = <ProjectConvention>[];
 
-    if (sourceCode.contains('class') && sourceCode.contains('Controller extends GetxController')) {
+    if (sourceCode.contains('class') &&
+        sourceCode.contains('Controller extends GetxController')) {
       final conv = const ProjectConvention(
         type: ConventionType.stateManagement,
         name: 'GetX Controller Structure',
@@ -22,7 +23,8 @@ class ProjectConventionEngine {
       learn(conv);
     }
 
-    if (sourceCode.contains('class') && sourceCode.contains('extends StatelessWidget')) {
+    if (sourceCode.contains('class') &&
+        sourceCode.contains('extends StatelessWidget')) {
       final conv = const ProjectConvention(
         type: ConventionType.folderLayout,
         name: 'Stateless UI Component',

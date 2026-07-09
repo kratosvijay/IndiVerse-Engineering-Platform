@@ -43,7 +43,8 @@ class DistributedScheduler {
     double highestScore = -1.0;
 
     for (final worker in workers) {
-      if (worker.state == WorkerState.offline || worker.state == WorkerState.failed) {
+      if (worker.state == WorkerState.offline ||
+          worker.state == WorkerState.failed) {
         continue;
       }
 

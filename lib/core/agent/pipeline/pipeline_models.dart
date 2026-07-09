@@ -1,18 +1,6 @@
-enum DeploymentTarget {
-  local,
-  development,
-  qa,
-  staging,
-  production
-}
+enum DeploymentTarget { local, development, qa, staging, production }
 
-enum PipelineStageStatus {
-  pending,
-  running,
-  passed,
-  failed,
-  cancelled
-}
+enum PipelineStageStatus { pending, running, passed, failed, cancelled }
 
 enum DeploymentStatus {
   planning,
@@ -85,11 +73,11 @@ class PipelineLog {
 
 class HealthSnapshot {
   final double availability; // 0.0 to 1.0
-  final double crashRate;      // percentage
-  final double errorRate;      // percentage
+  final double crashRate; // percentage
+  final double errorRate; // percentage
   final double responseTimeMs;
-  final double resourceUsage;   // CPU/memory percentage
-  final double healthScore;     // derived 0.0 to 10.0
+  final double resourceUsage; // CPU/memory percentage
+  final double healthScore; // derived 0.0 to 10.0
   final DateTime timestamp;
 
   const HealthSnapshot({

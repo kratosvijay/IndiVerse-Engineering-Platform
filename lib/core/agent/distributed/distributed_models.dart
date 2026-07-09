@@ -1,25 +1,8 @@
-enum CloudProviderType {
-  local,
-  docker,
-  ssh,
-  kubernetes,
-  vm
-}
+enum CloudProviderType { local, docker, ssh, kubernetes, vm }
 
-enum LeaseType {
-  workspace,
-  file,
-  section
-}
+enum LeaseType { workspace, file, section }
 
-enum WorkerState {
-  starting,
-  healthy,
-  busy,
-  draining,
-  offline,
-  failed
-}
+enum WorkerState { starting, healthy, busy, draining, offline, failed }
 
 enum ClusterJobState {
   queued,

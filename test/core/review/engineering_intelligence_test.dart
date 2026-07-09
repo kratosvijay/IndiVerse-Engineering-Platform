@@ -22,13 +22,15 @@ import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
 }
 
 void main() {
-  group('Sprint 22.8 - Engineering Intelligence & Human Collaboration Tests', () {
+  group('Sprint 22.8 - Engineering Intelligence & Human Collaboration Tests',
+      () {
     test('EngineeringReviewEngine runs analyzers and returns scores', () async {
       final engine = EngineeringReviewEngine(
         analyzers: [
@@ -105,7 +107,8 @@ void main() {
     });
 
     test('HumanApprovalEngine gates and processes outcomes', () {
-      final engine = HumanApprovalEngine(policies: [RiskPolicy(), SecurityPolicy()]);
+      final engine =
+          HumanApprovalEngine(policies: [RiskPolicy(), SecurityPolicy()]);
       const request = ApprovalRequest(
         requestId: 'req-1',
         title: 'Large Code Change',
@@ -125,7 +128,8 @@ void main() {
       expect(processed.status, equals(ApprovalStatus.approved));
     });
 
-    test('ProjectConventionEngine classifies state managers and view styles', () {
+    test('ProjectConventionEngine classifies state managers and view styles',
+        () {
       final engine = ProjectConventionEngine();
       const code = '''
         class AuthController extends GetxController {}
@@ -137,7 +141,8 @@ void main() {
       expect(conventions.first.type, equals(ConventionType.stateManagement));
     });
 
-    test('ArchitectureDiffCalculator detects added and removed class paths', () {
+    test('ArchitectureDiffCalculator detects added and removed class paths',
+        () {
       const calc = ArchitectureDiffCalculator();
       final diff = calc.calculateDiff(
         oldClasses: const ['AuthService'],
@@ -165,7 +170,8 @@ void main() {
       expect(retrieved?.whyExplanation, contains('CVEs'));
     });
 
-    test('Review Tools execute via ToolExecutionService successfully', () async {
+    test('Review Tools execute via ToolExecutionService successfully',
+        () async {
       final registry = TestToolRegistry();
       registry.register(ReviewArchitectureTool());
       registry.register(ReviewSecurityTool());

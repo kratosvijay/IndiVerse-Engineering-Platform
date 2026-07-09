@@ -8,8 +8,14 @@ class RollbackManager {
     required String targetRevision,
   }) {
     final steps = [
-      const RollbackStep(id: 'step-1', type: RollbackStepType.revertGitBranch, target: 'Revert Git to target sha'),
-      const RollbackStep(id: 'step-2', type: RollbackStepType.restoreDbSnapshot, target: 'Restore DB snapshot'),
+      const RollbackStep(
+          id: 'step-1',
+          type: RollbackStepType.revertGitBranch,
+          target: 'Revert Git to target sha'),
+      const RollbackStep(
+          id: 'step-2',
+          type: RollbackStepType.restoreDbSnapshot,
+          target: 'Restore DB snapshot'),
     ];
 
     final plan = RollbackPlan(
@@ -27,7 +33,8 @@ class RollbackManager {
   // Executes the rollback plan steps
   RollbackPlan execute(RollbackPlan plan) {
     final executedSteps = plan.steps
-        .map((s) => RollbackStep(id: s.id, type: s.type, target: s.target, completed: true))
+        .map((s) => RollbackStep(
+            id: s.id, type: s.type, target: s.target, completed: true))
         .toList();
 
     final updatedPlan = RollbackPlan(

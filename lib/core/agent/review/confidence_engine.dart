@@ -12,7 +12,14 @@ class ConfidenceEngine {
     required double knowledge,
     required double reflection,
   }) {
-    final overall = (planning + generation + verification + repair + deployment + knowledge + reflection) / 7.0;
+    final overall = (planning +
+            generation +
+            verification +
+            repair +
+            deployment +
+            knowledge +
+            reflection) /
+        7.0;
     return ConfidenceScoreReport(
       planning: planning,
       generation: generation,
