@@ -14,6 +14,7 @@ import 'planner_tools.dart';
 import 'generation_tools.dart';
 import 'verification_tools.dart';
 import 'project_tools.dart';
+import 'git_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -92,4 +93,16 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(ProjectHistoryTool());
   registry.register(ProjectRollbackTool());
   registry.register(ProjectCheckpointTool());
+
+  // Git Tools
+  registry.register(GitCreateBranchTool());
+  registry.register(GitCommitTool());
+  registry.register(GitPlatformDiffTool());
+  registry.register(GitLogTool());
+  registry.register(GitCheckoutTool());
+  registry.register(GitMergeTool());
+  registry.register(GitRebaseTool());
+  registry.register(GitRollbackTool());
+  registry.register(GitPullRequestTool());
+  registry.register(GitPlatformStatusTool());
 }

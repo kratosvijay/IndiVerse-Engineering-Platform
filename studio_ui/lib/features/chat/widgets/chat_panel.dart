@@ -13,6 +13,7 @@ import 'task_execution_widget.dart';
 import 'generation_progress_widget.dart';
 import 'verification_progress_widget.dart';
 import 'project_dashboard_widget.dart';
+import 'git_dashboard_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -187,6 +188,19 @@ class _ChatPanelState extends State<ChatPanel> {
                                       'TaskStarted: task-1: Building symbol indices',
                                       'TaskCompleted: task-1 finished successfully',
                                     ],
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  child: GitDashboardWidget(
+                                    activeBranch: 'feature/agent-auth',
+                                    baseBranch: 'main',
+                                    purpose: 'feature',
+                                    latestCommitHash: 'sha-1',
+                                    latestCommitMsg: 'feat(auth): implement OAuth login',
+                                    filesChangedCount: 3,
+                                    passesGates: true,
+                                    hasPRDraft: true,
                                   ),
                                 ),
                               ],
