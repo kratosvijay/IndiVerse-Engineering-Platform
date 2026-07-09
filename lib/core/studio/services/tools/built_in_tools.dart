@@ -13,6 +13,7 @@ import 'knowledge_tools.dart';
 import 'planner_tools.dart';
 import 'generation_tools.dart';
 import 'verification_tools.dart';
+import 'project_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -78,4 +79,17 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(VerifyFixTool());
   registry.register(VerifyReportTool());
   registry.register(VerifySummaryTool());
+
+  // Project Tools
+  registry.register(ProjectCreateTool());
+  registry.register(ProjectOpenTool());
+  registry.register(ProjectPlanTool());
+  registry.register(ProjectExecuteTool());
+  registry.register(ProjectPauseTool());
+  registry.register(ProjectResumeTool());
+  registry.register(ProjectStatusTool());
+  registry.register(ProjectSummaryTool());
+  registry.register(ProjectHistoryTool());
+  registry.register(ProjectRollbackTool());
+  registry.register(ProjectCheckpointTool());
 }

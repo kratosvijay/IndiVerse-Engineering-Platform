@@ -12,6 +12,7 @@ import 'tool_call_widget.dart';
 import 'task_execution_widget.dart';
 import 'generation_progress_widget.dart';
 import 'verification_progress_widget.dart';
+import 'project_dashboard_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -165,6 +166,26 @@ class _ChatPanelState extends State<ChatPanel> {
                                       '✔ Step 2: Compile Passed (210ms)',
                                       '✖ Step 3: Test Failed: Uncaught error in tests (350ms)',
                                       '⟳ Step 4: Self-Healing Repair Triggered (Scope: lines)',
+                                    ],
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  child: ProjectDashboardWidget(
+                                    activeProject: 'IndiVerse Engine Platform',
+                                    activeEpic: 'Epic 1: Workspace Intelligence',
+                                    activeMilestone: 'Milestone 2: Graph Resolving',
+                                    currentTask: 'Task 3: Resolving symbols dependency graph',
+                                    projectState: 'executing',
+                                    completionPercentage: 0.6,
+                                    completedTasks: 3,
+                                    remainingTasks: 2,
+                                    velocity: 1.5,
+                                    timelineEvents: [
+                                      'ProjectCreated: Initialized roadmap',
+                                      'MilestoneStarted: milestone-1: Resolving dependencies',
+                                      'TaskStarted: task-1: Building symbol indices',
+                                      'TaskCompleted: task-1 finished successfully',
                                     ],
                                   ),
                                 ),
