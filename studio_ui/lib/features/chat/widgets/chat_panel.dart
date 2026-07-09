@@ -16,6 +16,7 @@ import 'project_dashboard_widget.dart';
 import 'git_dashboard_widget.dart';
 import 'pipeline_dashboard_widget.dart';
 import 'cluster_dashboard_widget.dart';
+import 'review_dashboard_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -253,6 +254,20 @@ class _ChatPanelState extends State<ChatPanel> {
                                         averageMemory: 45.0,
                                         activeLeases: 0,
                                         knowledgeSyncStatus: 'synced',
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: ReviewDashboardWidget(
+                                        architectureScore: 9.5,
+                                        securityScore: 10.0,
+                                        performanceScore: 9.0,
+                                        overallConfidence: 0.92,
+                                        pendingApprovalsCount: 0,
+                                        complianceStatus: 'compliant',
                                       ),
                                     ),
                                   ],

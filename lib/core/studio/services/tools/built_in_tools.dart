@@ -17,6 +17,7 @@ import 'project_tools.dart';
 import 'git_tools.dart';
 import 'pipeline_tools.dart';
 import 'cluster_tools.dart';
+import 'review_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -130,4 +131,31 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(ClusterUnregisterTool());
   registry.register(ClusterLeasesTool());
   registry.register(ClusterScaleTool());
+
+  // Review Tools
+  registry.register(ReviewArchitectureTool());
+  registry.register(ReviewSecurityTool());
+  registry.register(ReviewPerformanceTool());
+  registry.register(ReviewMaintainabilityTool());
+  registry.register(ReviewTestabilityTool());
+  registry.register(ReviewStyleTool());
+  registry.register(ReviewDocumentationTool());
+  registry.register(ReviewSummaryTool());
+  registry.register(ReviewExplainTool());
+  registry.register(ReviewCompareTool());
+  registry.register(DecisionExplainTool());
+  registry.register(DecisionHistoryTool());
+  registry.register(DecisionReplayTool());
+  registry.register(DecisionCompareTool());
+  registry.register(ApprovalPendingTool());
+  registry.register(ApprovalRespondTool());
+  registry.register(ApprovalHistoryTool());
+  registry.register(ApprovalCancelTool());
+  registry.register(ConventionsScanTool());
+  registry.register(ConventionsLearnTool());
+  registry.register(ConventionsExportTool());
+  registry.register(ConventionsImportTool());
+  registry.register(ArchitectureDiffTool());
+  registry.register(ConfidenceReportTool());
+  registry.register(ConfidenceTimelineTool());
 }
