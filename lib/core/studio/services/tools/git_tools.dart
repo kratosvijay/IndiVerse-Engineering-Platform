@@ -23,7 +23,8 @@ class GitCreateBranchTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final name = request.arguments['branchName'] as String? ?? 'feature/agent-1';
+    final name =
+        request.arguments['branchName'] as String? ?? 'feature/agent-1';
 
     final gitHistory = GitHistoryRegistry.active ??
         GitHistoryRegistry.get(context.workspaceId) ??
@@ -57,7 +58,8 @@ class GitCommitTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'git.commit',
     name: 'Commit Code Modifications',
-    description: 'Stages and commits modifications after checking verification gates.',
+    description:
+        'Stages and commits modifications after checking verification gates.',
     category: ToolCategory.workspace,
     requiresPermission: false,
     readOnly: false,
@@ -70,7 +72,8 @@ class GitCommitTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final message = request.arguments['message'] as String? ?? 'feat(auth): add OAuth login';
+    final message = request.arguments['message'] as String? ??
+        'feat(auth): add OAuth login';
 
     // Gate checks
     final policyEngine = const GitPolicyEngine();
@@ -186,7 +189,9 @@ class GitLogTool implements ToolHandler {
     return ToolCallResult(
       success: true,
       output: ToolOutput(
-        data: {'commits': gitHistory.commitsHistory.map((c) => c.toJson()).toList()},
+        data: {
+          'commits': gitHistory.commitsHistory.map((c) => c.toJson()).toList()
+        },
         displayText: 'Commits list loaded.',
         mimeType: 'application/json',
       ),
@@ -346,7 +351,8 @@ class GitPullRequestTool implements ToolHandler {
     final stopwatch = Stopwatch()..start();
 
     final draft = PullRequestDraft(
-      title: request.arguments['title'] as String? ?? 'feat(auth): OAuth integration',
+      title: request.arguments['title'] as String? ??
+          'feat(auth): OAuth integration',
       summary: 'Adds login screen view widgets and controllers.',
       changes: const ['Create auth_panel.dart', 'Create auth_controller.dart'],
       risks: const ['Migration dependencies key conflicts'],

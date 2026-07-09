@@ -12,15 +12,19 @@ class BranchPolicy implements GitPolicy {
   String get name => 'BranchPolicy';
 
   @override
-  VerificationGateResult evaluate(GitBranch branch, {double reviewScore = 9.5}) {
+  VerificationGateResult evaluate(GitBranch branch,
+      {double reviewScore = 9.5}) {
     if (branch.name == 'main' || branch.name == 'master') {
       return const VerificationGateResult(
         passesGates: false,
-        errors: ['Policy Violation: direct commits to main branch are forbidden.'],
+        errors: [
+          'Policy Violation: direct commits to main branch are forbidden.'
+        ],
         overallScore: 0.0,
       );
     }
-    return const VerificationGateResult(passesGates: true, errors: [], overallScore: 10.0);
+    return const VerificationGateResult(
+        passesGates: true, errors: [], overallScore: 10.0);
   }
 }
 
@@ -31,15 +35,19 @@ class VerificationPolicy implements GitPolicy {
   String get name => 'VerificationPolicy';
 
   @override
-  VerificationGateResult evaluate(GitBranch branch, {double reviewScore = 9.5}) {
+  VerificationGateResult evaluate(GitBranch branch,
+      {double reviewScore = 9.5}) {
     if (reviewScore < 7.0) {
       return VerificationGateResult(
         passesGates: false,
-        errors: ['Verification Policy Gate Failed: review score $reviewScore is below threshold 7.0.'],
+        errors: [
+          'Verification Policy Gate Failed: review score $reviewScore is below threshold 7.0.'
+        ],
         overallScore: reviewScore,
       );
     }
-    return VerificationGateResult(passesGates: true, errors: [], overallScore: reviewScore);
+    return VerificationGateResult(
+        passesGates: true, errors: [], overallScore: reviewScore);
   }
 }
 
@@ -53,7 +61,8 @@ class GitPolicyEngine {
     ],
   });
 
-  VerificationGateResult checkCommitGates(GitBranch branch, double reviewScore) {
+  VerificationGateResult checkCommitGates(
+      GitBranch branch, double reviewScore) {
     final errors = <String>[];
     var lowestScore = 10.0;
 

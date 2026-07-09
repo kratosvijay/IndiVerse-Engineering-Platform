@@ -60,7 +60,9 @@ class ProjectDashboardWidget extends StatelessWidget {
                 child: Text(
                   projectState.toUpperCase(),
                   style: TextStyle(
-                    color: projectState == 'executing' ? Colors.greenAccent : Colors.orangeAccent,
+                    color: projectState == 'executing'
+                        ? Colors.greenAccent
+                        : Colors.orangeAccent,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
@@ -124,21 +126,26 @@ class ProjectDashboardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          ...timelineEvents.map((evt) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.bolt, size: 12, color: Colors.blueAccent),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        evt,
-                        style: const TextStyle(color: Colors.white30, fontSize: 11),
+          ...timelineEvents.map(
+            (evt) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.bolt, size: 12, color: Colors.blueAccent),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      evt,
+                      style: const TextStyle(
+                        color: Colors.white30,
+                        fontSize: 11,
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

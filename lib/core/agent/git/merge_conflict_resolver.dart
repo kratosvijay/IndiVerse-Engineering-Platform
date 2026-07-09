@@ -14,7 +14,8 @@ class MergeConflictResolver {
     }
 
     final hasConflictBlock = conflict.conflictContent.contains('=======');
-    if (hasConflictBlock && conflict.conflictContent.contains('// Auto-resolvable')) {
+    if (hasConflictBlock &&
+        conflict.conflictContent.contains('// Auto-resolvable')) {
       // Simulates resolution by choosing the inbound head modification block
       final resolved = conflict.conflictContent
           .replaceAll(RegExp(r'<<<<<<<[\s\S]*?======='), '')

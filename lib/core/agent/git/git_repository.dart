@@ -30,7 +30,8 @@ class LocalGitRepository implements GitRepository {
   Future<GitExecutionContext> getContext() async {
     return GitExecutionContext(
       activeBranch: activeBranch,
-      remoteUrl: 'https://github.com/kratosvijay/IndiVerse-Engineering-Platform.git',
+      remoteUrl:
+          'https://github.com/kratosvijay/IndiVerse-Engineering-Platform.git',
       localConfigs: const {
         'user.name': 'IndiVerse AI',
         'user.email': 'ai@indiverse.io',

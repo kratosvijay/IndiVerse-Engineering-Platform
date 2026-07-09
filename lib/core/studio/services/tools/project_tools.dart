@@ -72,7 +72,8 @@ class ProjectOpenTool implements ToolHandler {
       success: true,
       output: ToolOutput(
         data: plan?.toJson() ?? {},
-        displayText: plan != null ? 'Project $id opened.' : 'Project $id not found.',
+        displayText:
+            plan != null ? 'Project $id opened.' : 'Project $id not found.',
         mimeType: 'application/json',
       ),
       duration: stopwatch.elapsed,
@@ -316,7 +317,8 @@ class ProjectHistoryTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final projectId = request.arguments['projectId'] as String? ?? 'proj-default';
+    final projectId =
+        request.arguments['projectId'] as String? ?? 'proj-default';
 
     final manager = ProjectExecutionManagerRegistry.active ??
         ProjectExecutionManagerRegistry.get(context.workspaceId) ??
@@ -341,7 +343,8 @@ class ProjectRollbackTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'project.rollback',
     name: 'Rollback Project Checkpoint',
-    description: 'Rolls back workspace state to a specific checkpoint snapshot.',
+    description:
+        'Rolls back workspace state to a specific checkpoint snapshot.',
     category: ToolCategory.workspace,
     requiresPermission: false,
     readOnly: false,
@@ -354,14 +357,16 @@ class ProjectRollbackTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final projectId = request.arguments['projectId'] as String? ?? 'proj-default';
+    final projectId =
+        request.arguments['projectId'] as String? ?? 'proj-default';
     final checkpointId = request.arguments['checkpointId'] as String? ?? '';
 
     final manager = ProjectExecutionManagerRegistry.active ??
         ProjectExecutionManagerRegistry.get(context.workspaceId) ??
         ProjectExecutionManager(repository: JsonProjectRepository());
 
-    final checkpoint = await manager.checkpointService.rollback(projectId, checkpointId);
+    final checkpoint =
+        await manager.checkpointService.rollback(projectId, checkpointId);
 
     return ToolCallResult(
       success: true,
@@ -395,8 +400,10 @@ class ProjectCheckpointTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final projectId = request.arguments['projectId'] as String? ?? 'proj-default';
-    final checkpointId = request.arguments['checkpointId'] as String? ?? 'chk-1';
+    final projectId =
+        request.arguments['projectId'] as String? ?? 'proj-default';
+    final checkpointId =
+        request.arguments['checkpointId'] as String? ?? 'chk-1';
 
     final manager = ProjectExecutionManagerRegistry.active ??
         ProjectExecutionManagerRegistry.get(context.workspaceId) ??

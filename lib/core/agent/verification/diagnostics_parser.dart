@@ -12,7 +12,9 @@ class DiagnosticsParser {
 
       // Matches typical dart analyze output:
       // info - lib/main.dart:10:5 - Unused variable. - unused_local_variable
-      final match = RegExp(r'^\s*(error|warning|info|hint)\s*-\s*([^:]+):(\d+):(\d+)\s*-\s*(.+)\s*-\s*(.+)$').firstMatch(line);
+      final match = RegExp(
+              r'^\s*(error|warning|info|hint)\s*-\s*([^:]+):(\d+):(\d+)\s*-\s*(.+)\s*-\s*(.+)$')
+          .firstMatch(line);
       if (match != null) {
         final severity = match.group(1)!;
         final file = match.group(2)!;

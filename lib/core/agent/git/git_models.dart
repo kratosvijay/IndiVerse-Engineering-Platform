@@ -1,10 +1,4 @@
-enum GitBranchPurpose {
-  feature,
-  bugfix,
-  hotfix,
-  refactor,
-  experiment
-}
+enum GitBranchPurpose { feature, bugfix, hotfix, refactor, experiment }
 
 class GitBranch {
   final String name;

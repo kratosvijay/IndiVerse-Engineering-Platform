@@ -22,8 +22,9 @@ class LocalVerificationRunner implements VerificationRunner {
   @override
   Future<VerificationReport> analyze() async {
     final issues = parser.parse(mockAnalyzeOutput, origin: 'analyzer');
-    final status = issues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
-    
+    final status =
+        issues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
+
     return VerificationReport(
       status: status,
       issues: issues,
@@ -50,7 +51,8 @@ class LocalVerificationRunner implements VerificationRunner {
   @override
   Future<VerificationReport> compile() async {
     final issues = parser.parse(mockCompileOutput, origin: 'compiler');
-    final status = issues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
+    final status =
+        issues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
 
     return VerificationReport(
       status: status,
@@ -78,7 +80,8 @@ class LocalVerificationRunner implements VerificationRunner {
   @override
   Future<VerificationReport> test() async {
     final issues = parser.parse(mockTestOutput, origin: 'test');
-    final status = issues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
+    final status =
+        issues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
 
     return VerificationReport(
       status: status,
@@ -122,14 +125,16 @@ class VerificationEngine {
     }
 
     final testRep = await runner.test();
-    
+
     final allIssues = [
       ...analyzeRep.issues,
       ...compileRep.issues,
       ...testRep.issues,
     ];
 
-    final status = allIssues.isEmpty ? VerificationStatus.passed : VerificationStatus.failed;
+    final status = allIssues.isEmpty
+        ? VerificationStatus.passed
+        : VerificationStatus.failed;
 
     return VerificationReport(
       status: status,
@@ -162,6 +167,7 @@ class VerificationEngineRegistry {
     _registry[workspaceId] = engine;
     _active ??= engine;
   }
+
   static VerificationEngine? get(String workspaceId) => _registry[workspaceId];
   static void clear() {
     _registry.clear();

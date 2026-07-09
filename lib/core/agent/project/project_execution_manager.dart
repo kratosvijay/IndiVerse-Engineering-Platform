@@ -59,7 +59,8 @@ class ProjectExecutionManager {
     await repository.saveProject(updated);
 
     if (state == ProjectState.completed) {
-      _emitEvent(ProjectFinished(projectId: current.id, timestamp: DateTime.now()));
+      _emitEvent(
+          ProjectFinished(projectId: current.id, timestamp: DateTime.now()));
     }
   }
 
@@ -78,7 +79,9 @@ class ProjectExecutionManagerRegistry {
     _registry[workspaceId] = manager;
     _active ??= manager;
   }
-  static ProjectExecutionManager? get(String workspaceId) => _registry[workspaceId];
+
+  static ProjectExecutionManager? get(String workspaceId) =>
+      _registry[workspaceId];
   static void clear() {
     _registry.clear();
     _active = null;

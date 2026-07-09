@@ -19,6 +19,7 @@ import 'package:indiverse_developer_platform/platform_sdk/agent_api.dart';
 import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -55,7 +56,8 @@ void main() {
       expect(patch.edits, hasLength(1));
     });
 
-    test('PatchBuilder maps GeneratedPatch lists to WorkspaceEdit structures', () async {
+    test('PatchBuilder maps GeneratedPatch lists to WorkspaceEdit structures',
+        () async {
       final patch = await generator.generatePatch(
         filePath: 'lib/main.dart',
         originalText: 'void main() {}',
@@ -67,14 +69,17 @@ void main() {
       expect(workspaceEdit.changes['lib/main.dart']!, hasLength(1));
     });
 
-    test('ValidationPipeline flags syntax, import, and clean architecture errors', () async {
+    test(
+        'ValidationPipeline flags syntax, import, and clean architecture errors',
+        () async {
       final invalidSyntaxPatch = await generator.generatePatch(
         filePath: 'lib/invalid.dart',
         originalText: '',
         generatedText: 'void run() { invalid syntax',
       );
       final syntaxErrors = await validationPipeline.run(invalidSyntaxPatch);
-      expect(syntaxErrors, contains('Syntax error: dangling brackets detected.'));
+      expect(
+          syntaxErrors, contains('Syntax error: dangling brackets detected.'));
 
       final invalidArchitecturePatch = await generator.generatePatch(
         filePath: 'lib/domain/entities/user.dart',
@@ -82,10 +87,15 @@ void main() {
         generatedText: 'import "package:flutter/widgets.dart";\nclass User {}',
       );
       final archErrors = await validationPipeline.run(invalidArchitecturePatch);
-      expect(archErrors, contains('Clean Architecture Warning: Domain layer must not import UI packages.'));
+      expect(
+          archErrors,
+          contains(
+              'Clean Architecture Warning: Domain layer must not import UI packages.'));
     });
 
-    test('ReviewEngine evaluates performance, security, and generates decisions', () async {
+    test(
+        'ReviewEngine evaluates performance, security, and generates decisions',
+        () async {
       final securePatch = await generator.generatePatch(
         filePath: 'lib/service.dart',
         originalText: '',
@@ -107,7 +117,8 @@ void main() {
       expect(reviewInsecure.overallDecision, equals('Regenerate'));
     });
 
-    test('Generator tools generate, patch, review, and rollback successfully', () async {
+    test('Generator tools generate, patch, review, and rollback successfully',
+        () async {
       final registry = TestToolRegistry();
       registry.register(GeneratorGenerateTool());
       registry.register(GeneratorPatchTool());

@@ -1,30 +1,10 @@
 import '../../diagnostics/diagnostic_models.dart';
 
-enum VerificationStage {
-  analyzing,
-  compiling,
-  testing,
-  linting,
-  reviewing
-}
+enum VerificationStage { analyzing, compiling, testing, linting, reviewing }
 
-enum VerificationStatus {
-  queued,
-  running,
-  passed,
-  warning,
-  failed,
-  cancelled
-}
+enum VerificationStatus { queued, running, passed, warning, failed, cancelled }
 
-enum RepairScope {
-  entireProject,
-  module,
-  file,
-  className,
-  functionName,
-  lines
-}
+enum RepairScope { entireProject, module, file, className, functionName, lines }
 
 class VerificationIssue {
   final String severity; // e.g. "error", "warning", "info"

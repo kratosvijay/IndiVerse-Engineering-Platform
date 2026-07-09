@@ -1,4 +1,3 @@
-
 class CommitMessageGenerator {
   const CommitMessageGenerator();
 

@@ -20,13 +20,15 @@ import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
 }
 
 void main() {
-  group('Sprint 22.4 - Project Manager & Autonomous Task Orchestration Tests', () {
+  group('Sprint 22.4 - Project Manager & Autonomous Task Orchestration Tests',
+      () {
     late JsonProjectRepository repository;
     late ProjectExecutionManager manager;
 
@@ -37,7 +39,8 @@ void main() {
       ProjectExecutionManagerRegistry.register('test-ws', manager);
     });
 
-    test('ProjectExecutionManager creates, opens, and saves projects correctly', () async {
+    test('ProjectExecutionManager creates, opens, and saves projects correctly',
+        () async {
       final epic = const Epic(
         id: 'epic-1',
         title: 'Core UI',
@@ -62,7 +65,8 @@ void main() {
         ],
       );
 
-      final plan = await manager.createProject(id: 'project-engine', epics: [epic]);
+      final plan =
+          await manager.createProject(id: 'project-engine', epics: [epic]);
       expect(plan.id, equals('project-engine'));
       expect(plan.version, equals(1));
       expect(plan.epics, hasLength(1));
@@ -72,7 +76,9 @@ void main() {
       expect(opened!.epics, hasLength(1));
     });
 
-    test('MilestoneScheduler schedules tasks using Dependency and Priority strategies', () {
+    test(
+        'MilestoneScheduler schedules tasks using Dependency and Priority strategies',
+        () {
       final taskA = const ProjectTask(
         id: 'task-a',
         title: 'Task A',
@@ -187,7 +193,8 @@ void main() {
       expect(progress.completionPercentage, equals(0.5));
     });
 
-    test('Project Tools execute via ToolExecutionService successfully', () async {
+    test('Project Tools execute via ToolExecutionService successfully',
+        () async {
       final registry = TestToolRegistry();
       registry.register(ProjectCreateTool());
       registry.register(ProjectOpenTool());

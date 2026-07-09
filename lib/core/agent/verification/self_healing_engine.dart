@@ -30,7 +30,9 @@ class SelfHealingEngine {
   // Orchestrates the state-machine self-healing loop
   Future<VerificationReport> runSelfHealingLoop({
     required List<GeneratedPatch> initialPatches,
-    required Future<List<GeneratedPatch>> Function(RepairScope scope, List<VerificationIssue> issues) repairGenerator,
+    required Future<List<GeneratedPatch>> Function(
+            RepairScope scope, List<VerificationIssue> issues)
+        repairGenerator,
   }) async {
     state = SelfHealingState.runningVerification;
     var report = await verificationEngine.verify();
@@ -69,7 +71,9 @@ class SelfHealingEngine {
         compileDuration: report.metrics.compileDuration,
         testDuration: report.metrics.testDuration,
         retries: attempt,
-        issuesFixed: attempt > 0 && report.status == VerificationStatus.passed ? report.issues.length : 0,
+        issuesFixed: attempt > 0 && report.status == VerificationStatus.passed
+            ? report.issues.length
+            : 0,
         remainingIssues: report.issues.length,
         recoveryTime: Duration(seconds: attempt * 5),
       ),

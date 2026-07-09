@@ -20,6 +20,7 @@ import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -67,7 +68,8 @@ void main() {
 
       final gateMain = engine.checkCommitGates(mainBranch, 9.5);
       expect(gateMain.passesGates, isFalse);
-      expect(gateMain.errors.first, contains('direct commits to main branch are forbidden'));
+      expect(gateMain.errors.first,
+          contains('direct commits to main branch are forbidden'));
 
       final gateLowScore = engine.checkCommitGates(featureBranch, 5.0);
       expect(gateLowScore.passesGates, isFalse);
@@ -77,7 +79,9 @@ void main() {
       expect(gatePass.passesGates, isTrue);
     });
 
-    test('CommitMessageGenerator outputs standard Conventional Commits with meta trailers', () {
+    test(
+        'CommitMessageGenerator outputs standard Conventional Commits with meta trailers',
+        () {
       const generator = CommitMessageGenerator();
       final msg = generator.generateMessage(
         type: 'feat',
@@ -92,7 +96,9 @@ void main() {
       expect(msg, contains('Execution-ID: exec-456'));
     });
 
-    test('PullRequestGenerator compiles structured PullRequestDraft to markdown', () {
+    test(
+        'PullRequestGenerator compiles structured PullRequestDraft to markdown',
+        () {
       const generator = PullRequestGenerator();
       const draft = PullRequestDraft(
         title: 'feat(auth): OAuth integration',
@@ -114,7 +120,8 @@ void main() {
 
       const conflictUnresolvable = MergeConflict(
         filePath: 'lib/main.dart',
-        conflictContent: '<<<<<<< HEAD\nvoid test() {}\n=======\nvoid main() {}\n>>>>>>> feature',
+        conflictContent:
+            '<<<<<<< HEAD\nvoid test() {}\n=======\nvoid main() {}\n>>>>>>> feature',
         autoResolvable: false,
       );
       final resUnresolved = resolver.resolveConflict(conflictUnresolvable);
@@ -122,7 +129,8 @@ void main() {
 
       const conflictResolvable = MergeConflict(
         filePath: 'lib/main.dart',
-        conflictContent: '<<<<<<< HEAD\n// original\n=======\n// Auto-resolvable\nvoid test() {}\n>>>>>>> feature',
+        conflictContent:
+            '<<<<<<< HEAD\n// original\n=======\n// Auto-resolvable\nvoid test() {}\n>>>>>>> feature',
         autoResolvable: false,
       );
       final resResolved = resolver.resolveConflict(conflictResolvable);

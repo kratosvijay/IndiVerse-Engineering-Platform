@@ -50,8 +50,11 @@ class ArchitectureValidator implements CodeValidator {
   @override
   Future<List<String>> validate(GeneratedPatch patch) async {
     final errors = <String>[];
-    if (patch.filePath.contains('domain') && patch.generatedText.contains('import "package:flutter/widgets.dart";')) {
-      errors.add('Clean Architecture Warning: Domain layer must not import UI packages.');
+    if (patch.filePath.contains('domain') &&
+        patch.generatedText
+            .contains('import "package:flutter/widgets.dart";')) {
+      errors.add(
+          'Clean Architecture Warning: Domain layer must not import UI packages.');
     }
     return errors;
   }

@@ -21,6 +21,7 @@ import 'package:indiverse_developer_platform/core/diagnostics/diagnostic_models.
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -38,7 +39,8 @@ void main() {
     });
 
     test('DiagnosticsParser parses standard dart analyze logs correctly', () {
-      const mockLog = 'info - lib/core/service.dart:15:3 - Unused local variable - unused_variable\n';
+      const mockLog =
+          'info - lib/core/service.dart:15:3 - Unused local variable - unused_variable\n';
       final issues = parser.parse(mockLog, origin: 'analyzer');
 
       expect(issues, hasLength(1));
@@ -64,7 +66,9 @@ void main() {
         severity: 'error',
         origin: 'analyzer',
         file: 'lib/main.dart',
-        range: Range(start: Position(line: 5, column: 1), end: Position(line: 5, column: 5)),
+        range: Range(
+            start: Position(line: 5, column: 1),
+            end: Position(line: 5, column: 5)),
         code: 'err',
         message: 'msg',
         fixHint: '',
@@ -73,7 +77,9 @@ void main() {
         severity: 'error',
         origin: 'analyzer',
         file: 'lib/main.dart',
-        range: Range(start: Position(line: 8, column: 1), end: Position(line: 8, column: 5)),
+        range: Range(
+            start: Position(line: 8, column: 1),
+            end: Position(line: 8, column: 5)),
         code: 'err',
         message: 'msg',
         fixHint: '',
@@ -87,7 +93,9 @@ void main() {
         severity: 'error',
         origin: 'analyzer',
         file: 'lib/main.dart',
-        range: Range(start: Position(line: 30, column: 1), end: Position(line: 30, column: 5)),
+        range: Range(
+            start: Position(line: 30, column: 1),
+            end: Position(line: 30, column: 5)),
         code: 'err',
         message: 'msg',
         fixHint: '',
@@ -101,22 +109,29 @@ void main() {
         severity: 'error',
         origin: 'analyzer',
         file: 'lib/other.dart',
-        range: Range(start: Position(line: 5, column: 1), end: Position(line: 5, column: 5)),
+        range: Range(
+            start: Position(line: 5, column: 1),
+            end: Position(line: 5, column: 5)),
         code: 'err',
         message: 'msg',
         fixHint: '',
       );
 
-      final scopeProject = repairPlanner.planRepairScope([issue1, issueOtherFile]);
+      final scopeProject =
+          repairPlanner.planRepairScope([issue1, issueOtherFile]);
       expect(scopeProject, equals(RepairScope.entireProject));
     });
 
-    test('SelfHealingEngine executes state transitions and retries up to maxRetries', () async {
+    test(
+        'SelfHealingEngine executes state transitions and retries up to maxRetries',
+        () async {
       final runner = LocalVerificationRunner(
-        mockAnalyzeOutput: 'error - lib/main.dart:5:2 - Invalid type - type_error',
+        mockAnalyzeOutput:
+            'error - lib/main.dart:5:2 - Invalid type - type_error',
       );
       final engine = VerificationEngine(runner: runner);
-      final selfHealing = SelfHealingEngine(verificationEngine: engine, maxRetries: 3);
+      final selfHealing =
+          SelfHealingEngine(verificationEngine: engine, maxRetries: 3);
 
       var generatorCalled = 0;
       final finalReport = await selfHealing.runSelfHealingLoop(
@@ -141,7 +156,8 @@ void main() {
       expect(finalReport.metrics.retries, equals(3));
     });
 
-    test('Verification Tools execute properly via ToolExecutionService', () async {
+    test('Verification Tools execute properly via ToolExecutionService',
+        () async {
       final runner = LocalVerificationRunner();
       final engine = VerificationEngine(runner: runner);
       VerificationEngineRegistry.register('test-ws', engine);

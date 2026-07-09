@@ -14,13 +14,7 @@ enum ProjectState {
   archived
 }
 
-enum ProjectTaskStatus {
-  todo,
-  inProgress,
-  blocked,
-  completed,
-  failed
-}
+enum ProjectTaskStatus { todo, inProgress, blocked, completed, failed }
 
 class ProjectTask {
   final String id;
@@ -71,7 +65,8 @@ class ProjectTask {
         title: json['title'] as String,
         description: json['description'] as String,
         priority: json['priority'] as String,
-        status: ProjectTaskStatus.values.firstWhere((e) => e.name == json['status']),
+        status: ProjectTaskStatus.values
+            .firstWhere((e) => e.name == json['status']),
         dependencies: List<String>.from(json['dependencies'] as List),
       );
 }
@@ -296,43 +291,68 @@ class ProjectCreated extends ProjectEvent {
 
 class MilestoneStarted extends ProjectEvent {
   final String milestoneId;
-  MilestoneStarted({required super.projectId, required super.timestamp, required this.milestoneId});
+  MilestoneStarted(
+      {required super.projectId,
+      required super.timestamp,
+      required this.milestoneId});
 }
 
 class MilestoneCompleted extends ProjectEvent {
   final String milestoneId;
-  MilestoneCompleted({required super.projectId, required super.timestamp, required this.milestoneId});
+  MilestoneCompleted(
+      {required super.projectId,
+      required super.timestamp,
+      required this.milestoneId});
 }
 
 class TaskStarted extends ProjectEvent {
   final String taskId;
-  TaskStarted({required super.projectId, required super.timestamp, required this.taskId});
+  TaskStarted(
+      {required super.projectId,
+      required super.timestamp,
+      required this.taskId});
 }
 
 class TaskCompleted extends ProjectEvent {
   final String taskId;
-  TaskCompleted({required super.projectId, required super.timestamp, required this.taskId});
+  TaskCompleted(
+      {required super.projectId,
+      required super.timestamp,
+      required this.taskId});
 }
 
 class TaskBlocked extends ProjectEvent {
   final String taskId;
   final String reason;
-  TaskBlocked({required super.projectId, required super.timestamp, required this.taskId, required this.reason});
+  TaskBlocked(
+      {required super.projectId,
+      required super.timestamp,
+      required this.taskId,
+      required this.reason});
 }
 
 class VerificationCompleted extends ProjectEvent {
   final VerificationReport report;
-  VerificationCompleted({required super.projectId, required super.timestamp, required this.report});
+  VerificationCompleted(
+      {required super.projectId,
+      required super.timestamp,
+      required this.report});
 }
 
 class CheckpointCreated extends ProjectEvent {
   final String checkpointId;
-  CheckpointCreated({required super.projectId, required super.timestamp, required this.checkpointId});
+  CheckpointCreated(
+      {required super.projectId,
+      required super.timestamp,
+      required this.checkpointId});
 }
 
 class RollbackPerformed extends ProjectEvent {
   final String checkpointId;
-  RollbackPerformed({required super.projectId, required super.timestamp, required this.checkpointId});
+  RollbackPerformed(
+      {required super.projectId,
+      required super.timestamp,
+      required this.checkpointId});
 }
 
 class ProjectFinished extends ProjectEvent {

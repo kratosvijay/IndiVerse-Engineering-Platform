@@ -156,10 +156,14 @@ class _ChatPanelState extends State<ChatPanel> {
                                   ),
                                 ),
                                 const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 4.0,
+                                  ),
                                   child: VerificationProgressWidget(
                                     activeStage: 'Self-Healing Run',
-                                    statusText: 'Running test pipeline self-healing...',
+                                    statusText:
+                                        'Running test pipeline self-healing...',
                                     retryAttempt: 2,
                                     maxRetries: 5,
                                     historyLog: [
@@ -171,12 +175,18 @@ class _ChatPanelState extends State<ChatPanel> {
                                   ),
                                 ),
                                 const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 4.0,
+                                  ),
                                   child: ProjectDashboardWidget(
                                     activeProject: 'IndiVerse Engine Platform',
-                                    activeEpic: 'Epic 1: Workspace Intelligence',
-                                    activeMilestone: 'Milestone 2: Graph Resolving',
-                                    currentTask: 'Task 3: Resolving symbols dependency graph',
+                                    activeEpic:
+                                        'Epic 1: Workspace Intelligence',
+                                    activeMilestone:
+                                        'Milestone 2: Graph Resolving',
+                                    currentTask:
+                                        'Task 3: Resolving symbols dependency graph',
                                     projectState: 'executing',
                                     completionPercentage: 0.6,
                                     completedTasks: 3,
@@ -191,13 +201,17 @@ class _ChatPanelState extends State<ChatPanel> {
                                   ),
                                 ),
                                 const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 4.0,
+                                  ),
                                   child: GitDashboardWidget(
                                     activeBranch: 'feature/agent-auth',
                                     baseBranch: 'main',
                                     purpose: 'feature',
                                     latestCommitHash: 'sha-1',
-                                    latestCommitMsg: 'feat(auth): implement OAuth login',
+                                    latestCommitMsg:
+                                        'feat(auth): implement OAuth login',
                                     filesChangedCount: 3,
                                     passesGates: true,
                                     hasPRDraft: true,

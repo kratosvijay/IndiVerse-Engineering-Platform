@@ -29,13 +29,36 @@ class GeneratorGenerateTool implements ToolHandler {
 
     final plan = ExecutionPlan(
       planId: 'plan-gen',
-      goalAnalysis: GoalAnalysis(goal: goal, type: GoalType.feature, constraints: const [], acceptanceCriteria: const [], priority: 'Medium'),
-      requirement: const Requirement(functional: [], nonFunctional: [], constraints: [], assumptions: []),
-      impact: const ArchitectureImpact(files: ['lib/main.dart'], services: [], routes: [], providers: [], tests: [], apis: [], database: []),
+      goalAnalysis: GoalAnalysis(
+          goal: goal,
+          type: GoalType.feature,
+          constraints: const [],
+          acceptanceCriteria: const [],
+          priority: 'Medium'),
+      requirement: const Requirement(
+          functional: [], nonFunctional: [], constraints: [], assumptions: []),
+      impact: const ArchitectureImpact(
+          files: ['lib/main.dart'],
+          services: [],
+          routes: [],
+          providers: [],
+          tests: [],
+          apis: [],
+          database: []),
       graph: const TaskGraph(id: 'graph-gen', goal: 'gen', steps: []),
-      risk: const RiskReport(complexityScore: 1, securityRisk: 1, architectureRisk: 1, performanceRisk: 1, migrationRisk: 1, regressionRisk: 1),
-      estimate: const ExecutionEstimate(estimatedLOC: 50, estimatedTime: Duration(minutes: 10), rollbackScope: []),
-      validation: const PlanValidation(valid: true, warnings: [], recommendations: []),
+      risk: const RiskReport(
+          complexityScore: 1,
+          securityRisk: 1,
+          architectureRisk: 1,
+          performanceRisk: 1,
+          migrationRisk: 1,
+          regressionRisk: 1),
+      estimate: const ExecutionEstimate(
+          estimatedLOC: 50,
+          estimatedTime: Duration(minutes: 10),
+          rollbackScope: []),
+      validation:
+          const PlanValidation(valid: true, warnings: [], recommendations: []),
     );
 
     final engine = GenerationEngineRegistry.active ??
@@ -127,10 +150,7 @@ class GeneratorValidateTool implements ToolHandler {
     return ToolCallResult(
       success: true,
       output: const ToolOutput(
-        data: {
-          'valid': true,
-          'errors': <String>[]
-        },
+        data: {'valid': true, 'errors': <String>[]},
         displayText: 'Patches validated successfully.',
         mimeType: 'application/json',
       ),
@@ -201,7 +221,8 @@ class GeneratorRollbackTool implements ToolHandler {
     return ToolCallResult(
       success: true,
       output: const ToolOutput(
-        displayText: 'Workspace successfully rolled back to latest stable checkpoint.',
+        displayText:
+            'Workspace successfully rolled back to latest stable checkpoint.',
         mimeType: 'text/plain',
       ),
       duration: stopwatch.elapsed,
@@ -274,7 +295,8 @@ class GeneratorDiffTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'generator.diff',
     name: 'Generate Diff representation',
-    description: 'Generates a clean text diff between original and generated file text.',
+    description:
+        'Generates a clean text diff between original and generated file text.',
     category: ToolCategory.workspace,
     requiresPermission: false,
     readOnly: true,
@@ -291,9 +313,7 @@ class GeneratorDiffTool implements ToolHandler {
     return ToolCallResult(
       success: true,
       output: const ToolOutput(
-        data: {
-          'diff': '+ void test() {}'
-        },
+        data: {'diff': '+ void test() {}'},
         displayText: 'Diff output calculated.',
         mimeType: 'application/json',
       ),

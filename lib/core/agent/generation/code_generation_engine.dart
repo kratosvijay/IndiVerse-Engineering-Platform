@@ -18,7 +18,8 @@ class CodeGenerationEngine {
     final patches = <GeneratedPatch>[];
 
     // Simulates multi-agent code generation based on target capability
-    final generatedCode = '// Generated logic for: ${task.title}\n// Capability: ${task.agentCapability.name}\nvoid run() {}';
+    final generatedCode =
+        '// Generated logic for: ${task.title}\n// Capability: ${task.agentCapability.name}\nvoid run() {}';
 
     final patch = await generator.generatePatch(
       filePath: 'lib/core/agent/planning/${task.id.replaceAll(".", "_")}.dart',
@@ -42,7 +43,9 @@ class GenerationEngineRegistry {
     _registry[workspaceId] = engine;
     _active ??= engine;
   }
-  static CodeGenerationEngine? get(String workspaceId) => _registry[workspaceId];
+
+  static CodeGenerationEngine? get(String workspaceId) =>
+      _registry[workspaceId];
   static void clear() {
     _registry.clear();
     _active = null;

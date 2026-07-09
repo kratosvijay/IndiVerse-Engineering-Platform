@@ -56,7 +56,9 @@ class VerificationProgressWidget extends StatelessWidget {
                 height: 14,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orangeAccent),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.orangeAccent,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -83,7 +85,10 @@ class VerificationProgressWidget extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ...historyLog.map((log) {
-            final isPass = log.contains('Passed') || log.contains('Completed') || log.contains('✔');
+            final isPass =
+                log.contains('Passed') ||
+                log.contains('Completed') ||
+                log.contains('✔');
             final isFail = log.contains('Failed') || log.contains('✖');
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 3.0),
@@ -93,14 +98,14 @@ class VerificationProgressWidget extends StatelessWidget {
                     isPass
                         ? Icons.check_circle_outline
                         : isFail
-                            ? Icons.error_outline
-                            : Icons.loop_outlined,
+                        ? Icons.error_outline
+                        : Icons.loop_outlined,
                     size: 13,
                     color: isPass
                         ? Colors.greenAccent
                         : isFail
-                            ? Colors.redAccent
-                            : Colors.grey,
+                        ? Colors.redAccent
+                        : Colors.grey,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -110,8 +115,8 @@ class VerificationProgressWidget extends StatelessWidget {
                         color: isPass
                             ? Colors.greenAccent
                             : isFail
-                                ? Colors.redAccent
-                                : Colors.white38,
+                            ? Colors.redAccent
+                            : Colors.white38,
                         fontSize: 11,
                       ),
                     ),

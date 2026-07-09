@@ -39,7 +39,11 @@ class GitDashboardWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.call_split, size: 14, color: Colors.blueAccent),
+                  const Icon(
+                    Icons.call_split,
+                    size: 14,
+                    color: Colors.blueAccent,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     activeBranch,
@@ -137,7 +141,9 @@ class GitDashboardWidget extends StatelessWidget {
                   Text(
                     passesGates ? 'Gates Passed' : 'Gates Failed',
                     style: TextStyle(
-                      color: passesGates ? Colors.greenAccent : Colors.redAccent,
+                      color: passesGates
+                          ? Colors.greenAccent
+                          : Colors.redAccent,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),

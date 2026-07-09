@@ -33,6 +33,7 @@ class GitHistoryRegistry {
     _registry[workspaceId] = manager;
     _active ??= manager;
   }
+
   static GitHistoryManager? get(String workspaceId) => _registry[workspaceId];
   static void clear() {
     _registry.clear();
