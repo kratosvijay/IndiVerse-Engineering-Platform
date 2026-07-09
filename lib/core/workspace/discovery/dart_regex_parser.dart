@@ -23,10 +23,12 @@ class DartRegexParser implements LanguageParser {
 
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
-      
+
       var match = importRegex.firstMatch(line);
       if (match != null) {
-        var path = match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ?? '';
+        var path =
+            match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ??
+                '';
         if (path.isNotEmpty) {
           imports.add({'target': path, 'type': DependencyType.importRelation});
         }
@@ -35,7 +37,9 @@ class DartRegexParser implements LanguageParser {
 
       match = exportRegex.firstMatch(line);
       if (match != null) {
-        var path = match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ?? '';
+        var path =
+            match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ??
+                '';
         if (path.isNotEmpty) {
           imports.add({'target': path, 'type': DependencyType.exportRelation});
         }
@@ -44,7 +48,9 @@ class DartRegexParser implements LanguageParser {
 
       match = partOfRegex.firstMatch(line);
       if (match != null) {
-        var path = match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ?? '';
+        var path =
+            match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ??
+                '';
         if (path.isNotEmpty) {
           imports.add({'target': path, 'type': DependencyType.partOfRelation});
         }
@@ -53,7 +59,9 @@ class DartRegexParser implements LanguageParser {
 
       match = partRegex.firstMatch(line);
       if (match != null) {
-        var path = match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ?? '';
+        var path =
+            match.group(1)?.replaceAll("'", "").replaceAll('"', "").trim() ??
+                '';
         if (path.isNotEmpty) {
           imports.add({'target': path, 'type': DependencyType.partRelation});
         }
@@ -62,14 +70,16 @@ class DartRegexParser implements LanguageParser {
     }
 
     // 2. Extract Symbols (Classes, Mixins, Enums, Typedefs, Extensions, and Methods)
-    final classRegex = RegExp(r"^\s*(?:abstract\s+|base\s+|interface\s+|final\s+|sealed\s+)?class\s+([a-zA-Z0-9_<>]+)");
+    final classRegex = RegExp(
+        r"^\s*(?:abstract\s+|base\s+|interface\s+|final\s+|sealed\s+)?class\s+([a-zA-Z0-9_<>]+)");
     final mixinRegex = RegExp(r"^\s*mixin\s+([a-zA-Z0-9_]+)");
     final enumRegex = RegExp(r"^\s*enum\s+([a-zA-Z0-9_]+)");
     final typedefRegex = RegExp(r"^\s*typedef\s+([a-zA-Z0-9_<>]+)\s*=");
     final extensionRegex = RegExp(r"^\s*extension\s+([a-zA-Z0-9_]+)?\s+on\s+");
-    
+
     // Simplistic method/field match within lines
-    final methodRegex = RegExp(r"^\s*(?:@\w+\s+)*(?:async\s+|static\s+|factory\s+|external\s+)*([a-zA-Z0-9_<>]+)\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)");
+    final methodRegex = RegExp(
+        r"^\s*(?:@\w+\s+)*(?:async\s+|static\s+|factory\s+|external\s+)*([a-zA-Z0-9_<>]+)\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)");
 
     WorkspaceSymbol? currentParent;
     String? activeMethodId;
@@ -85,7 +95,8 @@ class DartRegexParser implements LanguageParser {
       // Accumulate documentation comments
       if (line.trim().startsWith('///')) {
         final docLine = line.trim().substring(3).trim();
-        docAccumulator = docAccumulator == null ? docLine : '$docAccumulator\n$docLine';
+        docAccumulator =
+            docAccumulator == null ? docLine : '$docAccumulator\n$docLine';
         continue;
       } else if (line.trim().startsWith('//')) {
         // regular comments, ignore docs but clean up if needed
@@ -123,7 +134,9 @@ class DartRegexParser implements LanguageParser {
           id: id,
           name: name,
           kind: SymbolKind.classSymbol,
-          visibility: name.startsWith('_') ? SymbolVisibility.private : SymbolVisibility.public,
+          visibility: name.startsWith('_')
+              ? SymbolVisibility.private
+              : SymbolVisibility.public,
           filePath: filePath,
           startLine: lineNum,
           endLine: lineNum + 10, // heuristic
@@ -153,7 +166,9 @@ class DartRegexParser implements LanguageParser {
           id: id,
           name: name,
           kind: SymbolKind.mixin,
-          visibility: name.startsWith('_') ? SymbolVisibility.private : SymbolVisibility.public,
+          visibility: name.startsWith('_')
+              ? SymbolVisibility.private
+              : SymbolVisibility.public,
           filePath: filePath,
           startLine: lineNum,
           endLine: lineNum + 5,
@@ -176,7 +191,9 @@ class DartRegexParser implements LanguageParser {
           id: id,
           name: name,
           kind: SymbolKind.enumSymbol,
-          visibility: name.startsWith('_') ? SymbolVisibility.private : SymbolVisibility.public,
+          visibility: name.startsWith('_')
+              ? SymbolVisibility.private
+              : SymbolVisibility.public,
           filePath: filePath,
           startLine: lineNum,
           endLine: lineNum + 5,
@@ -199,7 +216,9 @@ class DartRegexParser implements LanguageParser {
           id: id,
           name: name,
           kind: SymbolKind.typedefSymbol,
-          visibility: name.startsWith('_') ? SymbolVisibility.private : SymbolVisibility.public,
+          visibility: name.startsWith('_')
+              ? SymbolVisibility.private
+              : SymbolVisibility.public,
           filePath: filePath,
           startLine: lineNum,
           endLine: lineNum,
@@ -222,7 +241,9 @@ class DartRegexParser implements LanguageParser {
           id: id,
           name: name,
           kind: SymbolKind.extensionSymbol,
-          visibility: name.startsWith('_') ? SymbolVisibility.private : SymbolVisibility.public,
+          visibility: name.startsWith('_')
+              ? SymbolVisibility.private
+              : SymbolVisibility.public,
           filePath: filePath,
           startLine: lineNum,
           endLine: lineNum + 5,
@@ -242,20 +263,37 @@ class DartRegexParser implements LanguageParser {
       if (m != null) {
         final returnType = m.group(1)!;
         final name = m.group(2)!;
-        
+
         // Skip common keywords misidentified as types/methods
-        if (const {'if', 'for', 'while', 'switch', 'return', 'else', 'import', 'export', 'part', 'class', 'enum', 'mixin'}.contains(returnType)) {
+        if (const {
+          'if',
+          'for',
+          'while',
+          'switch',
+          'return',
+          'else',
+          'import',
+          'export',
+          'part',
+          'class',
+          'enum',
+          'mixin'
+        }.contains(returnType)) {
           continue;
         }
 
         final parentId = currentParent?.id;
-        final id = parentId != null ? "$parentId.$name" : "workspace://$filePath#$name";
+        final id = parentId != null
+            ? "$parentId.$name"
+            : "workspace://$filePath#$name";
 
         final methodSymbol = WorkspaceSymbol(
           id: id,
           name: name,
           kind: SymbolKind.method,
-          visibility: name.startsWith('_') ? SymbolVisibility.private : SymbolVisibility.public,
+          visibility: name.startsWith('_')
+              ? SymbolVisibility.private
+              : SymbolVisibility.public,
           filePath: filePath,
           startLine: lineNum,
           endLine: lineNum,

@@ -26,14 +26,17 @@ class PlanReviewer {
     }
 
     // 3. Clean Architecture layer check (e.g. Services should not directly depend on UI)
-    if (impact.services.any((s) => s.contains('view') || s.contains('widget'))) {
-      warnings.add('Possible Clean Architecture violation: service matches widget name.');
+    if (impact.services
+        .any((s) => s.contains('view') || s.contains('widget'))) {
+      warnings.add(
+          'Possible Clean Architecture violation: service matches widget name.');
       recommendations.add('Decouple logic layer elements from widget symbols.');
     }
 
     // 4. Extensible recommendations
     if (goalAnalysis.type == GoalType.bugfix) {
-      recommendations.add('Inspect diagnostics before executing modifications.');
+      recommendations
+          .add('Inspect diagnostics before executing modifications.');
     }
 
     return PlanValidation(

@@ -55,17 +55,19 @@ class SymbolGraphContextProvider implements ContextProvider {
       final snapshot = intel.getSnapshot();
       content.writeln("=== Symbol Graph Snapshot (V${snapshot.version}) ===");
       content.writeln("Total Symbols: ${snapshot.symbols.length}");
-      
+
       // List primary classes and structures
       final topClasses = snapshot.classes.take(15).toList();
       for (final cls in topClasses) {
         content.writeln("Class: ${cls.name} (${cls.filePath})");
         if (cls.childrenIds.isNotEmpty) {
-          content.writeln("  Children: ${cls.childrenIds.map((id) => id.split('.').last).join(', ')}");
+          content.writeln(
+              "  Children: ${cls.childrenIds.map((id) => id.split('.').last).join(', ')}");
         }
       }
       if (snapshot.classes.length > 15) {
-        content.writeln("... and ${snapshot.classes.length - 15} more classes.");
+        content
+            .writeln("... and ${snapshot.classes.length - 15} more classes.");
       }
     } else {
       content.writeln("Symbol Graph Context: Workspace not loaded.");
@@ -97,10 +99,12 @@ class DependencyContextProvider implements ContextProvider {
       final snapshot = intel.getSnapshot();
       content.writeln("=== Dependency Import Graph ===");
       for (final dep in snapshot.dependencies.take(20)) {
-        content.writeln("  ${dep.fromPath} -> ${dep.toPath} (${dep.type.name})");
+        content
+            .writeln("  ${dep.fromPath} -> ${dep.toPath} (${dep.type.name})");
       }
       if (snapshot.dependencies.length > 20) {
-        content.writeln("  ... and ${snapshot.dependencies.length - 20} more edges.");
+        content.writeln(
+            "  ... and ${snapshot.dependencies.length - 20} more edges.");
       }
     } else {
       content.writeln("Dependency Graph Context: Workspace not loaded.");
@@ -132,7 +136,8 @@ class CallGraphContextProvider implements ContextProvider {
       final snapshot = intel.getSnapshot();
       content.writeln("=== Invocations & Call Trees ===");
       for (final call in snapshot.calls.take(20)) {
-        content.writeln("  ${call.callerId.split('#').last} calls ${call.calleeId.split('#').last} (${call.type.name})");
+        content.writeln(
+            "  ${call.callerId.split('#').last} calls ${call.calleeId.split('#').last} (${call.type.name})");
       }
       if (snapshot.calls.length > 20) {
         content.writeln("  ... and ${snapshot.calls.length - 20} more calls.");
@@ -166,20 +171,23 @@ class BuildContextProvider implements ContextProvider {
     if (intel != null) {
       final buildIntel = intel.buildIntelligence;
       content.writeln("=== Build & Test Intelligence ===");
-      content.writeln("Build status: ${buildIntel.hasBuildFailures ? 'FAILING' : 'PASSING'}");
-      
+      content.writeln(
+          "Build status: ${buildIntel.hasBuildFailures ? 'FAILING' : 'PASSING'}");
+
       final errors = buildIntel.getErrors();
       if (errors.isNotEmpty) {
         content.writeln("Errors (${errors.length}):");
         for (final err in errors) {
-          content.writeln("  [${err.origin.name}] ${err.filePath ?? 'Global'}:${err.line ?? 0}:${err.column ?? 0} - ${err.message}");
+          content.writeln(
+              "  [${err.origin.name}] ${err.filePath ?? 'Global'}:${err.line ?? 0}:${err.column ?? 0} - ${err.message}");
         }
       } else {
         content.writeln("No compiler or analyzer errors registered.");
       }
 
       if (buildIntel.compilerOutput != null) {
-        content.writeln("Compiler Output snippet:\n${buildIntel.compilerOutput!.split('\n').take(10).join('\n')}");
+        content.writeln(
+            "Compiler Output snippet:\n${buildIntel.compilerOutput!.split('\n').take(10).join('\n')}");
       }
     } else {
       content.writeln("Build Context: Workspace not loaded.");

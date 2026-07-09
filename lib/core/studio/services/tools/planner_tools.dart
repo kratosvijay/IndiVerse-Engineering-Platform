@@ -88,7 +88,8 @@ class PlannerGeneratePlanTool implements ToolHandler {
       success: true,
       output: ToolOutput(
         data: plan.toJson(),
-        displayText: 'Generated execution plan containing ${graph.steps.length} tasks.',
+        displayText:
+            'Generated execution plan containing ${graph.steps.length} tasks.',
         mimeType: 'application/json',
       ),
       duration: stopwatch.elapsed,
@@ -178,7 +179,8 @@ class PlannerEstimateTool implements ToolHandler {
       success: true,
       output: ToolOutput(
         data: estimate.toJson(),
-        displayText: 'Estimated LOC: ${estimate.estimatedLOC}, time: ${estimate.estimatedTime.inMinutes} minutes.',
+        displayText:
+            'Estimated LOC: ${estimate.estimatedLOC}, time: ${estimate.estimatedTime.inMinutes} minutes.',
         mimeType: 'application/json',
       ),
       duration: stopwatch.elapsed,
@@ -285,9 +287,13 @@ class PlannerDependenciesTool implements ToolHandler {
 
     return ToolCallResult(
       success: true,
-      output: ToolOutput(
-        data: const {
-          'dependencies': ['task.plan -> task.code', 'task.code -> task.review', 'task.code -> task.test']
+      output: const ToolOutput(
+        data: {
+          'dependencies': [
+            'task.plan -> task.code',
+            'task.code -> task.review',
+            'task.code -> task.test'
+          ]
         },
         displayText: 'Dependency relationships mapped.',
         mimeType: 'application/json',
@@ -318,8 +324,8 @@ class PlannerImpactTool implements ToolHandler {
 
     return ToolCallResult(
       success: true,
-      output: ToolOutput(
-        data: const {
+      output: const ToolOutput(
+        data: {
           'impacted_files': ['lib/main.dart']
         },
         displayText: 'Impact assessment retrieved.',
@@ -351,8 +357,8 @@ class PlannerAcceptanceTool implements ToolHandler {
 
     return ToolCallResult(
       success: true,
-      output: ToolOutput(
-        data: const {
+      output: const ToolOutput(
+        data: {
           'criteria': ['Compilation succeeds.', 'Tests pass cleanly.']
         },
         displayText: 'Acceptance checklist formulated.',
@@ -384,10 +390,10 @@ class PlannerReviewTool implements ToolHandler {
 
     return ToolCallResult(
       success: true,
-      output: ToolOutput(
-        data: const {
-          'warnings': [],
-          'recommendations': ['Use final variables in models.']
+      output: const ToolOutput(
+        data: {
+          'warnings': <String>[],
+          'recommendations': <String>['Use final variables in models.']
         },
         displayText: 'Recommendations generated.',
         mimeType: 'application/json',

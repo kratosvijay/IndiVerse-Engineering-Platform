@@ -23,7 +23,7 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(DiagnosticsListTool());
   registry.register(EditorCurrentFileTool());
   registry.register(EditorSelectionTool());
-  
+
   // Workspace Intelligence Tools
   registry.register(FindSymbolTool());
   registry.register(FindReferencesTool());

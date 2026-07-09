@@ -81,9 +81,7 @@ class DependencyGraph {
   }
 
   List<String> dependenciesOf(String filePath) {
-    return (_adjacencyList[filePath] ?? [])
-        .map((edge) => edge.toPath)
-        .toList();
+    return (_adjacencyList[filePath] ?? []).map((edge) => edge.toPath).toList();
   }
 
   List<String> dependentsOf(String filePath) {
@@ -98,7 +96,7 @@ class DependencyGraph {
 
   bool hasCycles() {
     final visited = <String, int>{}; // 0 = unvisited, 1 = visiting, 2 = visited
-    
+
     bool dfs(String node) {
       visited[node] = 1;
       final edges = _adjacencyList[node] ?? [];
@@ -124,8 +122,10 @@ class DependencyGraph {
 
   List<String>? shortestPath(String start, String end) {
     if (start == end) return [start];
-    
-    final queue = <List<String>>[[start]];
+
+    final queue = <List<String>>[
+      [start]
+    ];
     final visited = <String>{start};
 
     while (queue.isNotEmpty) {

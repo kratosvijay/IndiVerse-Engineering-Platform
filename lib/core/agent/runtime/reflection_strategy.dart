@@ -24,7 +24,8 @@ class RetryReflectionStrategy implements ReflectionStrategy {
     final nextRetry = context.stepState.retryCount + 1;
     return ReflectionResult(
       decision: ReflectionDecision.retryCurrentStep,
-      reasoning: "Step failed. Retry attempt $nextRetry of ${context.activeStep.policy.maxRetries} scheduled.",
+      reasoning:
+          "Step failed. Retry attempt $nextRetry of ${context.activeStep.policy.maxRetries} scheduled.",
     );
   }
 }
@@ -38,14 +39,17 @@ class ModifyPlanStrategy implements ReflectionStrategy {
     // If the step failed due to missing tools, specific known errors, or diagnostics, we matches.
     final error = context.lastFailure ?? '';
     return context.stepState.status == StepStatus.failed &&
-        (error.contains('diagnostic') || error.contains('modify_plan') || error.contains('analyze'));
+        (error.contains('diagnostic') ||
+            error.contains('modify_plan') ||
+            error.contains('analyze'));
   }
 
   @override
   Future<ReflectionResult> evaluate(ReflectionContext context) async {
     return const ReflectionResult(
       decision: ReflectionDecision.insertSteps,
-      reasoning: "Step failed with diagnostic error. Inserting recovery step before retrying.",
+      reasoning:
+          "Step failed with diagnostic error. Inserting recovery step before retrying.",
       insertedSteps: [],
     );
   }
@@ -58,14 +62,16 @@ class AskAIStrategy implements ReflectionStrategy {
   @override
   bool matches(ReflectionContext context) {
     final error = context.lastFailure ?? '';
-    return context.stepState.status == StepStatus.failed && error.contains('ask_ai');
+    return context.stepState.status == StepStatus.failed &&
+        error.contains('ask_ai');
   }
 
   @override
   Future<ReflectionResult> evaluate(ReflectionContext context) async {
     return const ReflectionResult(
       decision: ReflectionDecision.askAI,
-      reasoning: "Unrecoverable structural step failure. Delegating details to LLM for planning correction.",
+      reasoning:
+          "Unrecoverable structural step failure. Delegating details to LLM for planning correction.",
     );
   }
 }
@@ -83,7 +89,8 @@ class FailStrategy implements ReflectionStrategy {
   Future<ReflectionResult> evaluate(ReflectionContext context) async {
     return ReflectionResult(
       decision: ReflectionDecision.failExecution,
-      reasoning: "Step failed and no other recovery strategies matched. Retry limit: ${context.activeStep.policy.maxRetries}.",
+      reasoning:
+          "Step failed and no other recovery strategies matched. Retry limit: ${context.activeStep.policy.maxRetries}.",
     );
   }
 }
@@ -104,7 +111,8 @@ class KnowledgeReflectionStrategy implements ReflectionStrategy {
   @override
   Future<ReflectionResult> evaluate(ReflectionContext context) async {
     final failure = context.lastFailure ?? '';
-    final relevantContext = await retriever!.retrieveAndBuildContext(failure, limit: 1);
+    final relevantContext =
+        await retriever!.retrieveAndBuildContext(failure, limit: 1);
 
     if (relevantContext.isNotEmpty) {
       return ReflectionResult(
@@ -116,7 +124,8 @@ class KnowledgeReflectionStrategy implements ReflectionStrategy {
     final nextRetry = context.stepState.retryCount + 1;
     return ReflectionResult(
       decision: ReflectionDecision.retryCurrentStep,
-      reasoning: "No matching failure solutions in long-term memory. Failover to standard retry attempt $nextRetry.",
+      reasoning:
+          "No matching failure solutions in long-term memory. Failover to standard retry attempt $nextRetry.",
     );
   }
 }

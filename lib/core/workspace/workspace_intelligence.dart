@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'graph/workspace_symbol.dart';
 import 'graph/dependency_graph.dart';
 import 'graph/call_graph.dart';
@@ -41,18 +40,20 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
     _removeFileIndices(filePath);
 
     final parseResult = parser.parse(filePath, content);
-    
+
     for (final sym in parseResult.symbols) {
       _symbolsMap[sym.id] = sym;
       _architectureIndex.indexSymbol(sym);
     }
 
     for (final imp in parseResult.imports) {
-      _dependencyGraph.addDependency(filePath, imp['target'] as String, imp['type'] as DependencyType);
+      _dependencyGraph.addDependency(
+          filePath, imp['target'] as String, imp['type'] as DependencyType);
     }
 
     for (final call in parseResult.calls) {
-      _callGraph.addCall(call['callerId'] as String, call['calleeId'] as String, call['type'] as CallType);
+      _callGraph.addCall(call['callerId'] as String, call['calleeId'] as String,
+          call['type'] as CallType);
     }
 
     _snapshotVersion++;
@@ -88,7 +89,7 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   // Retrieve an immutable point-in-time snapshot of the workspace
   WorkspaceSnapshot getSnapshot() {
     final symList = List<WorkspaceSymbol>.unmodifiable(_symbolsMap.values);
-    
+
     final depsList = <ImportEdge>[];
     for (final sym in symList) {
       depsList.addAll(_dependencyGraph.getEdges(sym.filePath));
@@ -127,11 +128,11 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   WorkspaceQueryResult<WorkspaceSymbol> findSymbol(String query) {
     final watch = Stopwatch()..start();
     final lowerQuery = query.toLowerCase();
-    
+
     final matches = _symbolsMap.values
         .where((s) => s.name.toLowerCase().contains(lowerQuery))
         .toList();
-    
+
     watch.stop();
     return WorkspaceQueryResult(
       items: matches.take(50).toList(),
@@ -144,10 +145,10 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   @override
   WorkspaceQueryResult<String> findReferences(String symbolName) {
     final watch = Stopwatch()..start();
-    
+
     // Find all calls or symbols containing reference to symbolName
     final matches = <String>{};
-    
+
     // Exact symbol check
     for (final sym in _symbolsMap.values) {
       if (sym.id.endsWith('#$symbolName') || sym.id.contains('#$symbolName.')) {
@@ -178,7 +179,7 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   @override
   WorkspaceQueryResult<WorkspaceSymbol> findImplementations(String className) {
     final watch = Stopwatch()..start();
-    
+
     // Find classes inheriting or implementing className
     final matches = _symbolsMap.values
         .where((s) =>
@@ -198,7 +199,7 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   @override
   WorkspaceQueryResult<String> findCallers(String methodName) {
     final watch = Stopwatch()..start();
-    
+
     // Find call target
     final callers = <String>{};
     _symbolsMap.values.forEach((sym) {
@@ -221,7 +222,7 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   @override
   WorkspaceQueryResult<String> findCallees(String methodName) {
     final watch = Stopwatch()..start();
-    
+
     // Find targets called by methodName
     final callees = <String>{};
     _symbolsMap.values.forEach((sym) {
@@ -244,13 +245,12 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   @override
   WorkspaceQueryResult<String> findFiles(String globPattern) {
     final watch = Stopwatch()..start();
-    
+
     final pattern = globPattern.replaceAll('*', '.*');
     final regex = RegExp(pattern, caseSensitive: false);
-    
-    final matches = _fileHashes.keys
-        .where((path) => regex.hasMatch(path))
-        .toList();
+
+    final matches =
+        _fileHashes.keys.where((path) => regex.hasMatch(path)).toList();
 
     watch.stop();
     return WorkspaceQueryResult(
@@ -264,7 +264,7 @@ class WorkspaceIntelligence implements WorkspaceQueryEngine {
   @override
   WorkspaceQueryResult<WorkspaceSymbol> findDefinition(String symbolName) {
     final watch = Stopwatch()..start();
-    
+
     WorkspaceSymbol? match;
     for (final sym in _symbolsMap.values) {
       if (sym.name == symbolName) {

@@ -6,7 +6,7 @@ class ArchitectureIndex {
   final Map<String, WorkspaceSymbol> _mixins = {};
   final Map<String, WorkspaceSymbol> _typedefs = {};
   final Map<String, WorkspaceSymbol> _extensions = {};
-  
+
   // Custom Architecture Roles parsed from names, directories or inheritance/annotations
   final Map<String, WorkspaceSymbol> _routes = {};
   final Map<String, WorkspaceSymbol> _services = {};
@@ -59,19 +59,23 @@ class ArchitectureIndex {
 
   void _detectArchitectureRoles(WorkspaceSymbol symbol) {
     final lowerName = symbol.name.toLowerCase();
-    
+
     // Services: e.g. class AuthService, UserToolService
-    if (lowerName.contains('service') || symbol.annotations.any((a) => a.contains('Service'))) {
+    if (lowerName.contains('service') ||
+        symbol.annotations.any((a) => a.contains('Service'))) {
       _services[symbol.id] = symbol;
     }
-    
+
     // Providers: e.g. class UserProvider, ThemeProvider, AIProvider
-    if (lowerName.contains('provider') || symbol.annotations.any((a) => a.contains('Provider'))) {
+    if (lowerName.contains('provider') ||
+        symbol.annotations.any((a) => a.contains('Provider'))) {
       _providers[symbol.id] = symbol;
     }
 
     // Routes: e.g. class UserRoute, router mappings, or path constants
-    if (lowerName.contains('route') || lowerName.contains('router') || symbol.annotations.any((a) => a.contains('Route'))) {
+    if (lowerName.contains('route') ||
+        lowerName.contains('router') ||
+        symbol.annotations.any((a) => a.contains('Route'))) {
       _routes[symbol.id] = symbol;
     }
   }

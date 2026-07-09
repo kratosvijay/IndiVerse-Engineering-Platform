@@ -3,19 +3,16 @@ import '../../../prompt/prompt_pipeline.dart';
 import '../../../workspace/graph/workspace_snapshot.dart';
 import '../../workflow/task_graph.dart';
 import '../../workflow/task_step.dart';
-import '../../workflow/execution_state.dart';
 import '../agent_runtime.dart';
 import '../agent_runtime_event.dart';
 import 'agent_role.dart';
 import 'agent_context.dart';
 import 'agent_registry.dart';
 import 'agent_message_bus.dart';
-import 'agent_envelope.dart';
 import 'agent_memory.dart';
 import 'agent_scheduler.dart';
 import 'conflict_resolver.dart';
 import 'execution_plan.dart';
-import 'agent_role_extensions.dart';
 
 class CoordinatorAgent {
   final String executionId;
@@ -25,7 +22,7 @@ class CoordinatorAgent {
   final SharedMemory memory = SharedMemory();
   final AgentScheduler scheduler = AgentScheduler();
   final ConflictResolver conflictResolver = ConflictResolver();
-  
+
   final StreamController<AgentRuntimeEvent> _eventController =
       StreamController<AgentRuntimeEvent>.broadcast(sync: true);
 
@@ -62,30 +59,30 @@ class CoordinatorAgent {
     }
 
     // 1. Plan Decomposition (Construct TaskGraph DAG)
-    final planStep = TaskStep(
+    final planStep = const TaskStep(
       id: 'step.plan',
       title: 'Formulate Architecture Plan',
-      dependencies: const [],
+      dependencies: [],
     );
-    final codeStep = TaskStep(
+    final codeStep = const TaskStep(
       id: 'step.code',
       title: 'Write Implementation Modules',
-      dependencies: const ['step.plan'],
+      dependencies: ['step.plan'],
     );
-    final reviewStep = TaskStep(
+    final reviewStep = const TaskStep(
       id: 'step.review',
       title: 'Verify Code and Architecture Cleanliness',
-      dependencies: const ['step.code'],
+      dependencies: ['step.code'],
     );
-    final testStep = TaskStep(
+    final testStep = const TaskStep(
       id: 'step.test',
       title: 'Run Integration and Quality Tests',
-      dependencies: const ['step.code'],
+      dependencies: ['step.code'],
     );
-    final docStep = TaskStep(
+    final docStep = const TaskStep(
       id: 'step.doc',
       title: 'Write Verification Documentation',
-      dependencies: const ['step.review', 'step.test'],
+      dependencies: ['step.review', 'step.test'],
     );
 
     final graph = TaskGraph(
@@ -197,7 +194,7 @@ class CoordinatorAgent {
             content: 'void main() {}',
             timestamp: DateTime.now(),
           ));
-          
+
           _emit(ArtifactPublishedEvent(
             executionId: executionId,
             goalId: goalId,

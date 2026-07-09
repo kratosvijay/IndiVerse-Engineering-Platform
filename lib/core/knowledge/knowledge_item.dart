@@ -51,13 +51,15 @@ class KnowledgeDocument {
         'metadata': metadata,
       };
 
-  factory KnowledgeDocument.fromJson(Map<String, dynamic> json) => KnowledgeDocument(
+  factory KnowledgeDocument.fromJson(Map<String, dynamic> json) =>
+      KnowledgeDocument(
         id: json['id'] as String,
         title: json['title'] as String,
         content: json['content'] as String,
         summary: json['summary'] as String,
         source: json['source'] as String,
-        category: KnowledgeCategory.values.firstWhere((e) => e.name == json['category']),
+        category: KnowledgeCategory.values
+            .firstWhere((e) => e.name == json['category']),
         language: json['language'] as String,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),

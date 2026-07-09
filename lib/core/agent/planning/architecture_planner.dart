@@ -3,7 +3,8 @@ import 'planning_models.dart';
 
 class ArchitecturePlanner {
   // Plan architectural details mapping impacted files and services using snapshot intelligence
-  ArchitectureImpact planImpact(GoalAnalysis goalAnalysis, WorkspaceSnapshot snapshot) {
+  ArchitectureImpact planImpact(
+      GoalAnalysis goalAnalysis, WorkspaceSnapshot snapshot) {
     final files = <String>[];
     final services = <String>[];
     final routes = <String>[];
@@ -27,7 +28,8 @@ class ArchitecturePlanner {
       }
     }
 
-    if (goalAnalysis.goal.toLowerCase().contains('database') || goalAnalysis.goal.toLowerCase().contains('db')) {
+    if (goalAnalysis.goal.toLowerCase().contains('database') ||
+        goalAnalysis.goal.toLowerCase().contains('db')) {
       database.add('schema-migration');
     }
 

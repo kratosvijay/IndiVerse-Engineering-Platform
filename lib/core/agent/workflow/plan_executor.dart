@@ -19,7 +19,7 @@ class PlanExecutor {
   final ReflectionEngine reflectionEngine;
   final PlanMutationEngine mutationEngine;
   AgentRuntime? runtimeHook;
-  
+
   final StreamController<PlanEvent> _eventController =
       StreamController<PlanEvent>.broadcast();
 
@@ -208,7 +208,8 @@ class PlanExecutor {
               error: result.output.displayText,
             ));
 
-            final handleRes = await _handleReflection(step, session, result.output.displayText ?? '');
+            final handleRes = await _handleReflection(
+                step, session, result.output.displayText ?? '');
             session = handleRes.session;
             if (handleRes.didBreak) {
               break;
@@ -233,7 +234,8 @@ class PlanExecutor {
             error: e.toString(),
           ));
 
-          final handleRes = await _handleReflection(step, session, e.toString());
+          final handleRes =
+              await _handleReflection(step, session, e.toString());
           session = handleRes.session;
           if (handleRes.didBreak) {
             break;
@@ -311,21 +313,26 @@ class PlanExecutor {
       runtimeHook?.updateActiveSession(session);
       return ReflectionHandleResult(session, true);
     } else if (reflectionResult.decision == ReflectionDecision.insertSteps ||
-               reflectionResult.decision == ReflectionDecision.replaceSteps) {
+        reflectionResult.decision == ReflectionDecision.replaceSteps) {
       var newGraph = session.graph;
       final inserted = reflectionResult.insertedSteps;
       final replacements = reflectionResult.replacementSteps;
 
-      if (reflectionResult.decision == ReflectionDecision.insertSteps && inserted.isNotEmpty) {
+      if (reflectionResult.decision == ReflectionDecision.insertSteps &&
+          inserted.isNotEmpty) {
         newGraph = mutationEngine.insertSteps(session.graph, step.id, inserted);
-      } else if (reflectionResult.decision == ReflectionDecision.replaceSteps && replacements.isNotEmpty) {
-        newGraph = mutationEngine.replaceStep(session.graph, step.id, replacements);
+      } else if (reflectionResult.decision == ReflectionDecision.replaceSteps &&
+          replacements.isNotEmpty) {
+        newGraph =
+            mutationEngine.replaceStep(session.graph, step.id, replacements);
       }
 
-      final updatedStepStates = Map<String, StepExecutionState>.from(session.stepStates);
+      final updatedStepStates =
+          Map<String, StepExecutionState>.from(session.stepStates);
       for (final newStep in newGraph.steps) {
         if (!updatedStepStates.containsKey(newStep.id)) {
-          updatedStepStates[newStep.id] = StepExecutionState(stepId: newStep.id);
+          updatedStepStates[newStep.id] =
+              StepExecutionState(stepId: newStep.id);
         }
       }
 
@@ -346,7 +353,8 @@ class PlanExecutor {
       runtimeHook?.updateActiveSession(session);
       return ReflectionHandleResult(session, true);
     } else if (reflectionResult.decision == ReflectionDecision.skipStep) {
-      final skippedState = session.stepStates[step.id]!.copyWith(status: StepStatus.skipped);
+      final skippedState =
+          session.stepStates[step.id]!.copyWith(status: StepStatus.skipped);
       session = session.copyWith(
         stepStates: Map<String, StepExecutionState>.from(session.stepStates)
           ..[step.id] = skippedState,

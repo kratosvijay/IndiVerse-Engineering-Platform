@@ -7,7 +7,9 @@ class GoalAnalyzer {
     GoalType type = GoalType.research;
     var priority = 'Medium';
 
-    if (lower.contains('bug') || lower.contains('fix') || lower.contains('error')) {
+    if (lower.contains('bug') ||
+        lower.contains('fix') ||
+        lower.contains('error')) {
       type = GoalType.bugfix;
       priority = 'High';
     } else if (lower.contains('refactor') || lower.contains('clean')) {
@@ -22,7 +24,9 @@ class GoalAnalyzer {
       priority = 'Low';
     } else if (lower.contains('test') || lower.contains('spec')) {
       type = GoalType.testing;
-    } else if (lower.contains('implement') || lower.contains('create') || lower.contains('add')) {
+    } else if (lower.contains('implement') ||
+        lower.contains('create') ||
+        lower.contains('add')) {
       type = GoalType.feature;
     }
 
@@ -39,7 +43,8 @@ class GoalAnalyzer {
       'Core unit tests verify functionality.',
     ];
     if (type == GoalType.feature) {
-      acceptanceCriteria.add('New features are fully integrated and routes mapped.');
+      acceptanceCriteria
+          .add('New features are fully integrated and routes mapped.');
     }
 
     return GoalAnalysis(

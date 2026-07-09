@@ -13,7 +13,8 @@ class RequirementExtractor {
     switch (goalAnalysis.type) {
       case GoalType.feature:
         functional.add('Implement modules parsing core inputs.');
-        nonFunctional.add('Clean Architecture boundaries must not be violated.');
+        nonFunctional
+            .add('Clean Architecture boundaries must not be violated.');
         break;
       case GoalType.bugfix:
         functional.add('Resolve diagnostics error stack trace.');

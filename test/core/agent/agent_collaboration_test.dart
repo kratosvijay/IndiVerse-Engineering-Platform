@@ -15,13 +15,8 @@ import 'package:indiverse_developer_platform/core/studio/services/permission_sto
 import 'package:indiverse_developer_platform/core/models/tool_call_models.dart';
 import 'package:indiverse_developer_platform/core/prompt/prompt_pipeline.dart';
 import 'package:indiverse_developer_platform/core/workspace/graph/workspace_snapshot.dart';
-import 'package:indiverse_developer_platform/core/workspace/graph/workspace_symbol.dart';
-import 'package:indiverse_developer_platform/core/workspace/graph/dependency_graph.dart';
-import 'package:indiverse_developer_platform/core/workspace/graph/call_graph.dart';
 import 'package:indiverse_developer_platform/core/workspace/index/build_intelligence.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/multi_agent/agent_role.dart';
-import 'package:indiverse_developer_platform/core/agent/runtime/multi_agent/agent_role_extensions.dart';
-import 'package:indiverse_developer_platform/core/agent/runtime/multi_agent/agent_context.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/multi_agent/agent_envelope.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/multi_agent/agent_memory.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/multi_agent/agent_registry.dart';
@@ -38,6 +33,7 @@ import 'package:indiverse_developer_platform/platform_sdk/agent_api.dart';
 import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -98,17 +94,19 @@ void main() {
 
     test('AgentRegistry matches agents by roles and capabilities', () {
       final registry = AgentRegistry();
-      
+
       final planners = registry.getAgentsByRole(AgentRole.planner);
       expect(planners, isNotEmpty);
       expect(planners.first.descriptor.role, equals(AgentRole.planner));
 
       final coders = registry.getAgentsByCapability(AgentCapability.coding);
       expect(coders, isNotEmpty);
-      expect(coders.first.descriptor.capabilities, contains(AgentCapability.coding));
+      expect(coders.first.descriptor.capabilities,
+          contains(AgentCapability.coding));
     });
 
-    test('AgentMessageBus broadcasts and filters typed envelope messages', () async {
+    test('AgentMessageBus broadcasts and filters typed envelope messages',
+        () async {
       final bus = AgentMessageBus();
       final envelope = AgentEnvelope<String>(
         envelopeId: 'env-1',
@@ -122,14 +120,16 @@ void main() {
       final sub = bus.filterByType<String>().listen(events.add);
 
       bus.publish(envelope);
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
 
       expect(events, hasLength(1));
       expect(events.first.payload, equals('Create class AuthController'));
       await sub.cancel();
     });
 
-    test('SharedMemory segments separate artifacts, reasoning, facts, and diagnostics', () {
+    test(
+        'SharedMemory segments separate artifacts, reasoning, facts, and diagnostics',
+        () {
       final memory = SharedMemory();
 
       memory.artifacts.publish('art-1', 'print("Hello");');
@@ -145,17 +145,21 @@ void main() {
       ));
 
       expect(memory.artifacts.get('art-1'), equals('print("Hello");'));
-      expect(memory.reasoning.getForAgent('agent.coder'), contains('Writing standard boilerplate.'));
-      expect(memory.facts.all, contains('Project uses Clean Architecture standard.'));
+      expect(memory.reasoning.getForAgent('agent.coder'),
+          contains('Writing standard boilerplate.'));
+      expect(memory.facts.all,
+          contains('Project uses Clean Architecture standard.'));
       expect(memory.diagnostics.all.first.message, equals('Syntax error'));
     });
 
-    test('AgentScheduler topologically resolves dependent execution graphs', () {
+    test('AgentScheduler topologically resolves dependent execution graphs',
+        () {
       final scheduler = AgentScheduler();
-      
+
       final stepA = const TaskStep(id: 'A', title: 'Prepare');
       final stepB = const TaskStep(id: 'B', title: 'Code', dependencies: ['A']);
-      final stepC = const TaskStep(id: 'C', title: 'Review', dependencies: ['B']);
+      final stepC =
+          const TaskStep(id: 'C', title: 'Review', dependencies: ['B']);
 
       final graph = TaskGraph(
         id: 'graph-1',
@@ -176,7 +180,8 @@ void main() {
       expect(order[2].id, equals('C'));
     });
 
-    test('ConflictResolver yields resolution strategies for overlapping writes', () {
+    test('ConflictResolver yields resolution strategies for overlapping writes',
+        () {
       final resolver = ConflictResolver();
 
       // Case 1: No overlap
@@ -226,7 +231,9 @@ void main() {
       expect(resolution3, equals(ConflictResolution.retry));
     });
 
-    test('CoordinatorAgent executes end-to-end multi-agent loop with progress event broadcasts', () async {
+    test(
+        'CoordinatorAgent executes end-to-end multi-agent loop with progress event broadcasts',
+        () async {
       final coordinator = CoordinatorAgent(
         executionId: 'exec-collab',
         goalId: 'goal-collab',

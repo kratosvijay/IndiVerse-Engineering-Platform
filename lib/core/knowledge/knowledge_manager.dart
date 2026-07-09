@@ -18,7 +18,7 @@ class KnowledgeManager {
   Future<void> insertDocument(KnowledgeDocument doc) async {
     store.add(doc);
     final chunks = chunker.chunk(doc);
-    
+
     for (final chunk in chunks) {
       final embedding = await embeddingProvider.embedText(chunk.text);
       final item = VectorItem(
@@ -77,6 +77,7 @@ class KnowledgeManagerRegistry {
     _registry[workspaceId] = manager;
     _active ??= manager;
   }
+
   static KnowledgeManager? get(String workspaceId) => _registry[workspaceId];
   static void clear() {
     _registry.clear();

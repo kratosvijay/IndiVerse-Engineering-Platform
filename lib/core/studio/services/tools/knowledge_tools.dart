@@ -23,14 +23,16 @@ class KnowledgeSearchTool implements ToolHandler {
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
     final query = request.arguments['query'] as String? ?? '';
-    
+
     final manager = KnowledgeManagerRegistry.active ??
         KnowledgeManagerRegistry.get(context.workspaceId);
 
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -52,7 +54,8 @@ class KnowledgeSearchTool implements ToolHandler {
                   })
               .toList(),
         },
-        displayText: 'Found ${results.length} relevant context chunks matching "$query".',
+        displayText:
+            'Found ${results.length} relevant context chunks matching "$query".',
         mimeType: 'application/json',
       ),
       duration: stopwatch.elapsed,
@@ -78,11 +81,13 @@ class KnowledgeInsertTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final id = request.arguments['id'] as String? ?? 'doc_${DateTime.now().millisecondsSinceEpoch}';
+    final id = request.arguments['id'] as String? ??
+        'doc_${DateTime.now().millisecondsSinceEpoch}';
     final title = request.arguments['title'] as String? ?? 'Untitled Document';
     final content = request.arguments['content'] as String? ?? '';
-    final categoryName = request.arguments['category'] as String? ?? 'documentation';
-    
+    final categoryName =
+        request.arguments['category'] as String? ?? 'documentation';
+
     final category = KnowledgeCategory.values.firstWhere(
       (e) => e.name == categoryName,
       orElse: () => KnowledgeCategory.documentation,
@@ -94,7 +99,9 @@ class KnowledgeInsertTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -145,7 +152,8 @@ class KnowledgeUpdateTool implements ToolHandler {
     final id = request.arguments['id'] as String? ?? '';
     final title = request.arguments['title'] as String? ?? 'Updated Title';
     final content = request.arguments['content'] as String? ?? '';
-    final categoryName = request.arguments['category'] as String? ?? 'documentation';
+    final categoryName =
+        request.arguments['category'] as String? ?? 'documentation';
 
     final category = KnowledgeCategory.values.firstWhere(
       (e) => e.name == categoryName,
@@ -158,7 +166,9 @@ class KnowledgeUpdateTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -214,7 +224,9 @@ class KnowledgeDeleteTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -251,14 +263,16 @@ class KnowledgeHistoryTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    
+
     final manager = KnowledgeManagerRegistry.active ??
         KnowledgeManagerRegistry.get(context.workspaceId);
 
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -306,7 +320,9 @@ class KnowledgeSimilarTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -334,7 +350,8 @@ class KnowledgeLearnTool implements ToolHandler {
   final ToolDescriptor descriptor = const ToolDescriptor(
     id: 'knowledge.learn',
     name: 'Learn Execution Fact',
-    description: 'Records lessons learned, planning failures, or coding patterns.',
+    description:
+        'Records lessons learned, planning failures, or coding patterns.',
     category: ToolCategory.workspace,
     requiresPermission: false,
     readOnly: false,
@@ -356,7 +373,9 @@ class KnowledgeLearnTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -412,7 +431,9 @@ class KnowledgeRelatedTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -420,10 +441,13 @@ class KnowledgeRelatedTool implements ToolHandler {
 
     final pipeline = RetrieverPipeline(manager: manager);
     final results = await pipeline.retrieve(query, limit: 3);
-    final docs = results.map((r) {
-      final docId = r.item.payload['documentId'] as String;
-      return manager.store.get(docId)?.title ?? 'Untitled';
-    }).toSet().toList();
+    final docs = results
+        .map((r) {
+          final docId = r.item.payload['documentId'] as String;
+          return manager.store.get(docId)?.title ?? 'Untitled';
+        })
+        .toSet()
+        .toList();
 
     return ToolCallResult(
       success: true,
@@ -463,7 +487,9 @@ class KnowledgeSummarizeTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -473,7 +499,8 @@ class KnowledgeSummarizeTool implements ToolHandler {
     if (doc == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Document not found.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Document not found.', mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'DOCUMENT_NOT_FOUND',
       );
@@ -516,7 +543,9 @@ class KnowledgeReindexTool implements ToolHandler {
     if (manager == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Knowledge Manager not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Knowledge Manager not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'KNOWLEDGE_NOT_INITIALIZED',
       );
@@ -524,7 +553,7 @@ class KnowledgeReindexTool implements ToolHandler {
 
     final allDocs = List<KnowledgeDocument>.from(manager.store.all);
     await manager.vectorStore.clear();
-    
+
     for (final doc in allDocs) {
       await manager.insertDocument(doc);
     }

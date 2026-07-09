@@ -23,12 +23,12 @@ class TaskExecutionWidget extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.85),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(color: const Color(0xFF333333)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -128,7 +128,7 @@ class TaskExecutionWidget extends StatelessWidget {
                             step.title,
                             style: TextStyle(
                               color: stepStatus == StepStatus.completed
-                                  ? Colors.white.withOpacity(0.5)
+                                  ? Colors.white.withValues(alpha: 0.5)
                                   : Colors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -137,7 +137,7 @@ class TaskExecutionWidget extends StatelessWidget {
                                   : null,
                             ),
                           ),
-                          if (stepState?.error != null) ...[
+                          if (stepState != null && stepState.error != null) ...[
                             const SizedBox(height: 4),
                             Text(
                               stepState.error!,
@@ -146,7 +146,8 @@ class TaskExecutionWidget extends StatelessWidget {
                                 fontSize: 11,
                               ),
                             ),
-                          ] else if (stepState?.output != null &&
+                          ] else if (stepState != null &&
+                              stepState.output != null &&
                               stepState.output!.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
@@ -154,7 +155,7 @@ class TaskExecutionWidget extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
+                                color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 11,
                               ),
                             ),

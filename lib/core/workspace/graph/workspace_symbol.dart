@@ -8,11 +8,7 @@ enum SymbolKind {
   extensionSymbol
 }
 
-enum SymbolVisibility {
-  public,
-  private,
-  protected
-}
+enum SymbolVisibility { public, private, protected }
 
 class WorkspaceSymbol {
   final String id; // Format: workspace://relative/path.dart#Parent.child

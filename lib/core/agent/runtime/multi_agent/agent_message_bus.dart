@@ -2,10 +2,10 @@ import 'dart:async';
 import 'agent_envelope.dart';
 
 class AgentMessageBus {
-  final StreamController<AgentEnvelope> _controller =
-      StreamController<AgentEnvelope>.broadcast(sync: true);
+  final StreamController<AgentEnvelope<dynamic>> _controller =
+      StreamController<AgentEnvelope<dynamic>>.broadcast(sync: true);
 
-  Stream<AgentEnvelope> get messages => _controller.stream;
+  Stream<AgentEnvelope<dynamic>> get messages => _controller.stream;
 
   void publish<T>(AgentEnvelope<T> envelope) {
     _controller.add(envelope);

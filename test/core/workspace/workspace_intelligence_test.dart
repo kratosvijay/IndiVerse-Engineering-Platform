@@ -3,11 +3,7 @@ import 'package:indiverse_developer_platform/core/workspace/workspace_intelligen
 import 'package:indiverse_developer_platform/core/workspace/graph/workspace_symbol.dart';
 import 'package:indiverse_developer_platform/core/workspace/graph/dependency_graph.dart';
 import 'package:indiverse_developer_platform/core/workspace/graph/call_graph.dart';
-import 'package:indiverse_developer_platform/core/workspace/graph/workspace_snapshot.dart';
-import 'package:indiverse_developer_platform/core/workspace/index/architecture_index.dart';
-import 'package:indiverse_developer_platform/core/workspace/index/build_intelligence.dart';
 import 'package:indiverse_developer_platform/core/workspace/discovery/dart_regex_parser.dart';
-import 'package:indiverse_developer_platform/core/workspace/workspace_query_engine.dart';
 import 'package:indiverse_developer_platform/core/workspace/context/providers/intelligence_context_providers.dart';
 import 'package:indiverse_developer_platform/core/context/context_engine.dart';
 import 'package:indiverse_developer_platform/core/models/tool_call_models.dart';
@@ -47,31 +43,37 @@ class AuthService {
 
     test('DartRegexParser extracts classes, methods, imports, and calls', () {
       final parser = DartRegexParser();
-      final result = parser.parse('lib/services/auth_service.dart', mockDartContent);
+      final result =
+          parser.parse('lib/services/auth_service.dart', mockDartContent);
 
       expect(result.symbols, isNotEmpty);
-      
-      final classSym = result.symbols.firstWhere((s) => s.kind == SymbolKind.classSymbol);
+
+      final classSym =
+          result.symbols.firstWhere((s) => s.kind == SymbolKind.classSymbol);
       expect(classSym.name, equals('AuthService'));
       expect(classSym.documentation, equals('Documentation for AuthService'));
       expect(classSym.annotations, contains('Service'));
 
-      final methodSym = result.symbols.firstWhere((s) => s.kind == SymbolKind.method);
+      final methodSym =
+          result.symbols.firstWhere((s) => s.kind == SymbolKind.method);
       expect(methodSym.name, equals('login'));
       expect(methodSym.annotations, contains('Route'));
       expect(methodSym.parentIds, contains(classSym.id));
 
       // Check extracted calls
       expect(result.calls, isNotEmpty);
-      final normalCall = result.calls.firstWhere((c) => c['type'] == CallType.normal);
+      final normalCall =
+          result.calls.firstWhere((c) => c['type'] == CallType.normal);
       expect(normalCall['callerId'], equals(methodSym.id));
       expect(normalCall['calleeId'], contains('verifyUser'));
     });
 
     test('DependencyGraph tracks dependencies, cycles, and shortest paths', () {
       final graph = DependencyGraph();
-      graph.addDependency('lib/a.dart', 'lib/b.dart', DependencyType.importRelation);
-      graph.addDependency('lib/b.dart', 'lib/c.dart', DependencyType.importRelation);
+      graph.addDependency(
+          'lib/a.dart', 'lib/b.dart', DependencyType.importRelation);
+      graph.addDependency(
+          'lib/b.dart', 'lib/c.dart', DependencyType.importRelation);
 
       expect(graph.dependenciesOf('lib/a.dart'), contains('lib/b.dart'));
       expect(graph.dependentsOf('lib/c.dart'), contains('lib/b.dart'));
@@ -82,7 +84,8 @@ class AuthService {
 
       // Cycle detection
       expect(graph.hasCycles(), isFalse);
-      graph.addDependency('lib/c.dart', 'lib/a.dart', DependencyType.importRelation);
+      graph.addDependency(
+          'lib/c.dart', 'lib/a.dart', DependencyType.importRelation);
       expect(graph.hasCycles(), isTrue);
     });
 
@@ -105,17 +108,19 @@ class AuthService {
       expect(intel.getSnapshot().symbols, isEmpty);
 
       // Index file first time
-      final isModified1 = intel.indexFile('lib/services/auth_service.dart', mockDartContent);
+      final isModified1 =
+          intel.indexFile('lib/services/auth_service.dart', mockDartContent);
       expect(isModified1, isTrue);
-      
+
       final snap1 = intel.getSnapshot();
       expect(snap1.symbols, isNotEmpty);
       expect(snap1.version, equals(2));
 
       // Index second time with identical content (should skip)
-      final isModified2 = intel.indexFile('lib/services/auth_service.dart', mockDartContent);
+      final isModified2 =
+          intel.indexFile('lib/services/auth_service.dart', mockDartContent);
       expect(isModified2, isFalse);
-      
+
       final snap2 = intel.getSnapshot();
       expect(snap2.version, equals(2)); // version did not increment
 
@@ -138,14 +143,17 @@ class AuthService {
       WorkspaceIntelligenceRegistry.register('test_root', intel);
 
       final archProvider = ArchitectureContextProvider();
-      final contextReq = const ContextRequest(workspace: 'test_root', maxTokens: 1000);
+      final contextReq =
+          const ContextRequest(workspace: 'test_root', maxTokens: 1000);
       final frag = await archProvider.resolve(contextReq);
 
       expect(frag.content, contains('AuthService'));
       expect(frag.content, contains('Services'));
     });
 
-    test('Workspace Intelligence tools execute correctly via ToolExecutionService', () async {
+    test(
+        'Workspace Intelligence tools execute correctly via ToolExecutionService',
+        () async {
       final registry = ToolRegistry();
       final permissionStore = ToolPermissionStore();
       final executionService = ToolExecutionService(
@@ -171,10 +179,10 @@ class AuthService {
       intel.indexFile('lib/services/auth_service.dart', mockDartContent);
       WorkspaceIntelligenceRegistry.register('test_root', intel);
 
-      final request = ToolCallRequest(
+      final request = const ToolCallRequest(
         toolCallId: 'call-1',
         toolName: 'workspace.find_symbol',
-        arguments: const {'query': 'AuthService'},
+        arguments: {'query': 'AuthService'},
       );
 
       final context = ToolExecutionContext(

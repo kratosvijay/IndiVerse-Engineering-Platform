@@ -4,7 +4,8 @@ import '../workflow/task_step.dart';
 class PlanMutationEngine {
   /// Inserts [newSteps] sequentially after [afterStepId].
   /// Updates existing steps that depend on [afterStepId] to depend on the last step of [newSteps].
-  TaskGraph insertSteps(TaskGraph graph, String afterStepId, List<TaskStep> newSteps) {
+  TaskGraph insertSteps(
+      TaskGraph graph, String afterStepId, List<TaskStep> newSteps) {
     if (newSteps.isEmpty) return graph;
 
     final steps = List<TaskStep>.from(graph.steps);
@@ -61,7 +62,8 @@ class PlanMutationEngine {
   /// Replaces [stepId] with [replacementSteps].
   /// The first replacement step inherits the dependencies of [stepId].
   /// Existing steps depending on [stepId] are updated to depend on the last replacement step.
-  TaskGraph replaceStep(TaskGraph graph, String stepId, List<TaskStep> replacementSteps) {
+  TaskGraph replaceStep(
+      TaskGraph graph, String stepId, List<TaskStep> replacementSteps) {
     final steps = List<TaskStep>.from(graph.steps);
     final index = steps.indexWhere((s) => s.id == stepId);
     if (index == -1) return graph;
@@ -77,7 +79,8 @@ class PlanMutationEngine {
     final preparedReplacements = <TaskStep>[];
     for (var i = 0; i < replacementSteps.length; i++) {
       final step = replacementSteps[i];
-      final deps = i == 0 ? targetStep.dependencies : [replacementSteps[i - 1].id];
+      final deps =
+          i == 0 ? targetStep.dependencies : [replacementSteps[i - 1].id];
       preparedReplacements.add(TaskStep(
         id: step.id,
         title: step.title,
@@ -135,7 +138,8 @@ class PlanMutationEngine {
     for (var i = 0; i < steps.length; i++) {
       final step = steps[i];
       if (step.dependencies.contains(stepId)) {
-        final updatedDeps = List<String>.from(step.dependencies)..remove(stepId);
+        final updatedDeps = List<String>.from(step.dependencies)
+          ..remove(stepId);
         // Add targetStep's dependencies to avoid breaking DAG continuity
         for (final dep in targetStep.dependencies) {
           if (!updatedDeps.contains(dep)) {

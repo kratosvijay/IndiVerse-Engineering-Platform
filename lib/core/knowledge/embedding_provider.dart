@@ -49,7 +49,11 @@ class MockEmbeddingProvider implements EmbeddingProvider {
     final vector = List<double>.filled(dimensions, 0.0);
     if (text.isEmpty) {
       vector[0] = 1.0;
-      return Embedding(provider: provider, model: model, vector: vector, dimensions: dimensions);
+      return Embedding(
+          provider: provider,
+          model: model,
+          vector: vector,
+          dimensions: dimensions);
     }
 
     for (int i = 0; i < text.length; i++) {

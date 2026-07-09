@@ -21,14 +21,16 @@ class FindSymbolTool implements ToolHandler {
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
     final query = request.arguments['query'] as String? ?? '';
-    
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );
@@ -70,15 +72,19 @@ class FindReferencesTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final symbol = request.arguments['symbol'] as String? ?? request.arguments['symbolName'] as String? ?? '';
-    
+    final symbol = request.arguments['symbol'] as String? ??
+        request.arguments['symbolName'] as String? ??
+        '';
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );
@@ -120,15 +126,19 @@ class FindImplementationsTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final className = request.arguments['className'] as String? ?? request.arguments['class'] as String? ?? '';
-    
+    final className = request.arguments['className'] as String? ??
+        request.arguments['class'] as String? ??
+        '';
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );
@@ -170,15 +180,19 @@ class FindCallersTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final methodName = request.arguments['methodName'] as String? ?? request.arguments['method'] as String? ?? '';
-    
+    final methodName = request.arguments['methodName'] as String? ??
+        request.arguments['method'] as String? ??
+        '';
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );
@@ -220,15 +234,19 @@ class FindCalleesTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final methodName = request.arguments['methodName'] as String? ?? request.arguments['method'] as String? ?? '';
-    
+    final methodName = request.arguments['methodName'] as String? ??
+        request.arguments['method'] as String? ??
+        '';
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );
@@ -270,15 +288,19 @@ class FindDefinitionTool implements ToolHandler {
   Future<ToolCallResult> execute(
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
-    final symbol = request.arguments['symbol'] as String? ?? request.arguments['symbolName'] as String? ?? '';
-    
+    final symbol = request.arguments['symbol'] as String? ??
+        request.arguments['symbolName'] as String? ??
+        '';
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );
@@ -323,14 +345,16 @@ class FindFileTool implements ToolHandler {
       ToolCallRequest request, ToolExecutionContext context) async {
     final stopwatch = Stopwatch()..start();
     final pattern = request.arguments['pattern'] as String? ?? '';
-    
+
     final intel = WorkspaceIntelligenceRegistry.active ??
         WorkspaceIntelligenceRegistry.get(context.workspaceId);
 
     if (intel == null) {
       return ToolCallResult(
         success: false,
-        output: const ToolOutput(displayText: 'Workspace intelligence not initialized.', mimeType: 'text/plain'),
+        output: const ToolOutput(
+            displayText: 'Workspace intelligence not initialized.',
+            mimeType: 'text/plain'),
         duration: stopwatch.elapsed,
         errorCode: 'INTEL_NOT_INITIALIZED',
       );

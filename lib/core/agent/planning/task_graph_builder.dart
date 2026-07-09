@@ -7,14 +7,14 @@ class TaskGraphBuilder {
   TaskGraph build(GoalAnalysis goalAnalysis, ArchitectureImpact impact) {
     final nodes = <TaskNode>[];
 
-    final planNode = TaskNode(
+    final planNode = const TaskNode(
       id: 'task.plan',
       title: 'Analyze and plan dependencies',
       description: 'Formulate final execution specifications.',
       priority: 'High',
       estimatedTokens: 1000,
       estimatedLOC: 0,
-      dependencies: const [],
+      dependencies: [],
       parallelizable: false,
       agentCapability: AgentCapability.planning,
     );
@@ -34,40 +34,40 @@ class TaskGraphBuilder {
     );
     nodes.add(writeNode);
 
-    final reviewNode = TaskNode(
+    final reviewNode = const TaskNode(
       id: 'task.review',
       title: 'Review updates',
       description: 'Verify clean architecture code conventions.',
       priority: 'Medium',
       estimatedTokens: 1200,
       estimatedLOC: 0,
-      dependencies: const ['task.code'],
+      dependencies: ['task.code'],
       parallelizable: true,
       agentCapability: AgentCapability.review,
     );
     nodes.add(reviewNode);
 
-    final testNode = TaskNode(
+    final testNode = const TaskNode(
       id: 'task.test',
       title: 'Run quality verification tests',
       description: 'Verify all unit tests pass cleanly.',
       priority: 'High',
       estimatedTokens: 1500,
       estimatedLOC: 0,
-      dependencies: const ['task.code'],
+      dependencies: ['task.code'],
       parallelizable: true,
       agentCapability: AgentCapability.testing,
     );
     nodes.add(testNode);
 
-    final docNode = TaskNode(
+    final docNode = const TaskNode(
       id: 'task.document',
       title: 'Generate markdown docs',
       description: 'Document changes in repository walkthroughs.',
       priority: 'Low',
       estimatedTokens: 800,
       estimatedLOC: 15,
-      dependencies: const ['task.review', 'task.test'],
+      dependencies: ['task.review', 'task.test'],
       parallelizable: true,
       agentCapability: AgentCapability.documentation,
     );

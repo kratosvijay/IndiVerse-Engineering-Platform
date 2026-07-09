@@ -109,7 +109,8 @@ class WorkspaceManager {
 
     final dir = Directory(rootPath);
     if (await dir.exists()) {
-      await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      await for (final entity
+          in dir.list(recursive: true, followLinks: false)) {
         if (entity is File && entity.path.endsWith('.dart')) {
           try {
             final content = await entity.readAsString();

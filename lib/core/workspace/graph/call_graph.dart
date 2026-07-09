@@ -37,7 +37,7 @@ class CallGraph {
 
   void addCall(String callerId, String calleeId, CallType type) {
     final edge = CallEdge(callerId: callerId, calleeId: calleeId, type: type);
-    
+
     _callsFrom.putIfAbsent(callerId, () => []);
     if (!_callsFrom[callerId]!.contains(edge)) {
       _callsFrom[callerId]!.add(edge);
@@ -52,7 +52,7 @@ class CallGraph {
   void removeCallsForFile(String filePath) {
     // A file path matches in symbol IDs starting with `workspace://relative/path.dart#`
     final prefix = "workspace://$filePath#";
-    
+
     // Remove outgoing calls
     _callsFrom.removeWhere((key, _) => key.startsWith(prefix));
     for (final key in _callsFrom.keys) {

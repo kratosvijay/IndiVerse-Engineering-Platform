@@ -1,12 +1,12 @@
 import '../graph/workspace_symbol.dart';
-import '../graph/dependency_graph.dart';
-import '../graph/call_graph.dart';
 import '../index/build_intelligence.dart';
 
 class WorkspaceParseResult {
   final List<WorkspaceSymbol> symbols;
-  final List<Map<String, dynamic>> imports; // List of {'target': String, 'type': DependencyType}
-  final List<Map<String, dynamic>> calls;   // List of {'callerId': String, 'calleeId': String, 'type': CallType}
+  final List<Map<String, dynamic>>
+      imports; // List of {'target': String, 'type': DependencyType}
+  final List<Map<String, dynamic>>
+      calls; // List of {'callerId': String, 'calleeId': String, 'type': CallType}
   final List<BuildDiagnostic> diagnostics;
 
   const WorkspaceParseResult({

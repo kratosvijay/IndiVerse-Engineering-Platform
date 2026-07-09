@@ -13,9 +13,11 @@ class KnowledgeIndexer {
 
     if (lowerPath.endsWith('readme.md')) {
       category = KnowledgeCategory.readme;
-    } else if (lowerPath.contains('adr') || lowerPath.contains('architecture')) {
+    } else if (lowerPath.contains('adr') ||
+        lowerPath.contains('architecture')) {
       category = KnowledgeCategory.adr;
-    } else if (lowerPath.contains('docs/') || lowerPath.contains('documentation/')) {
+    } else if (lowerPath.contains('docs/') ||
+        lowerPath.contains('documentation/')) {
       category = KnowledgeCategory.documentation;
     } else if (lowerPath.contains('test/')) {
       category = KnowledgeCategory.testPattern;

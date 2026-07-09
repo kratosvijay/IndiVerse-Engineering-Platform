@@ -30,8 +30,9 @@ class PlannerAgent implements CollabAgent {
 
   @override
   Future<AgentResult> execute(TaskStep task, AgentContext context) async {
-    context.memory.reasoning.record(descriptor.id, "Decomposing task: ${task.title}");
-    return AgentResult(
+    context.memory.reasoning
+        .record(descriptor.id, "Decomposing task: ${task.title}");
+    return const AgentResult(
       success: true,
       outputMessage: "Plan formulated for strategic goals.",
       metadata: {'action': 'plan_generated'},
@@ -50,7 +51,8 @@ class CodingAgent implements CollabAgent {
 
   @override
   Future<AgentResult> execute(TaskStep task, AgentContext context) async {
-    context.memory.reasoning.record(descriptor.id, "Executing coding task: ${task.title}");
+    context.memory.reasoning
+        .record(descriptor.id, "Executing coding task: ${task.title}");
     context.memory.artifacts.publish(task.id, "Code implementation logic");
     return AgentResult(
       success: true,
@@ -70,8 +72,9 @@ class ReviewAgent implements CollabAgent {
 
   @override
   Future<AgentResult> execute(TaskStep task, AgentContext context) async {
-    context.memory.reasoning.record(descriptor.id, "Reviewing task: ${task.title}");
-    return AgentResult(
+    context.memory.reasoning
+        .record(descriptor.id, "Reviewing task: ${task.title}");
+    return const AgentResult(
       success: true,
       outputMessage: "Code review completed. Standards verified.",
     );
@@ -89,8 +92,9 @@ class TestingAgent implements CollabAgent {
 
   @override
   Future<AgentResult> execute(TaskStep task, AgentContext context) async {
-    context.memory.reasoning.record(descriptor.id, "Running tests for: ${task.title}");
-    return AgentResult(
+    context.memory.reasoning
+        .record(descriptor.id, "Running tests for: ${task.title}");
+    return const AgentResult(
       success: true,
       outputMessage: "Test suite executed. All specs passing.",
     );
@@ -108,8 +112,9 @@ class DocumentationAgent implements CollabAgent {
 
   @override
   Future<AgentResult> execute(TaskStep task, AgentContext context) async {
-    context.memory.reasoning.record(descriptor.id, "Writing documentation for: ${task.title}");
-    return AgentResult(
+    context.memory.reasoning
+        .record(descriptor.id, "Writing documentation for: ${task.title}");
+    return const AgentResult(
       success: true,
       outputMessage: "Markdown documentation generated.",
     );
@@ -122,13 +127,17 @@ class RefactoringAgent implements CollabAgent {
     id: 'agent.refactorer',
     name: 'Refactoring Specialist Agent',
     role: AgentRole.refactorer,
-    capabilities: [AgentCapability.refactoring, AgentCapability.workspaceAnalysis],
+    capabilities: [
+      AgentCapability.refactoring,
+      AgentCapability.workspaceAnalysis
+    ],
   );
 
   @override
   Future<AgentResult> execute(TaskStep task, AgentContext context) async {
-    context.memory.reasoning.record(descriptor.id, "Refactoring modules: ${task.title}");
-    return AgentResult(
+    context.memory.reasoning
+        .record(descriptor.id, "Refactoring modules: ${task.title}");
+    return const AgentResult(
       success: true,
       outputMessage: "Refactoring optimization finished.",
     );

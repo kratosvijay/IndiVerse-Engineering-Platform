@@ -11,7 +11,6 @@ import '../../agent/workflow/plan_event.dart';
 import '../../agent/runtime/reflection_engine.dart';
 import '../../agent/runtime/goal_manager.dart';
 import '../../agent/runtime/agent_runtime.dart';
-import '../../agent/runtime/agent_runtime_event.dart' as re;
 import 'tool_execution_service.dart';
 
 class AgentService {
@@ -135,8 +134,7 @@ class AgentService {
     runtime.updateActiveSession(session);
 
     scheduleMicrotask(() async {
-      await runtime.start(
-          graph, workspaceId, conversationId, requestId);
+      await runtime.start(graph, workspaceId, conversationId, requestId);
     });
 
     return session;

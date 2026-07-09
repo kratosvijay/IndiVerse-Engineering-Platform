@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:test/test.dart';
 import 'package:indiverse_developer_platform/core/knowledge/embedding_provider.dart';
 import 'package:indiverse_developer_platform/core/knowledge/vector_store.dart';
@@ -9,7 +8,6 @@ import 'package:indiverse_developer_platform/core/knowledge/retriever_pipeline.d
 import 'package:indiverse_developer_platform/core/knowledge/knowledge_indexer.dart';
 import 'package:indiverse_developer_platform/core/knowledge/memory_manager.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/reflection_context.dart';
-import 'package:indiverse_developer_platform/core/agent/runtime/reflection_engine.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/reflection_result.dart';
 import 'package:indiverse_developer_platform/core/agent/runtime/reflection_strategy.dart';
 import 'package:indiverse_developer_platform/core/agent/workflow/execution_state.dart';
@@ -30,6 +28,7 @@ import 'package:indiverse_developer_platform/platform_sdk/agent_api.dart';
 import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -50,13 +49,16 @@ void main() {
         embeddingProvider: embeddingProvider,
       );
       chunker = DocumentChunker();
-      
+
       KnowledgeManagerRegistry.clear();
       KnowledgeManagerRegistry.register('test-ws', knowledgeManager);
     });
 
-    test('Embeddings provider generates normalized dimension-consistent vectors', () async {
-      final text = 'Clean architecture dependencies are strictly unidirectional.';
+    test(
+        'Embeddings provider generates normalized dimension-consistent vectors',
+        () async {
+      final text =
+          'Clean architecture dependencies are strictly unidirectional.';
       final embedding = await embeddingProvider.embedText(text);
 
       expect(embedding.dimensions, equals(8));
@@ -70,11 +72,13 @@ void main() {
       expect(sumOfSquares, closeTo(1.0, 0.01));
     });
 
-    test('DocumentChunker splits text and preserves offsets and estimations', () {
+    test('DocumentChunker splits text and preserves offsets and estimations',
+        () {
       final doc = KnowledgeDocument(
         id: 'doc-1',
         title: 'Architectural Rules',
-        content: 'Rule 1: Domain layer must be pure. Rule 2: UI depends only on Controllers.',
+        content:
+            'Rule 1: Domain layer must be pure. Rule 2: UI depends only on Controllers.',
         summary: 'Workspace boundaries.',
         source: 'docs/ADR.md',
         category: KnowledgeCategory.adr,
@@ -90,13 +94,19 @@ void main() {
       expect(chunks.first.tokenEstimate, greaterThan(0));
     });
 
-    test('MemoryVectorStore performs correct cosine nearestNeighbors query', () async {
-      final embedA = await embeddingProvider.embedText('Riverpod state notifier initialization');
-      final embedB = await embeddingProvider.embedText('Sqlite local storage bindings configuration');
-      final queryEmbed = await embeddingProvider.embedText('Riverpod notifier state');
+    test('MemoryVectorStore performs correct cosine nearestNeighbors query',
+        () async {
+      final embedA = await embeddingProvider
+          .embedText('Riverpod state notifier initialization');
+      final embedB = await embeddingProvider
+          .embedText('Sqlite local storage bindings configuration');
+      final queryEmbed =
+          await embeddingProvider.embedText('Riverpod notifier state');
 
-      await vectorStore.insert(VectorItem(id: 'item-a', embedding: embedA, payload: const {}));
-      await vectorStore.insert(VectorItem(id: 'item-b', embedding: embedB, payload: const {}));
+      await vectorStore.insert(
+          VectorItem(id: 'item-a', embedding: embedA, payload: const {}));
+      await vectorStore.insert(
+          VectorItem(id: 'item-b', embedding: embedB, payload: const {}));
 
       final results = await vectorStore.search(queryEmbed, limit: 1);
       expect(results, hasLength(1));
@@ -104,7 +114,9 @@ void main() {
       expect(results.first.score, greaterThan(0.5));
     });
 
-    test('KnowledgeManager inserts, deletes, and updates canonical doc mappings', () async {
+    test(
+        'KnowledgeManager inserts, deletes, and updates canonical doc mappings',
+        () async {
       final doc = KnowledgeDocument(
         id: 'doc-2',
         title: 'Api Endpoints',
@@ -123,14 +135,17 @@ void main() {
       final queryEmbed = await embeddingProvider.embedText('/api/v1/auth');
       final results = await vectorStore.search(queryEmbed, limit: 10);
       expect(results, isNotEmpty);
-      expect(results.any((r) => r.item.payload['documentId'] == 'doc-2'), isTrue);
+      expect(
+          results.any((r) => r.item.payload['documentId'] == 'doc-2'), isTrue);
 
       // Delete document
       await knowledgeManager.deleteDocument('doc-2');
       expect(knowledgeManager.store.get('doc-2'), isNull);
 
       final resultsPostDelete = await vectorStore.search(queryEmbed, limit: 10);
-      expect(resultsPostDelete.any((r) => r.item.payload['documentId'] == 'doc-2'), isFalse);
+      expect(
+          resultsPostDelete.any((r) => r.item.payload['documentId'] == 'doc-2'),
+          isFalse);
     });
 
     test('RetrieverPipeline returns ranked context summaries', () async {
@@ -148,12 +163,15 @@ void main() {
       await knowledgeManager.insertDocument(doc);
 
       final pipeline = RetrieverPipeline(manager: knowledgeManager);
-      final contextText = await pipeline.retrieveAndBuildContext('state notifier pattern', minScore: 0.1);
+      final contextText = await pipeline
+          .retrieveAndBuildContext('state notifier pattern', minScore: 0.1);
       expect(contextText, contains('Riverside riverpod pattern'));
       expect(contextText, contains('Standard state notifier pattern is X.'));
     });
 
-    test('KnowledgeIndexer classifies and indexes README, ADR, and test patterns', () async {
+    test(
+        'KnowledgeIndexer classifies and indexes README, ADR, and test patterns',
+        () async {
       final indexer = KnowledgeIndexer();
 
       await indexer.indexWorkspaceFile(
@@ -185,7 +203,9 @@ void main() {
       expect(manager.get(MemorySegment.project), isEmpty);
     });
 
-    test('KnowledgeReflectionStrategy evaluates history before planning retries', () async {
+    test(
+        'KnowledgeReflectionStrategy evaluates history before planning retries',
+        () async {
       final doc = KnowledgeDocument(
         id: 'doc-err',
         title: 'Compiler fix',
@@ -202,17 +222,17 @@ void main() {
       final strategy = KnowledgeReflectionStrategy(retriever: pipeline);
 
       final step = const TaskStep(id: 'step-1', title: 'Write prompt builder');
-      final stepState = StepExecutionState(stepId: 'step-1').copyWith(
+      final stepState = const StepExecutionState(stepId: 'step-1').copyWith(
         status: StepStatus.failed,
         retryCount: 0,
       );
-      
+
       final context = ReflectionContext(
         goal: 'Mock goal',
         session: ExecutionSession(
           executionId: 'exec-1',
           planId: 'plan-1',
-          graph: TaskGraph(id: 'g-1', goal: 'test', steps: const []),
+          graph: const TaskGraph(id: 'g-1', goal: 'test', steps: []),
           stepStates: const {},
           startedAt: DateTime.now(),
         ),
@@ -256,10 +276,10 @@ void main() {
         sdk: sdk,
       );
 
-      final requestInsert = ToolCallRequest(
+      final requestInsert = const ToolCallRequest(
         toolCallId: 'call-ins',
         toolName: 'knowledge.insert',
-        arguments: const {
+        arguments: {
           'id': 'doc-tool',
           'title': 'Tool Documentation',
           'content': 'How to invoke permission checks.',
@@ -270,10 +290,10 @@ void main() {
       final resInsert = await service.execute(requestInsert, context);
       expect(resInsert.success, isTrue);
 
-      final requestSearch = ToolCallRequest(
+      final requestSearch = const ToolCallRequest(
         toolCallId: 'call-sea',
         toolName: 'knowledge.search',
-        arguments: const {'query': 'permission checks'},
+        arguments: {'query': 'permission checks'},
       );
 
       final resSearch = await service.execute(requestSearch, context);

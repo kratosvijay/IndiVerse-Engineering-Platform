@@ -1,8 +1,6 @@
-import 'dart:async';
 import '../../workflow/task_step.dart';
 import '../../workflow/ready_step_scheduler.dart';
 import '../../workflow/execution_state.dart';
-import '../../workflow/task_graph.dart';
 import 'execution_plan.dart';
 
 class AgentScheduler {
@@ -16,7 +14,7 @@ class AgentScheduler {
 
     void visit(TaskStep step) {
       if (visited.contains(step.id)) return;
-      
+
       // Visit dependencies first
       for (final depId in step.dependencies) {
         final depStep = graph.steps.firstWhere((s) => s.id == depId);

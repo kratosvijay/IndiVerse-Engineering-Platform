@@ -48,9 +48,9 @@ class FakeToolStepExecutor implements StepTypeExecutor {
     CancellationToken token,
   ) async {
     if (errorCode == 'PERMISSION_REQUIRED') {
-      return ToolCallResult(
+      return const ToolCallResult(
         success: false,
-        output: const ToolOutput(
+        output: ToolOutput(
             displayText: 'Permission required', mimeType: 'text/plain'),
         duration: Duration.zero,
         errorCode: 'PERMISSION_REQUIRED',

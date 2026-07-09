@@ -17,7 +17,7 @@ class AgentRuntime {
 
   ExecutionSession? _activeSession;
   Timer? _heartbeatTimer;
-  StreamSubscription? _executorSubscription;
+  StreamSubscription<pe.PlanEvent>? _executorSubscription;
 
   AgentRuntime({
     required this.planExecutor,
@@ -63,8 +63,10 @@ class AgentRuntime {
       } else if (event is pe.PlanStatusChangedEvent) {
         _activeSession = _activeSession!.copyWith(status: event.status);
       } else if (event is pe.StepStartedEvent) {
-        final states = Map<String, StepExecutionState>.from(_activeSession!.stepStates);
-        states[event.stepId] = states[event.stepId]!.copyWith(status: StepStatus.running);
+        final states =
+            Map<String, StepExecutionState>.from(_activeSession!.stepStates);
+        states[event.stepId] =
+            states[event.stepId]!.copyWith(status: StepStatus.running);
         _activeSession = _activeSession!.copyWith(stepStates: states);
 
         _eventController.add(StepStartedEvent(
@@ -74,7 +76,8 @@ class AgentRuntime {
           stepId: event.stepId,
         ));
       } else if (event is pe.StepCompletedEvent) {
-        final states = Map<String, StepExecutionState>.from(_activeSession!.stepStates);
+        final states =
+            Map<String, StepExecutionState>.from(_activeSession!.stepStates);
         states[event.stepId] = states[event.stepId]!.copyWith(
           status: StepStatus.completed,
           output: event.output,
@@ -89,15 +92,18 @@ class AgentRuntime {
           output: event.output,
         ));
       } else if (event is pe.StepFailedEvent) {
-        final states = Map<String, StepExecutionState>.from(_activeSession!.stepStates);
+        final states =
+            Map<String, StepExecutionState>.from(_activeSession!.stepStates);
         states[event.stepId] = states[event.stepId]!.copyWith(
           status: StepStatus.failed,
           error: event.error,
         );
         _activeSession = _activeSession!.copyWith(stepStates: states);
       } else if (event is pe.StepSkippedEvent) {
-        final states = Map<String, StepExecutionState>.from(_activeSession!.stepStates);
-        states[event.stepId] = states[event.stepId]!.copyWith(status: StepStatus.skipped);
+        final states =
+            Map<String, StepExecutionState>.from(_activeSession!.stepStates);
+        states[event.stepId] =
+            states[event.stepId]!.copyWith(status: StepStatus.skipped);
         _activeSession = _activeSession!.copyWith(stepStates: states);
       } else if (event is pe.PlanCompletedEvent) {
         _activeSession = event.session;
@@ -200,7 +206,8 @@ class AgentRuntime {
 
   void _startHeartbeats() {
     _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+    _heartbeatTimer =
+        Timer.periodic(const Duration(milliseconds: 500), (timer) {
       final active = _activeSession;
       if (active != null) {
         String? activeStepId;

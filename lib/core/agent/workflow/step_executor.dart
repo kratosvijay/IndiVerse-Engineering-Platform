@@ -30,9 +30,9 @@ class ToolStepExecutor implements StepTypeExecutor {
     CancellationToken token,
   ) async {
     if (step.toolId == null) {
-      return ToolCallResult(
+      return const ToolCallResult(
         success: true,
-        output: const ToolOutput(
+        output: ToolOutput(
             displayText: 'No tool specified', mimeType: 'text/plain'),
         duration: Duration.zero,
       );
@@ -56,9 +56,9 @@ class ToolStepExecutor implements StepTypeExecutor {
       if (decision == null ||
           decision == PermissionDecision.deny ||
           decision == PermissionDecision.denyAlways) {
-        return ToolCallResult(
+        return const ToolCallResult(
           success: false,
-          output: const ToolOutput(
+          output: ToolOutput(
               displayText: 'Permission required', mimeType: 'text/plain'),
           duration: Duration.zero,
           errorCode: 'PERMISSION_REQUIRED',

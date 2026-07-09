@@ -15,7 +15,8 @@ class RiskAnalyzer {
     regressionRisk += impact.files.length * 0.4;
 
     // Security triggers
-    if (goalAnalysis.goal.toLowerCase().contains('auth') || goalAnalysis.goal.toLowerCase().contains('login')) {
+    if (goalAnalysis.goal.toLowerCase().contains('auth') ||
+        goalAnalysis.goal.toLowerCase().contains('login')) {
       securityRisk += 4.0;
       complexityScore += 1.5;
     }
@@ -32,7 +33,8 @@ class RiskAnalyzer {
     }
 
     // Performance limits
-    if (goalAnalysis.constraints.any((c) => c.contains('200ms') || c.contains('time'))) {
+    if (goalAnalysis.constraints
+        .any((c) => c.contains('200ms') || c.contains('time'))) {
       performanceRisk += 3.0;
     }
 

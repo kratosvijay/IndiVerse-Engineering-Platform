@@ -1,15 +1,6 @@
-enum DiagnosticSeverity {
-  error,
-  warning,
-  info
-}
+enum DiagnosticSeverity { error, warning, info }
 
-enum DiagnosticOrigin {
-  analyzer,
-  compiler,
-  flutterTest,
-  runtime
-}
+enum DiagnosticOrigin { analyzer, compiler, flutterTest, runtime }
 
 class BuildDiagnostic {
   final DiagnosticSeverity severity;
@@ -66,9 +57,10 @@ class BuildIntelligence {
   }
 
   List<BuildDiagnostic> get diagnostics => List.unmodifiable(_diagnostics);
-  
-  List<BuildDiagnostic> getErrors() =>
-      _diagnostics.where((d) => d.severity == DiagnosticSeverity.error).toList();
+
+  List<BuildDiagnostic> getErrors() => _diagnostics
+      .where((d) => d.severity == DiagnosticSeverity.error)
+      .toList();
 
   List<BuildDiagnostic> getByOrigin(DiagnosticOrigin origin) =>
       _diagnostics.where((d) => d.origin == origin).toList();

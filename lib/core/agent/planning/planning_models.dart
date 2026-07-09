@@ -1,6 +1,5 @@
 import '../workflow/task_graph.dart';
 import '../workflow/task_step.dart';
-import '../../workspace/graph/workspace_snapshot.dart';
 import '../runtime/multi_agent/agent_role.dart';
 
 enum GoalType {

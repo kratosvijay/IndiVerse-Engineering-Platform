@@ -20,7 +20,8 @@ class VectorItem {
 
   factory VectorItem.fromJson(Map<String, dynamic> json) => VectorItem(
         id: json['id'] as String,
-        embedding: Embedding.fromJson(json['embedding'] as Map<String, dynamic>),
+        embedding:
+            Embedding.fromJson(json['embedding'] as Map<String, dynamic>),
         payload: json['payload'] as Map<String, dynamic>,
       );
 }
@@ -39,7 +40,8 @@ abstract class VectorStore {
   Future<void> insert(VectorItem item);
   Future<void> delete(String id);
   Future<void> update(VectorItem item);
-  Future<List<VectorSearchResult>> search(Embedding query, {int limit = 5, double minScore = 0.0});
+  Future<List<VectorSearchResult>> search(Embedding query,
+      {int limit = 5, double minScore = 0.0});
   Future<void> clear();
 }
 
@@ -67,7 +69,8 @@ class MemoryVectorStore implements VectorStore {
   }
 
   @override
-  Future<List<VectorSearchResult>> search(Embedding query, {int limit = 5, double minScore = 0.0}) async {
+  Future<List<VectorSearchResult>> search(Embedding query,
+      {int limit = 5, double minScore = 0.0}) async {
     final results = <VectorSearchResult>[];
 
     for (final item in _items.values) {

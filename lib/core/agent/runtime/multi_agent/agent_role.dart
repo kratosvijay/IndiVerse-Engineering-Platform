@@ -1,11 +1,4 @@
-enum AgentRole {
-  planner,
-  coder,
-  reviewer,
-  tester,
-  documenter,
-  refactorer
-}
+enum AgentRole { planner, coder, reviewer, tester, documenter, refactorer }
 
 enum AgentCapability {
   planning,

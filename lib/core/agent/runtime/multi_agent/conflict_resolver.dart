@@ -1,9 +1,4 @@
-enum ConflictResolution {
-  merged,
-  manualReview,
-  retry,
-  replan
-}
+enum ConflictResolution { merged, manualReview, retry, replan }
 
 class AgentFileEdit {
   final String agentId;
@@ -35,10 +30,13 @@ class ConflictResolver {
         // Redundant edit, can merge safely
         return ConflictResolution.merged;
       }
-      
+
       // Let's decide resolution strategy based on timestamps or content similarity
       // If edits happened within a close window, we replan/retry or request review
-      final timeWindow = edits.last.timestamp.difference(edits.first.timestamp).inSeconds.abs();
+      final timeWindow = edits.last.timestamp
+          .difference(edits.first.timestamp)
+          .inSeconds
+          .abs();
       if (timeWindow < 10) {
         return ConflictResolution.retry;
       }

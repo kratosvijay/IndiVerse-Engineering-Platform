@@ -52,9 +52,9 @@ class FakeStepExecutor implements StepTypeExecutor {
       shouldSucceed = true;
     }
     if (errorText == 'PERMISSION_REQUIRED') {
-      return ToolCallResult(
+      return const ToolCallResult(
         success: false,
-        output: const ToolOutput(
+        output: ToolOutput(
             displayText: 'Permission required', mimeType: 'text/plain'),
         duration: Duration.zero,
         errorCode: 'PERMISSION_REQUIRED',
@@ -214,7 +214,8 @@ void main() {
       expect(replacedGraph.steps[1].dependencies, contains('replaced-1'));
     });
 
-    test('AgentRuntime events, heartbeats, and pause/resume lifecycle', () async {
+    test('AgentRuntime events, heartbeats, and pause/resume lifecycle',
+        () async {
       final graph = const TaskGraph(
         id: 'plan-live',
         goal: 'Lifecycle verification',
@@ -244,7 +245,8 @@ void main() {
 
       expect(finalSession.status, equals(PlanStatus.completed));
       expect(events.any((e) => e is HeartbeatEvent), isTrue);
-      expect(events.any((e) => e is StepStartedEvent && e.stepId == 'step-1'), isTrue);
+      expect(events.any((e) => e is StepStartedEvent && e.stepId == 'step-1'),
+          isTrue);
       expect(events.any((e) => e is GoalCompletedEvent), isTrue);
     });
 
@@ -268,12 +270,14 @@ void main() {
       final events = <AgentRuntimeEvent>[];
       final sub = agentRuntime.events.listen(events.add);
 
-      final finalSession = await agentRuntime.start(graph, 'ws-1', 'conv-1', 'req-1');
+      final finalSession =
+          await agentRuntime.start(graph, 'ws-1', 'conv-1', 'req-1');
       await Future<void>.delayed(Duration.zero);
       await sub.cancel();
 
       expect(finalSession.status, equals(PlanStatus.completed));
-      expect(finalSession.stepStates['step-1']?.status, equals(StepStatus.completed));
+      expect(finalSession.stepStates['step-1']?.status,
+          equals(StepStatus.completed));
       expect(events.any((e) => e is StepRetryEvent), isTrue);
     });
 
@@ -293,9 +297,11 @@ void main() {
         ],
       );
 
-      final finalSession = await agentRuntime.start(graph, 'ws-1', 'conv-1', 'req-1');
+      final finalSession =
+          await agentRuntime.start(graph, 'ws-1', 'conv-1', 'req-1');
       expect(finalSession.status, equals(PlanStatus.failed));
-      expect(finalSession.stepStates['step-1']?.status, equals(StepStatus.failed));
+      expect(
+          finalSession.stepStates['step-1']?.status, equals(StepStatus.failed));
     });
   });
 }

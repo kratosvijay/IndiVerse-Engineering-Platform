@@ -25,6 +25,7 @@ import 'package:indiverse_developer_platform/platform_sdk/agent_api.dart';
 import 'package:indiverse_developer_platform/platform_sdk/plugin_api.dart';
 
 class TestToolRegistry extends ToolRegistry {}
+
 class TestPermissionStore extends ToolPermissionStore {
   @override
   PermissionDecision? getDecision(String toolName) => null;
@@ -95,13 +96,16 @@ void main() {
       );
     });
 
-    test('GoalAnalyzer correctly classifies feature, bugfix, and doc prompts', () {
+    test('GoalAnalyzer correctly classifies feature, bugfix, and doc prompts',
+        () {
       final resFeature = analyzer.analyze('Implement OAuth user login page.');
       expect(resFeature.type, equals(GoalType.feature));
       expect(resFeature.priority, equals('Medium'));
-      expect(resFeature.constraints, contains('Must enforce secure token handshake.'));
+      expect(resFeature.constraints,
+          contains('Must enforce secure token handshake.'));
 
-      final resBug = analyzer.analyze('Fix compiler diagnostic parsing error on main.dart.');
+      final resBug = analyzer
+          .analyze('Fix compiler diagnostic parsing error on main.dart.');
       expect(resBug.type, equals(GoalType.bugfix));
       expect(resBug.priority, equals('High'));
 
@@ -109,16 +113,24 @@ void main() {
       expect(resDoc.type, equals(GoalType.documentation));
     });
 
-    test('RequirementExtractor produces proper functional & nonfunctional conditions', () {
-      final goalAnalysis = analyzer.analyze('Clean the repository architecture paths.');
+    test(
+        'RequirementExtractor produces proper functional & nonfunctional conditions',
+        () {
+      final goalAnalysis =
+          analyzer.analyze('Clean the repository architecture paths.');
       final requirements = extractor.extract(goalAnalysis);
 
-      expect(requirements.functional, contains('Refactor modules to reuse shared utils.'));
-      expect(requirements.nonFunctional, contains('Execution performance must not degrade.'));
+      expect(requirements.functional,
+          contains('Refactor modules to reuse shared utils.'));
+      expect(requirements.nonFunctional,
+          contains('Execution performance must not degrade.'));
     });
 
-    test('ArchitecturePlanner detects affected paths using snapshot intelligence', () {
-      final goalAnalysis = analyzer.analyze('Implement user authentication service.');
+    test(
+        'ArchitecturePlanner detects affected paths using snapshot intelligence',
+        () {
+      final goalAnalysis =
+          analyzer.analyze('Implement user authentication service.');
       final impact = archPlanner.planImpact(goalAnalysis, dummySnapshot);
 
       expect(impact.files, contains('lib/services/auth_service.dart'));
@@ -126,7 +138,8 @@ void main() {
       expect(impact.routes, contains('AuthRoute'));
     });
 
-    test('TaskGraphBuilder maps planning DAG nodes with correct dependencies', () {
+    test('TaskGraphBuilder maps planning DAG nodes with correct dependencies',
+        () {
       final goalAnalysis = analyzer.analyze('Add settings page.');
       final impact = const ArchitectureImpact(
         files: ['lib/main.dart'],
@@ -149,8 +162,11 @@ void main() {
       expect(stepDoc.dependencies, contains('task.test'));
     });
 
-    test('RiskAnalyzer computes individual security, performance, regression categories', () {
-      final goalAnalysis = analyzer.analyze('Optimize database calls performance under 200ms.');
+    test(
+        'RiskAnalyzer computes individual security, performance, regression categories',
+        () {
+      final goalAnalysis =
+          analyzer.analyze('Optimize database calls performance under 200ms.');
       final impact = const ArchitectureImpact(
         files: ['lib/main.dart', 'lib/db.dart'],
         services: [],
@@ -186,10 +202,16 @@ void main() {
           acceptanceCriteria: [],
           priority: 'Medium',
         ),
-        const Requirement(functional: [], nonFunctional: [], constraints: [], assumptions: []),
+        const Requirement(
+            functional: [],
+            nonFunctional: [],
+            constraints: [],
+            assumptions: []),
         const ArchitectureImpact(
           files: ['lib/main.dart'],
-          services: ['AuthService_widget'], // widget name in service leads to warning
+          services: [
+            'AuthService_widget'
+          ], // widget name in service leads to warning
           routes: [],
           providers: [],
           tests: [],
@@ -200,11 +222,16 @@ void main() {
       );
 
       expect(validation.valid, isFalse);
-      expect(validation.warnings, contains('Cyclic dependencies detected in task graph!'));
-      expect(validation.warnings, contains('Possible Clean Architecture violation: service matches widget name.'));
+      expect(validation.warnings,
+          contains('Cyclic dependencies detected in task graph!'));
+      expect(
+          validation.warnings,
+          contains(
+              'Possible Clean Architecture violation: service matches widget name.'));
     });
 
-    test('Planner generate, validate, and estimate tools run successfully', () async {
+    test('Planner generate, validate, and estimate tools run successfully',
+        () async {
       final registry = TestToolRegistry();
       registry.register(PlannerGeneratePlanTool());
       registry.register(PlannerValidatePlanTool());
@@ -235,10 +262,10 @@ void main() {
         sdk: sdk,
       );
 
-      final requestGenerate = ToolCallRequest(
+      final requestGenerate = const ToolCallRequest(
         toolCallId: 'call-gen',
         toolName: 'planner.generate_plan',
-        arguments: const {'goal': 'Add secure token database log.'},
+        arguments: {'goal': 'Add secure token database log.'},
       );
 
       final resGenerate = await service.execute(requestGenerate, context);
@@ -247,19 +274,19 @@ void main() {
       expect(genData['planId'], isNotNull);
       expect(genData['risk'], isNotNull);
 
-      final requestValidate = ToolCallRequest(
+      final requestValidate = const ToolCallRequest(
         toolCallId: 'call-val',
         toolName: 'planner.validate_plan',
-        arguments: const {'goal': 'Add route.'},
+        arguments: {'goal': 'Add route.'},
       );
 
       final resValidate = await service.execute(requestValidate, context);
       expect(resValidate.success, isTrue);
 
-      final requestEstimate = ToolCallRequest(
+      final requestEstimate = const ToolCallRequest(
         toolCallId: 'call-est',
         toolName: 'planner.estimate',
-        arguments: const {'filesCount': 3},
+        arguments: {'filesCount': 3},
       );
 
       final resEstimate = await service.execute(requestEstimate, context);
