@@ -15,6 +15,7 @@ import 'generation_tools.dart';
 import 'verification_tools.dart';
 import 'project_tools.dart';
 import 'git_tools.dart';
+import 'pipeline_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -105,4 +106,14 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(GitRollbackTool());
   registry.register(GitPullRequestTool());
   registry.register(GitPlatformStatusTool());
+
+  // Pipeline Tools
+  registry.register(PipelineTriggerTool());
+  registry.register(PipelineStatusTool());
+  registry.register(PipelineLogsTool());
+  registry.register(PipelineArtifactsTool());
+  registry.register(PipelineCancelTool());
+  registry.register(PipelineDeployTool());
+  registry.register(PipelineRollbackTool());
+  registry.register(PipelineSummaryTool());
 }

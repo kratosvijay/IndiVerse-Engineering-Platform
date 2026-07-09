@@ -14,6 +14,7 @@ import 'generation_progress_widget.dart';
 import 'verification_progress_widget.dart';
 import 'project_dashboard_widget.dart';
 import 'git_dashboard_widget.dart';
+import 'pipeline_dashboard_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -219,6 +220,22 @@ class _ChatPanelState extends State<ChatPanel> {
                                         filesChangedCount: 3,
                                         passesGates: true,
                                         hasPRDraft: true,
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: PipelineDashboardWidget(
+                                        activePipeline: 'pipe-main',
+                                        stages: ['Lint', 'Analyze', 'Test'],
+                                        deploymentTarget: 'staging',
+                                        availability: 0.999,
+                                        crashRate: 0.02,
+                                        healthScore: 9.8,
+                                        approvalStatus: 'Approved',
+                                        rollbackAvailable: true,
                                       ),
                                     ),
                                   ],
