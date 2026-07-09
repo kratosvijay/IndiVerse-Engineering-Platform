@@ -15,6 +15,7 @@ import 'verification_progress_widget.dart';
 import 'project_dashboard_widget.dart';
 import 'git_dashboard_widget.dart';
 import 'pipeline_dashboard_widget.dart';
+import 'cluster_dashboard_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -236,6 +237,22 @@ class _ChatPanelState extends State<ChatPanel> {
                                         healthScore: 9.8,
                                         approvalStatus: 'Approved',
                                         rollbackAvailable: true,
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: ClusterDashboardWidget(
+                                        clusterId: 'cluster-alpha',
+                                        status: 'healthy',
+                                        workersCount: 3,
+                                        runningJobs: 2,
+                                        averageCpu: 35.0,
+                                        averageMemory: 45.0,
+                                        activeLeases: 0,
+                                        knowledgeSyncStatus: 'synced',
                                       ),
                                     ),
                                   ],

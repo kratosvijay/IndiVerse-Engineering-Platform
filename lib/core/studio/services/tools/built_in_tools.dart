@@ -16,6 +16,7 @@ import 'verification_tools.dart';
 import 'project_tools.dart';
 import 'git_tools.dart';
 import 'pipeline_tools.dart';
+import 'cluster_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -116,4 +117,17 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(PipelineDeployTool());
   registry.register(PipelineRollbackTool());
   registry.register(PipelineSummaryTool());
+
+  // Cluster Tools
+  registry.register(ClusterStatusTool());
+  registry.register(ClusterWorkersTool());
+  registry.register(ClusterSubmitTool());
+  registry.register(ClusterCancelTool());
+  registry.register(ClusterLogsTool());
+  registry.register(ClusterHealthTool());
+  registry.register(ClusterMetricsTool());
+  registry.register(ClusterRegisterTool());
+  registry.register(ClusterUnregisterTool());
+  registry.register(ClusterLeasesTool());
+  registry.register(ClusterScaleTool());
 }
