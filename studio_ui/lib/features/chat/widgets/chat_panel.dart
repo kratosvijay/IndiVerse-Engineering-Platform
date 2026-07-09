@@ -10,6 +10,7 @@ import 'reasoning_block_widget.dart';
 import 'token_counter_widget.dart';
 import 'tool_call_widget.dart';
 import 'task_execution_widget.dart';
+import 'generation_progress_widget.dart';
 
 class ChatPanel extends StatefulWidget {
   final ChatController controller;
@@ -130,8 +131,28 @@ class _ChatPanelState extends State<ChatPanel> {
                       ListenableBuilder(
                         listenable: widget.controller,
                         builder: (context, _) {
-                          return TaskExecutionWidget(
-                            controller: widget.controller,
+                          final state = widget.controller.state;
+                          final hasActiveSession = state.session != null;
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TaskExecutionWidget(
+                                controller: widget.controller,
+                              ),
+                              if (hasActiveSession)
+                                const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: GenerationProgressWidget(
+                                    activeFile: 'lib/main.dart',
+                                    currentTask: 'Generating task files...',
+                                    tokens: 2400,
+                                    retries: 0,
+                                    warningCount: 0,
+                                    progress: 0.8,
+                                  ),
+                                ),
+                            ],
                           );
                         },
                       ),

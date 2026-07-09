@@ -11,6 +11,7 @@ import 'editor_query_tools.dart';
 import 'workspace_intelligence_tools.dart';
 import 'knowledge_tools.dart';
 import 'planner_tools.dart';
+import 'generation_tools.dart';
 
 void registerBuiltInTools(ToolRegistry registry) {
   registry.register(WorkspaceSearchTool());
@@ -55,4 +56,16 @@ void registerBuiltInTools(ToolRegistry registry) {
   registry.register(PlannerImpactTool());
   registry.register(PlannerAcceptanceTool());
   registry.register(PlannerReviewTool());
+
+  // Generator Tools
+  registry.register(GeneratorGenerateTool());
+  registry.register(GeneratorPatchTool());
+  registry.register(GeneratorValidateTool());
+  registry.register(GeneratorReviewTool());
+  registry.register(GeneratorRollbackTool());
+  registry.register(GeneratorResumeTool());
+  registry.register(GeneratorPreviewTool());
+  registry.register(GeneratorDiffTool());
+  registry.register(GeneratorFilesTool());
+  registry.register(GeneratorCheckpointTool());
 }
