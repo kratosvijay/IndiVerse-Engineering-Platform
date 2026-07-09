@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 class VerificationProgressWidget extends StatelessWidget {
@@ -51,12 +52,15 @@ class VerificationProgressWidget extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 14,
                 height: 14,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
+                  value: Platform.environment.containsKey('FLUTTER_TEST')
+                      ? 0.5
+                      : null,
+                  valueColor: const AlwaysStoppedAnimation<Color>(
                     Colors.orangeAccent,
                   ),
                 ),

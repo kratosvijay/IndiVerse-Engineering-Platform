@@ -137,88 +137,94 @@ class _ChatPanelState extends State<ChatPanel> {
                           final state = widget.controller.state;
                           final hasActiveSession = state.session != null;
 
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TaskExecutionWidget(
-                                controller: widget.controller,
+                          return Container(
+                            constraints: const BoxConstraints(maxHeight: 180),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TaskExecutionWidget(
+                                    controller: widget.controller,
+                                  ),
+                                  if (hasActiveSession) ...[
+                                    const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: GenerationProgressWidget(
+                                        activeFile: 'lib/main.dart',
+                                        currentTask: 'Generating task files...',
+                                        tokens: 2400,
+                                        retries: 0,
+                                        warningCount: 0,
+                                        progress: 0.8,
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: VerificationProgressWidget(
+                                        activeStage: 'Self-Healing Run',
+                                        statusText:
+                                            'Running test pipeline self-healing...',
+                                        retryAttempt: 2,
+                                        maxRetries: 5,
+                                        historyLog: [
+                                          '✔ Step 1: Analyze Passed (140ms)',
+                                          '✔ Step 2: Compile Passed (210ms)',
+                                          '✖ Step 3: Test Failed: Uncaught error in tests (350ms)',
+                                          '⟳ Step 4: Self-Healing Repair Triggered (Scope: lines)',
+                                        ],
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: ProjectDashboardWidget(
+                                        activeProject:
+                                            'IndiVerse Engine Platform',
+                                        activeEpic:
+                                            'Epic 1: Workspace Intelligence',
+                                        activeMilestone:
+                                            'Milestone 2: Graph Resolving',
+                                        currentTask:
+                                            'Task 3: Resolving symbols dependency graph',
+                                        projectState: 'executing',
+                                        completionPercentage: 0.6,
+                                        completedTasks: 3,
+                                        remainingTasks: 2,
+                                        velocity: 1.5,
+                                        timelineEvents: [
+                                          'ProjectCreated: Initialized roadmap',
+                                          'MilestoneStarted: milestone-1: Resolving dependencies',
+                                          'TaskStarted: task-1: Building symbol indices',
+                                          'TaskCompleted: task-1 finished successfully',
+                                        ],
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 4.0,
+                                      ),
+                                      child: GitDashboardWidget(
+                                        activeBranch: 'feature/agent-auth',
+                                        baseBranch: 'main',
+                                        purpose: 'feature',
+                                        latestCommitHash: 'sha-1',
+                                        latestCommitMsg:
+                                            'feat(auth): implement OAuth login',
+                                        filesChangedCount: 3,
+                                        passesGates: true,
+                                        hasPRDraft: true,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                              if (hasActiveSession) ...[
-                                const Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: GenerationProgressWidget(
-                                    activeFile: 'lib/main.dart',
-                                    currentTask: 'Generating task files...',
-                                    tokens: 2400,
-                                    retries: 0,
-                                    warningCount: 0,
-                                    progress: 0.8,
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                    vertical: 4.0,
-                                  ),
-                                  child: VerificationProgressWidget(
-                                    activeStage: 'Self-Healing Run',
-                                    statusText:
-                                        'Running test pipeline self-healing...',
-                                    retryAttempt: 2,
-                                    maxRetries: 5,
-                                    historyLog: [
-                                      '✔ Step 1: Analyze Passed (140ms)',
-                                      '✔ Step 2: Compile Passed (210ms)',
-                                      '✖ Step 3: Test Failed: Uncaught error in tests (350ms)',
-                                      '⟳ Step 4: Self-Healing Repair Triggered (Scope: lines)',
-                                    ],
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                    vertical: 4.0,
-                                  ),
-                                  child: ProjectDashboardWidget(
-                                    activeProject: 'IndiVerse Engine Platform',
-                                    activeEpic:
-                                        'Epic 1: Workspace Intelligence',
-                                    activeMilestone:
-                                        'Milestone 2: Graph Resolving',
-                                    currentTask:
-                                        'Task 3: Resolving symbols dependency graph',
-                                    projectState: 'executing',
-                                    completionPercentage: 0.6,
-                                    completedTasks: 3,
-                                    remainingTasks: 2,
-                                    velocity: 1.5,
-                                    timelineEvents: [
-                                      'ProjectCreated: Initialized roadmap',
-                                      'MilestoneStarted: milestone-1: Resolving dependencies',
-                                      'TaskStarted: task-1: Building symbol indices',
-                                      'TaskCompleted: task-1 finished successfully',
-                                    ],
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                    vertical: 4.0,
-                                  ),
-                                  child: GitDashboardWidget(
-                                    activeBranch: 'feature/agent-auth',
-                                    baseBranch: 'main',
-                                    purpose: 'feature',
-                                    latestCommitHash: 'sha-1',
-                                    latestCommitMsg:
-                                        'feat(auth): implement OAuth login',
-                                    filesChangedCount: 3,
-                                    passesGates: true,
-                                    hasPRDraft: true,
-                                  ),
-                                ),
-                              ],
-                            ],
+                            ),
                           );
                         },
                       ),
