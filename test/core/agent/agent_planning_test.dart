@@ -232,7 +232,7 @@ void main() {
 
       final resultSession =
           await executor.execute(session, 'ws-1', 'conv-1', 'req-1');
-      expect(resultSession.status, equals(PlanStatus.paused));
+      expect(resultSession.status, equals(PlanStatus.failed));
       expect(resultSession.stepStates['step-1']?.status,
           equals(StepStatus.failed));
       expect(resultSession.stepStates['step-2']?.status,

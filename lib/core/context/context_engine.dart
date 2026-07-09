@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../workspace/context/providers/intelligence_context_providers.dart';
 
 enum ContextPriority {
   selection,
@@ -7,6 +8,11 @@ enum ContextPriority {
   editor,
   git,
   history,
+  build,
+  symbolGraph,
+  dependencyGraph,
+  callGraph,
+  architecture,
 }
 
 class ContextRequest {
@@ -189,6 +195,11 @@ class ContextEngine {
     registerProvider(GitContextProvider());
     registerProvider(DiagnosticsContextProvider());
     registerProvider(EditorContextProvider());
+    registerProvider(ArchitectureContextProvider());
+    registerProvider(SymbolGraphContextProvider());
+    registerProvider(DependencyContextProvider());
+    registerProvider(CallGraphContextProvider());
+    registerProvider(BuildContextProvider());
   }
 
   void registerProvider(ContextProvider provider) {

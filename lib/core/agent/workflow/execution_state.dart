@@ -8,6 +8,8 @@ class StepExecutionState {
   final String? output;
   final String? error;
   final int retryCount;
+  final String? lastFailure;
+  final DateTime? lastAttempt;
 
   const StepExecutionState({
     required this.stepId,
@@ -15,6 +17,8 @@ class StepExecutionState {
     this.output,
     this.error,
     this.retryCount = 0,
+    this.lastFailure,
+    this.lastAttempt,
   });
 
   StepExecutionState copyWith({
@@ -22,6 +26,8 @@ class StepExecutionState {
     String? output,
     String? error,
     int? retryCount,
+    String? lastFailure,
+    DateTime? lastAttempt,
   }) =>
       StepExecutionState(
         stepId: stepId,
@@ -29,6 +35,8 @@ class StepExecutionState {
         output: output ?? this.output,
         error: error ?? this.error,
         retryCount: retryCount ?? this.retryCount,
+        lastFailure: lastFailure ?? this.lastFailure,
+        lastAttempt: lastAttempt ?? this.lastAttempt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -37,6 +45,8 @@ class StepExecutionState {
         'output': output,
         'error': error,
         'retryCount': retryCount,
+        'lastFailure': lastFailure,
+        'lastAttempt': lastAttempt?.toIso8601String(),
       };
 
   factory StepExecutionState.fromJson(Map<String, dynamic> json) =>
@@ -46,6 +56,10 @@ class StepExecutionState {
         output: json['output'] as String?,
         error: json['error'] as String?,
         retryCount: json['retryCount'] as int? ?? 0,
+        lastFailure: json['lastFailure'] as String?,
+        lastAttempt: json['lastAttempt'] != null
+            ? DateTime.parse(json['lastAttempt'] as String)
+            : null,
       );
 }
 
@@ -87,11 +101,12 @@ class ExecutionSession {
     Map<String, StepExecutionState>? stepStates,
     double? progress,
     DateTime? completedAt,
+    TaskGraph? graph,
   }) =>
       ExecutionSession(
         executionId: executionId,
         planId: planId,
-        graph: graph,
+        graph: graph ?? this.graph,
         status: status ?? this.status,
         stepStates: stepStates ?? this.stepStates,
         progress: progress ?? this.progress,

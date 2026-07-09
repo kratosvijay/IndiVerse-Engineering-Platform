@@ -4,17 +4,34 @@ import 'execution_state.dart';
 import 'step_executor.dart';
 import 'ready_step_scheduler.dart';
 import 'plan_event.dart';
+import 'task_step.dart';
+import '../runtime/reflection_engine.dart';
+import '../runtime/reflection_context.dart';
+import '../runtime/reflection_result.dart';
+import '../runtime/plan_mutation_engine.dart';
+import '../runtime/agent_runtime.dart';
+import '../runtime/agent_runtime_event.dart' as re;
+import '../../workspace/workspace_intelligence.dart';
 
 class PlanExecutor {
   final StepExecutor stepExecutor;
   final ReadyStepScheduler scheduler = ReadyStepScheduler();
+  final ReflectionEngine reflectionEngine;
+  final PlanMutationEngine mutationEngine;
+  AgentRuntime? runtimeHook;
+  
   final StreamController<PlanEvent> _eventController =
       StreamController<PlanEvent>.broadcast();
 
   bool _isPaused = false;
   bool _isCancelled = false;
 
-  PlanExecutor(this.stepExecutor);
+  PlanExecutor(
+    this.stepExecutor, {
+    ReflectionEngine? reflectionEngine,
+    PlanMutationEngine? mutationEngine,
+  })  : reflectionEngine = reflectionEngine ?? ReflectionEngine(),
+        mutationEngine = mutationEngine ?? PlanMutationEngine();
 
   Stream<PlanEvent> get progressEvents => _eventController.stream;
 
@@ -175,6 +192,8 @@ class PlanExecutor {
             final failedState = updatedRunning.copyWith(
               status: StepStatus.failed,
               error: result.output.displayText,
+              lastFailure: result.output.displayText,
+              lastAttempt: DateTime.now(),
             );
             session = session.copyWith(
               stepStates:
@@ -188,11 +207,19 @@ class PlanExecutor {
               stepId: step.id,
               error: result.output.displayText,
             ));
+
+            final handleRes = await _handleReflection(step, session, result.output.displayText ?? '');
+            session = handleRes.session;
+            if (handleRes.didBreak) {
+              break;
+            }
           }
         } catch (e) {
           final failedState = updatedRunning.copyWith(
             status: StepStatus.failed,
             error: e.toString(),
+            lastFailure: e.toString(),
+            lastAttempt: DateTime.now(),
           );
           session = session.copyWith(
             stepStates: Map<String, StepExecutionState>.from(session.stepStates)
@@ -205,6 +232,12 @@ class PlanExecutor {
             stepId: step.id,
             error: e.toString(),
           ));
+
+          final handleRes = await _handleReflection(step, session, e.toString());
+          session = handleRes.session;
+          if (handleRes.didBreak) {
+            break;
+          }
         }
 
         // Calculate progress percentage
@@ -234,4 +267,127 @@ class PlanExecutor {
 
     return session;
   }
+
+  Future<ReflectionHandleResult> _handleReflection(
+    TaskStep step,
+    ExecutionSession currentSession,
+    String errorMessage,
+  ) async {
+    final intel = WorkspaceIntelligenceRegistry.active;
+    final snapshot = intel?.getSnapshot();
+
+    final reflectionContext = ReflectionContext(
+      goal: currentSession.graph.goal,
+      session: currentSession,
+      activeStep: step,
+      stepState: currentSession.stepStates[step.id]!,
+      lastFailure: errorMessage,
+      workspaceSnapshot: snapshot,
+    );
+
+    final reflectionResult = await reflectionEngine.reflect(reflectionContext);
+    var session = currentSession;
+
+    if (reflectionResult.decision == ReflectionDecision.retryCurrentStep) {
+      final currentRetryCount = session.stepStates[step.id]!.retryCount;
+      final retryState = session.stepStates[step.id]!.copyWith(
+        status: StepStatus.pending,
+        retryCount: currentRetryCount + 1,
+      );
+      session = session.copyWith(
+        stepStates: Map<String, StepExecutionState>.from(session.stepStates)
+          ..[step.id] = retryState,
+      );
+
+      runtimeHook?.emitEvent(re.StepRetryEvent(
+        executionId: session.executionId,
+        goalId: session.planId,
+        timestamp: DateTime.now(),
+        stepId: step.id,
+        retryCount: currentRetryCount + 1,
+        error: errorMessage,
+      ));
+
+      runtimeHook?.updateActiveSession(session);
+      return ReflectionHandleResult(session, true);
+    } else if (reflectionResult.decision == ReflectionDecision.insertSteps ||
+               reflectionResult.decision == ReflectionDecision.replaceSteps) {
+      var newGraph = session.graph;
+      final inserted = reflectionResult.insertedSteps;
+      final replacements = reflectionResult.replacementSteps;
+
+      if (reflectionResult.decision == ReflectionDecision.insertSteps && inserted.isNotEmpty) {
+        newGraph = mutationEngine.insertSteps(session.graph, step.id, inserted);
+      } else if (reflectionResult.decision == ReflectionDecision.replaceSteps && replacements.isNotEmpty) {
+        newGraph = mutationEngine.replaceStep(session.graph, step.id, replacements);
+      }
+
+      final updatedStepStates = Map<String, StepExecutionState>.from(session.stepStates);
+      for (final newStep in newGraph.steps) {
+        if (!updatedStepStates.containsKey(newStep.id)) {
+          updatedStepStates[newStep.id] = StepExecutionState(stepId: newStep.id);
+        }
+      }
+
+      session = session.copyWith(
+        graph: newGraph,
+        stepStates: updatedStepStates,
+      );
+
+      runtimeHook?.emitEvent(re.PlanModifiedEvent(
+        executionId: session.executionId,
+        goalId: session.planId,
+        timestamp: DateTime.now(),
+        reasoning: reflectionResult.reasoning,
+        insertedStepIds: inserted.map((s) => s.id).toList(),
+        replacementStepIds: replacements.map((s) => s.id).toList(),
+      ));
+
+      runtimeHook?.updateActiveSession(session);
+      return ReflectionHandleResult(session, true);
+    } else if (reflectionResult.decision == ReflectionDecision.skipStep) {
+      final skippedState = session.stepStates[step.id]!.copyWith(status: StepStatus.skipped);
+      session = session.copyWith(
+        stepStates: Map<String, StepExecutionState>.from(session.stepStates)
+          ..[step.id] = skippedState,
+      );
+      _eventController.add(StepSkippedEvent(
+        planId: session.planId,
+        executionId: session.executionId,
+        timestamp: DateTime.now(),
+        stepId: step.id,
+      ));
+      runtimeHook?.updateActiveSession(session);
+      return ReflectionHandleResult(session, true);
+    } else if (reflectionResult.decision == ReflectionDecision.askAI) {
+      session = session.copyWith(status: PlanStatus.waitingUser);
+      _eventController.add(PlanStatusChangedEvent(
+        planId: session.planId,
+        executionId: session.executionId,
+        timestamp: DateTime.now(),
+        status: PlanStatus.waitingUser,
+      ));
+      runtimeHook?.updateActiveSession(session);
+      return ReflectionHandleResult(session, true);
+    } else if (reflectionResult.decision == ReflectionDecision.failExecution) {
+      session = session.copyWith(status: PlanStatus.failed);
+      _eventController.add(PlanStatusChangedEvent(
+        planId: session.planId,
+        executionId: session.executionId,
+        timestamp: DateTime.now(),
+        status: PlanStatus.failed,
+      ));
+      runtimeHook?.updateActiveSession(session);
+      return ReflectionHandleResult(session, true);
+    }
+
+    return ReflectionHandleResult(session, false);
+  }
+}
+
+class ReflectionHandleResult {
+  final ExecutionSession session;
+  final bool didBreak;
+
+  const ReflectionHandleResult(this.session, this.didBreak);
 }

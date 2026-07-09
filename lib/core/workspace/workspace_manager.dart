@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'workspace_intelligence.dart';
 import 'workspace.dart';
 import 'workspace_state.dart';
 import 'workspace_registry.dart';
@@ -27,6 +29,8 @@ class WorkspaceManager {
 
   Future<Workspace> openWorkspace(String rootPath) async {
     _state = WorkspaceState.opening;
+
+    await _initializeIntelligence(rootPath);
 
     final cached = await cache.load(rootPath);
     if (cached != null) {
@@ -85,6 +89,7 @@ class WorkspaceManager {
   Future<void> closeWorkspace(String rootPath) async {
     _state = WorkspaceState.closing;
     registry.clearActive();
+    WorkspaceIntelligenceRegistry.clearActive();
     _state = WorkspaceState.closed;
 
     eventBus.publish(WorkspaceClosed(
@@ -92,5 +97,26 @@ class WorkspaceManager {
       eventId: "closed-${DateTime.now().millisecondsSinceEpoch}",
       rootPath: rootPath,
     ));
+  }
+
+  Future<void> _initializeIntelligence(String rootPath) async {
+    final intel = WorkspaceIntelligence(
+      workspaceId: rootPath.split('/').last,
+      workspacePath: rootPath,
+    );
+    WorkspaceIntelligenceRegistry.register(rootPath, intel);
+    WorkspaceIntelligenceRegistry.setActive(rootPath);
+
+    final dir = Directory(rootPath);
+    if (await dir.exists()) {
+      await for (final entity in dir.list(recursive: true, followLinks: false)) {
+        if (entity is File && entity.path.endsWith('.dart')) {
+          try {
+            final content = await entity.readAsString();
+            intel.indexFile(entity.path, content);
+          } catch (_) {}
+        }
+      }
+    }
   }
 }

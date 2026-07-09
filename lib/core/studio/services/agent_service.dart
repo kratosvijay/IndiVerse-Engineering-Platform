@@ -8,6 +8,10 @@ import '../../agent/workflow/agent_planner.dart';
 import '../../agent/workflow/step_executor.dart';
 import '../../agent/workflow/plan_executor.dart';
 import '../../agent/workflow/plan_event.dart';
+import '../../agent/runtime/reflection_engine.dart';
+import '../../agent/runtime/goal_manager.dart';
+import '../../agent/runtime/agent_runtime.dart';
+import '../../agent/runtime/agent_runtime_event.dart' as re;
 import 'tool_execution_service.dart';
 
 class AgentService {
@@ -17,6 +21,7 @@ class AgentService {
 
   late final AgentPlanner planner;
   late final PlanExecutor planExecutor;
+  late final AgentRuntime runtime;
 
   final List<ExecutionSession> _history = [];
   ExecutionSession? _activeSession;
@@ -28,7 +33,18 @@ class AgentService {
   AgentService(this.sdk, this.eventBus, this.toolExecutionService) {
     planner = AgentPlanner();
     final stepExecutor = StepExecutor(toolExecutionService, sdk);
-    planExecutor = PlanExecutor(stepExecutor);
+    final reflectionEngine = ReflectionEngine();
+    final goalManager = GoalManager();
+    planExecutor = PlanExecutor(
+      stepExecutor,
+      reflectionEngine: reflectionEngine,
+    );
+    runtime = AgentRuntime(
+      planExecutor: planExecutor,
+      goalManager: goalManager,
+      reflectionEngine: reflectionEngine,
+    );
+    planExecutor.runtimeHook = runtime;
 
     // Listen to plan executor events to update active session state
     _eventSubscription = planExecutor.progressEvents.listen((event) {
@@ -76,6 +92,7 @@ class AgentService {
 
   void dispose() {
     _eventSubscription?.cancel();
+    runtime.dispose();
   }
 
   ExecutionSession? get activeSession => _activeSession;
@@ -115,10 +132,11 @@ class AgentService {
     );
 
     _activeSession = session;
+    runtime.updateActiveSession(session);
 
     scheduleMicrotask(() async {
-      await planExecutor.execute(
-          session, workspaceId, conversationId, requestId);
+      await runtime.start(
+          graph, workspaceId, conversationId, requestId);
     });
 
     return session;
@@ -126,8 +144,8 @@ class AgentService {
 
   Future<ExecutionSession> pauseExecution() async {
     if (_activeSession != null) {
-      planExecutor.pause();
-      _activeSession = _activeSession!.copyWith(status: PlanStatus.paused);
+      runtime.pause();
+      _activeSession = runtime.activeSession;
       return _activeSession!;
     }
     throw Exception('No active planning execution session found to pause.');
@@ -136,13 +154,8 @@ class AgentService {
   Future<ExecutionSession> resumeExecution(
       String workspaceId, String conversationId, String requestId) async {
     if (_activeSession != null && _activeSession!.status == PlanStatus.paused) {
-      planExecutor.resume();
-      _activeSession = _activeSession!.copyWith(status: PlanStatus.running);
-
-      scheduleMicrotask(() async {
-        await planExecutor.execute(
-            _activeSession!, workspaceId, conversationId, requestId);
-      });
+      runtime.resume(workspaceId, conversationId, requestId);
+      _activeSession = runtime.activeSession;
       return _activeSession!;
     }
     throw Exception('No paused execution session found to resume.');
@@ -153,12 +166,8 @@ class AgentService {
     if (_activeSession != null &&
         (_activeSession!.status == PlanStatus.failed ||
             _activeSession!.status == PlanStatus.paused)) {
-      _activeSession = _activeSession!.copyWith(status: PlanStatus.running);
-
-      scheduleMicrotask(() async {
-        await planExecutor.execute(
-            _activeSession!, workspaceId, conversationId, requestId);
-      });
+      runtime.resume(workspaceId, conversationId, requestId);
+      _activeSession = runtime.activeSession;
       return _activeSession!;
     }
     throw Exception('No failed or paused execution session found to retry.');
@@ -166,8 +175,8 @@ class AgentService {
 
   Future<ExecutionSession> cancelExecution() async {
     if (_activeSession != null) {
-      planExecutor.cancel();
-      _activeSession = _activeSession!.copyWith(status: PlanStatus.cancelled);
+      runtime.cancel();
+      _activeSession = runtime.activeSession;
       return _activeSession!;
     }
     throw Exception('No active planning execution session found to cancel.');
