@@ -1,1 +1,1 @@
-{"metric":"mcpRequestTimeMs","value":2,"threshold":100,"status":"PASS"}
+{"metric":"mcpRequestTimeMs","value":1,"threshold":100,"status":"PASS"}

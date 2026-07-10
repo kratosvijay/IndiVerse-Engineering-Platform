@@ -109,15 +109,27 @@ class WorkspaceManager {
 
     final dir = Directory(rootPath);
     if (await dir.exists()) {
-      await for (final entity
-          in dir.list(recursive: true, followLinks: false)) {
-        if (entity is File && entity.path.endsWith('.dart')) {
+      await _scanDirectory(dir, intel);
+    }
+  }
+
+  Future<void> _scanDirectory(Directory dir, WorkspaceIntelligence intel) async {
+    try {
+      final list = await dir.list(recursive: false, followLinks: false).toList();
+      for (final entity in list) {
+        final name = entity.path.split(Platform.pathSeparator).last;
+        if (name.startsWith('.') || name == 'build') {
+          continue;
+        }
+        if (entity is Directory) {
+          await _scanDirectory(entity, intel);
+        } else if (entity is File && entity.path.endsWith('.dart')) {
           try {
             final content = await entity.readAsString();
             intel.indexFile(entity.path, content);
           } catch (_) {}
         }
       }
-    }
+    } catch (_) {}
   }
 }
